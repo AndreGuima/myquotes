@@ -1,17 +1,27 @@
-# Use the latest version of Node as the base image
-FROM node:latest
+# Stage 1: Build the application
+FROM node:latest as build
 
-# Set the working directory to /app
-WORKDIR /app
+WORKDIR /usr/app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+COPY package*.json ./
 
-# Install any needed packages specified in package.json
 RUN npm install
 
-# Make port 4200 available to the world outside this container
-EXPOSE 4200
+COPY . .
 
-# Run the app when the container launches
-CMD ["npm", "start"]
+RUN npm run build --prod
+
+# Stage 2: Serve the application
+FROM node:latest
+
+WORKDIR /usr/app
+
+COPY --from=build /usr/app/dist .
+
+COPY server.js .
+
+RUN npm install express
+
+EXPOSE 80
+
+CMD ["node", "server.js"]
