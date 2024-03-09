@@ -1,1 +1,5 @@
-/* You can add global styles to this file, and also import other style files */
+body {
+  --bege: #E6E0D6;
+  --marrom-escuro: #816D4F;
+  --marrom-claro: #B29463;
+}
