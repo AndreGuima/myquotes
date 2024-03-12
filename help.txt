@@ -1,0 +1,11 @@
+docker build -t myquotes .
+#docker run -p 4200:4200 -d myquotes
+docker run -p 80:80 -d myquotes
+
+docker login mycontainerregistryformyquotes.azurecr.io
+mycontainerregistryformyquotes
+hhAaAxzpVoHJNoj4KQ+VP7pdFrfIKnonTFQReYj6CQ+ACRC7U4y5
+
+docker tag myquotes mycontainerregistryformyquotes.azurecr.io/myquotes:v1
+
+docker push mycontainerregistryformyquotes.azurecr.io/myquotes:v1
