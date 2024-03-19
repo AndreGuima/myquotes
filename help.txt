@@ -1,12 +1,13 @@
-docker build -t myquotes .
-docker run -p 80:80 -d myquotes
+docker build -t myquotes:v1 .
+docker run -p 80:80 -d myquotes:v1
 
 az login
-az acr login --name mycontainerregistryformyquotes
+az acr login --name containerregistryformyquotes
 
-docker login mycontainerregistryformyquotes.azurecr.io
+
+docker login containerregistryformyquotes.azurecr.io
 obter em Access keys
 
-docker tag myquotes mycontainerregistryformyquotes.azurecr.io/myquotes:v1
+docker tag myquotes:v1 containerregistryformyquotes.azurecr.io/myquotes:v1
 
-docker push mycontainerregistryformyquotes.azurecr.io/myquotes:v1
+docker push containerregistryformyquotes.azurecr.io/myquotes:v1
