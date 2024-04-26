@@ -5,20 +5,21 @@
         <form>
           <div class="mb-3">
             <label for="quote" class="form-label">Frase</label>
-            <input type="text" class="form-control" id="quote" placeholder="Digite a sua frase" />
+            <input type="text" class="form-control" id="quote" placeholder="Digite a sua frase"
+            [(ngModel)]="pensamento.quote"/>
           </div>
           <div class="mb-3">
             <label for="author" class="form-label">Autor</label>
-            <input type="text" class="form-control" id="author" placeholder="Digite o nome do autor" />
+            <input type="text" class="form-control" id="author" placeholder="Digite o nome do autor"
+            [(ngModel)]="pensamento.author" />
           </div>
           <div class="mb-3 form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="notifiable" checked>
             <label class="form-check-label" for="notifiable">Envio de notificação</label>
+            <input class="form-check-input" type="checkbox" role="switch" id="notifiable" checked
+            [(ngModel)]="pensamento.notifiable" >
           </div>
           <div class="d-grid">
-            <button type="submit" class="btn btn-primary">
-              Salvar
-            </button>
+            <button (click)="savePensamento()" type="submit" class="btn btn-primary">Salvar</button>
           </div>
         </form>
       </div>
