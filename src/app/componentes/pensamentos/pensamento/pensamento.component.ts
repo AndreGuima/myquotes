@@ -1,5 +1,5 @@
 import { Pensamento } from './../pensamento';
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-pensamento',
@@ -7,7 +7,7 @@ import { Component, OnInit } from '@angular/core';
   styleUrl: './pensamento.component.css',
 })
 export class PensamentoComponent implements OnInit {
-  pensamento = {
+  @Input() pensamento = {
     id: '1',
     quote: 'Minha primeira frase, pensamento.ts',
     author: 'André Guimarães',

@@ -2,13 +2,22 @@
   <div class="container">
     <div class="card my-5">
       <div class="card-body">
-        <div class="mb-3">
-          <app-pensamento></app-pensamento>
-        </div>
+<!--        <div *ngFor="let pensamento of pensamentos">
+          <app-pensamento [pensamento]="pensamento"></app-pensamento>
+        </div>-->
+        <app-pensamento></app-pensamento>
+      </div>
+      <div class="card-body">
+        <app-pensamento></app-pensamento>
+      </div>
+      <div class="card-body">
+        <app-pensamento></app-pensamento>
       </div>
     </div>
-    <div class="d-grid">
-      <button class="btn btn-primary" routerLink="/savequote">Adicionar Frase</button>
+    <div class="text-center">
+      <div class="d-grid">
+        <button class="btn btn-primary" routerLink="/savequote">Nova Frase</button>
+      </div>
     </div>
   </div>
 </section>
