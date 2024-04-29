@@ -3,4 +3,5 @@ export interface Pensamento {
   quote: string;
   author: string;
   notifiable: boolean;
+  createdWhen: Date;
 }

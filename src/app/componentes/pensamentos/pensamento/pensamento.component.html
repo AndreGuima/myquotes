@@ -1,1 +1,19 @@
-<p>pensamento works!</p>
+<div class="card">
+  <div class="card-header">
+    <button class="botao-editar">
+      <i class="bi bi-pencil-square"></i>
+    </button>
+    <button class="botao-desabilitar">
+      <i class="bi bi-x-square"></i>
+    </button>
+    <button class="botao-excluir">
+      <i class="bi bi-trash3"></i>
+    </button>
+  </div>
+  <div class="card-body">
+    <blockquote class="blockquote mb-0">
+      <p>{{ pensamento.quote }}</p>
+      <footer class="blockquote-footer">{{ pensamento.author }} <cite title="Source Title">{{ pensamento.createdWhen }}</cite></footer>
+    </blockquote>
+  </div>
+</div>
