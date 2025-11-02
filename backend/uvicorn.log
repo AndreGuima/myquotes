@@ -1,0 +1,8 @@
+INFO:     Will watch for changes in these directories: ['/home/andre/MyQuotes/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [8701] using StatReload
+INFO:     Started server process [8714]
+INFO:     Waiting for application startup.
+Database not ready (attempt 1/10): (mysql.connector.errors.OperationalError) 2013 (HY000): Lost connection to MySQL server at 'reading initial communication packet', system error: 0
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+INFO:     Application startup complete.
