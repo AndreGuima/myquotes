@@ -1,18 +1,48 @@
 services:
+  # 🐬 Banco de Dados MySQL
   mysql:
     image: mysql:8.0
     container_name: myquotes-db
     restart: always
+    env_file:
+      - .env
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: myquotes_db
-      MYSQL_USER: myquotes_user
-      MYSQL_PASSWORD: myquotes_pass
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql_data:/var/lib/mysql
+    networks:
+      - myquotes-network
+
+  # 🐍 Backend (Python - FastAPI)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: myquotes-backend
+    restart: always
+    depends_on:
+      - mysql
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    working_dir: /app
+    command: >
+      sh -c "./wait-for-db.sh && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    networks:
+      - myquotes-network
 
 volumes:
-  mysql_data: 
+  mysql_data:
+
+networks:
+  myquotes-network:
+    driver: bridge
