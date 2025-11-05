@@ -14,7 +14,6 @@ from testcontainers.mysql import MySqlContainer
 backend_path = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(backend_path))
 
-from app.main import app
 from app.models.quote import Base
 
 
@@ -22,21 +21,18 @@ from app.models.quote import Base
 def mysql_container():
     # Start a real MySQL container for the test session.
     with MySqlContainer("mysql:8.0.33") as mysql:
-        # Wait a short while for mysqld to be fully ready
         time.sleep(2)
         yield mysql
 
 
 @pytest.fixture(scope="session")
 def engine(mysql_container):
-    # testcontainers provides a connection URL usable by SQLAlchemy
     url = mysql_container.get_connection_url()
-    # force mysql+mysqlconnector scheme if needed
+
     if url.startswith("mysql://"):
         url = url.replace("mysql://", "mysql+mysqlconnector://", 1)
 
     engine = create_engine(url, future=True)
-    # create tables for testing
     Base.metadata.create_all(bind=engine)
     yield engine
     Base.metadata.drop_all(bind=engine)
@@ -49,11 +45,19 @@ def db_sessionmaker(engine):
 
 @pytest.fixture()
 def client(engine, monkeypatch):
-    # Override the app module-level engine so endpoints use the test engine
+    # ✅ Set fake env vars BEFORE importing app
+    monkeypatch.setenv("DB_USER", "test")
+    monkeypatch.setenv("DB_PASSWORD", "test")
+    monkeypatch.setenv("DB_HOST", "localhost")
+    monkeypatch.setenv("DB_PORT", "3306")
+    monkeypatch.setenv("DB_NAME", "test_db")
+
+    # ✅ Now import the app AFTER env vars are set
     import app.main as app_main
 
+    # ✅ Override engine in the app module
     monkeypatch.setattr(app_main, "engine", engine)
 
-    # Provide a TestClient that exercises the FastAPI app in-process
-    with TestClient(app) as c:
+    # ✅ Build TestClient from app_main.app instead of global app
+    with TestClient(app_main.app) as c:
         yield c
