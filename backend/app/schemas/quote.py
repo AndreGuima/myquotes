@@ -9,6 +9,10 @@ class QuoteBase(BaseModel):
 class QuoteCreate(QuoteBase):
     pass
 
+class QuoteUpdate(BaseModel):
+    author: Optional[str] = Field(None, min_length=1)
+    text: Optional[str] = Field(None, min_length=1)
+    
 class QuoteRead(QuoteBase):
     id: int
     created_at: Optional[datetime]
