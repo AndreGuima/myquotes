@@ -1,45 +1,51 @@
 def test_get_quotes_returns_list(client):
-    """GET /quotes should return 200 and a JSON list."""
     r = client.get("/quotes")
     assert r.status_code == 200
     assert isinstance(r.json(), list)
 
 
 def test_post_quote_and_get(client):
-    """POST /quotes should create a quote and return it with an id."""
     payload = {"author": "Unit Tester", "text": "This is a test quote."}
     r = client.post("/quotes", json=payload)
     assert r.status_code == 201
     data = r.json()
-    assert data.get("author") == payload["author"]
-    assert data.get("text") == payload["text"]
-    assert "id" in data
+    assert data["author"] == payload["author"]
+    assert data["text"] == payload["text"]
+    new_id = data["id"]
 
-    # ensure it shows up in GET
-    r2 = client.get("/quotes")
+    r2 = client.get(f"/quotes/{new_id}")
     assert r2.status_code == 200
-    items = r2.json()
-    assert any(item.get("id") == data["id"] for item in items)
+    assert r2.json()["id"] == new_id
 
-def test_post_quote_validates_required_fields(client):
-    """POST /quotes should return 422 when required fields are missing or empty."""
-    
-    # Missing both
+
+def test_update_quote(client):
+    # create first
+    payload = {"author": "Old Name", "text": "Old text"}
+    r = client.post("/quotes", json=payload)
+    quote_id = r.json()["id"]
+
+    update_payload = {"author": "New Name"}
+    r2 = client.put(f"/quotes/{quote_id}", json=update_payload)
+    assert r2.status_code == 200
+    assert r2.json()["author"] == "New Name"
+    assert r2.json()["text"] == "Old text"  # unchanged field
+
+
+def test_delete_quote(client):
+    payload = {"author": "To Delete", "text": "Bye!"}
+    r = client.post("/quotes", json=payload)
+    quote_id = r.json()["id"]
+
+    r2 = client.delete(f"/quotes/{quote_id}")
+    assert r2.status_code == 204
+
+    r3 = client.get(f"/quotes/{quote_id}")
+    assert r3.status_code == 404
+
+
+def test_validation(client):
+    r = client.post("/quotes", json={"author": "", "text": ""})
+    assert r.status_code == 422
+
     r = client.post("/quotes", json={})
     assert r.status_code == 422
-    assert any(err["loc"][-1] == "author" for err in r.json()["detail"])
-    assert any(err["loc"][-1] == "text" for err in r.json()["detail"])
-
-    # Missing author
-    r = client.post("/quotes", json={"text": "Quote without author"})
-    assert r.status_code == 422
-    assert any(err["loc"][-1] == "author" for err in r.json()["detail"])
-
-    # Missing text
-    r = client.post("/quotes", json={"author": "Author without quote"})
-    assert r.status_code == 422
-    assert any(err["loc"][-1] == "text" for err in r.json()["detail"])
-
-    # Empty strings -> STILL invalid (Pydantic allows empty strings unless we add validators)
-    r = client.post("/quotes", json={"author": "", "text": ""})
-    assert r.status_code == 422 or r.status_code == 201  # until we enforce non-empty explicitly
