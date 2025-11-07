@@ -27,20 +27,13 @@
 ### 🧠 Backend — API
 
 ```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-pytest -v   # ✅ ensure tests pass
+./scripts/start.sh # Start prod-like env
 ```
-Start prod-like env
-```
-cd ..
-./scripts/start.sh
-```
-Start dev mode env
-```
-./backend/run-dev.sh
+
+```bash
+./backend/run-dev.sh # Start dev mode env
+cd ~/MyQuotes
+docker compose up -d mysql # Sobe apenas o banco em docker
 ```
 
 Backend runs at: **[http://localhost:8000](http://localhost:8000)**
