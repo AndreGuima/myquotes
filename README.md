@@ -32,8 +32,15 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 pytest -v   # ✅ ensure tests pass
+```
+Start prod-like env
+```
 cd ..
-./scripts/start.sh # start prod-like env
+./scripts/start.sh
+```
+Start dev mode env
+```
+./backend/run-dev.sh
 ```
 
 Backend runs at: **[http://localhost:8000](http://localhost:8000)**
@@ -43,39 +50,15 @@ Backend runs at: **[http://localhost:8000](http://localhost:8000)**
 ```bash
 cd frontend
 npm install
-npx expo start --clear
+npm start
 ```
 
-Web: [http://localhost:8081](http://localhost:8081)
-Mobile: open Expo Go & scan QR code
+Abra no celular com Expo Go ou via navegador:
 
-### 🌐 Environment Variables
+📱 Mobile: escaneie o QR Code
 
-Create files like:
+💻 Web: http://localhost:8081
 
-`.env`
-
-```
-API_URL=http://localhost:8000
-```
-
-`.env.development`
-
-```
-API_URL=http://YOUR_LOCAL_IP:8000
-```
-
-> ℹ️ For Android device testing, backend **cannot** be `localhost`
-
----
-
-## 🧪 Run Tests (Backend)
-
-```bash
-cd backend
-source venv/bin/activate
-pytest -v
-```
 
 ---
 
@@ -89,46 +72,12 @@ pytest -v
 
 ---
 
-## 📁 Project Structure
-
-```
-MyQuotes/
- ├── backend/         # FastAPI + MySQL
- ├── frontend/        # Expo app
- ├── database/
- ├── scripts/
- └── docker-compose.yml
-```
-
----
-
 ## ✅ Status
 
 * CRUD quotes ✅
 * Integration tests ✅
 * Mobile + Web UI ✅
 * Docker runtime ✅
-
----
-
-## 🛣️ Roadmap
-
-* 🔐 Auth (JWT)
-* 🌍 Deploy backend (Railway / Render)
-* 📱 Publish mobile app
-* 🧪 GitHub Actions CI
-
----
-
-## 🤝 Contributing
-
-Pull requests welcome.
-
----
-
-## 📝 License
-
-MIT — use freely, build better!
 
 ---
 
