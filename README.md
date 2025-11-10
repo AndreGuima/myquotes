@@ -25,18 +25,25 @@
 ## 🚀 Quick Start
 
 ### 🧠 Backend — API
+Starting prod-like env
 
 ```bash
-./scripts/start.sh # Start prod-like env
+./scripts/start.sh
 ```
 
+Starting dev mode env
 ```bash
 docker compose up -d mysql # Sobe apenas o banco em docker
 cd ~/MyQuotes
-./backend/run-dev.sh # Start dev mode env
+./backend/run-dev.sh
+```
+Run Tests
+```bash
+pytest -v
 ```
 
 Backend runs at: **[http://localhost:8000](http://localhost:8000)**
+http://localhost:8000/docs
 
 ### 📱 Frontend — Expo
 
