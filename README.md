@@ -31,9 +31,9 @@
 ```
 
 ```bash
-./backend/run-dev.sh # Start dev mode env
-cd ~/MyQuotes
 docker compose up -d mysql # Sobe apenas o banco em docker
+cd ~/MyQuotes
+./backend/run-dev.sh # Start dev mode env
 ```
 
 Backend runs at: **[http://localhost:8000](http://localhost:8000)**
@@ -41,9 +41,8 @@ Backend runs at: **[http://localhost:8000](http://localhost:8000)**
 ### 📱 Frontend — Expo
 
 ```bash
-cd frontend
-npm install
-npm start
+cd ~/MyQuotes/frontend
+npx expo start --clear
 ```
 
 Abra no celular com Expo Go ou via navegador:

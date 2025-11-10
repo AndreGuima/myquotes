@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { ThemedView } from "@/components/themed-view";
+import { ThemedText } from "@/components/themed-text";
 import api from "@/app/services/api";
 
 export default function QuotesScreen() {
@@ -23,27 +25,27 @@ export default function QuotesScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <ThemedView style={styles.center}>
         <ActivityIndicator size="large" />
-        <Text>Loading quotes...</Text>
-      </View>
+        <ThemedText>Loading quotes...</ThemedText>
+      </ThemedView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <ThemedView style={styles.container}>
       <FlatList
         data={quotes}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <View style={styles.quoteItem}>
-            <Text style={styles.quoteText}>“{item.text}”</Text>
-            <Text style={styles.quoteAuthor}>— {item.author}</Text>
-          </View>
+          <ThemedView style={styles.quoteItem}>
+            <ThemedText style={styles.quoteText}>“{item.text}”</ThemedText>
+            <ThemedText style={styles.quoteAuthor}>— {item.author}</ThemedText>
+          </ThemedView>
         )}
-        ListEmptyComponent={<Text>No quotes found.</Text>}
+        ListEmptyComponent={<ThemedText>No quotes found.</ThemedText>}
       />
-    </View>
+    </ThemedView>
   );
 }
 
@@ -53,9 +55,9 @@ const styles = StyleSheet.create({
   quoteItem: {
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#555',
     marginBottom: 8,
   },
   quoteText: { fontSize: 16, fontStyle: 'italic' },
-  quoteAuthor: { fontSize: 14, color: '#555', marginTop: 4 },
+  quoteAuthor: { fontSize: 14, marginTop: 4, opacity: 0.7 },
 });
