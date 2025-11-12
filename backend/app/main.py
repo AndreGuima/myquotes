@@ -1,10 +1,55 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import SQLAlchemyError
 
-from .routes.quotes import router as quotes_router
+# Internos
+from app.database import Base, engine
+from app.routes.quotes import router as quotes_router
+from app.routes.users import router as users_router
+from app.settings import settings
+from app.startup import create_default_admin
 
-app = FastAPI(title="MyQuotes API")
 
+# ==========================================
+# ⚙️ Lifespan moderno
+# ==========================================
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("🚀 Inicializando MyQuotes API...")
+
+    try:
+        # 🔧 Garante que as tabelas existam
+        Base.metadata.create_all(bind=engine)
+        print("✅ Tabelas verificadas/criadas com sucesso.")
+
+        # 👤 Cria admin padrão
+        create_default_admin()
+
+    except SQLAlchemyError as e:
+        print(f"❌ Erro ao inicializar o banco: {e}")
+
+    yield  # App rodando
+
+    print("🛑 Encerrando MyQuotes API...")
+
+
+# ==========================================
+# 🚀 Instância principal do app
+# ==========================================
+app = FastAPI(
+    title="MyQuotes API",
+    description="API para gerenciar frases e usuários do projeto MyQuotes.",
+    version="1.0.0",
+    contact={"name": "André Guimarães", "email": "andre@example.com"},
+    license_info={"name": "MIT License"},
+    lifespan=lifespan,
+)
+
+
+# ==========================================
+# 🌐 CORS Middleware
+# ==========================================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,4 +58,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# ==========================================
+# 🔗 Registro de rotas
+# ==========================================
+app.include_router(users_router)
 app.include_router(quotes_router)
+
+
+# ==========================================
+# ✅ Health Check
+# ==========================================
+@app.get("/", tags=["Health"])
+def root():
+    return {"status": "ok", "message": "MyQuotes API is running 🚀"}
