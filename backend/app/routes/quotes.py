@@ -23,7 +23,12 @@ def get_quote(quote_id: int, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=QuoteRead, status_code=status.HTTP_201_CREATED)
 def create_quote(payload: QuoteCreate, db: Session = Depends(get_db)):
-    q = Quote(**payload.model_dump())
+    DEFAULT_TEST_USER_ID = 1  # temporário até implementarmos auth
+
+    q = Quote(
+        **payload.model_dump(),
+        user_id=DEFAULT_TEST_USER_ID
+    )
     db.add(q)
     db.commit()
     db.refresh(q)
