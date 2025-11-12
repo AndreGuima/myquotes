@@ -1,19 +1,26 @@
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, ConfigDict
+
 
 class Settings(BaseSettings):
-    APP_ENV: str = Field("development")
-    APP_HOST: str = Field("0.0.0.0")
-    APP_PORT: int = Field(8000)
+    # 🔧 Configurações gerais do app
+    APP_ENV: str = Field(default="development")
+    APP_HOST: str = Field(default="0.0.0.0")
+    APP_PORT: int = Field(default=8000)
 
+    # 💾 Configurações do banco de dados
     DB_USER: str
     DB_PASSWORD: str
-    DB_HOST: str = "mysql"
-    DB_PORT: int = 3306
+    DB_HOST: str = Field(default="mysql")
+    DB_PORT: int = Field(default=3306)
     DB_NAME: str
 
-    class Config:
-        env_file = ".env"
-        extra = "allow"  # ✅ aceita variáveis extras sem erro
+    # ⚙️ Configuração moderna do Pydantic v2
+    model_config = ConfigDict(
+        env_file=".env",   # lê variáveis de ambiente do .env
+        extra="allow"      # permite variáveis extras sem erro
+    )
 
+
+# ✅ Instância global de Settings
 settings = Settings()

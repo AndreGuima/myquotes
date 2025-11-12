@@ -39,7 +39,8 @@ cd ~/MyQuotes
 ```
 Run Tests
 ```bash
-pytest -v
+source backend/venv/bin/activate
+pytest -v backend/tests/
 ```
 
 Backend runs at: **[http://localhost:8000](http://localhost:8000)**
