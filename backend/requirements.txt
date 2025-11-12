@@ -7,7 +7,7 @@ alembic==1.13.2
 mysql-connector-python==9.5.0
 
 # Pydantic 2 + Env settings
-pydantic==2.12.3
+pydantic[email]==2.12.3
 pydantic-settings==2.3.4
 
 # Optional: still useful outside Python app

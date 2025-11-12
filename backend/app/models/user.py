@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, TIMESTAMP, func
@@ -19,4 +19,9 @@ class User(Base):
         TIMESTAMP, server_default=func.current_timestamp()
     )
 
-    quotes: Mapped[list["Quote"]] = relationship(back_populates="user")
+    # 🔗 Relacionamento com Quote (lazy="select" é padrão)
+    quotes: Mapped[List["Quote"]] = relationship(
+        "Quote",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )

@@ -1,6 +1,7 @@
+
 services:
-  # 🐬 Banco de Dados MySQL
-  mysql:
+  # 🐬 MySQL 8.0
+  db:
     image: mysql:8.0
     container_name: myquotes-db
     restart: always
@@ -14,35 +15,49 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - mysql_data:/var/lib/mysql
+    healthcheck:  # ✅ espera até o banco aceitar conexões
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
     networks:
       - myquotes-network
 
-  # 🐍 Backend (Python - FastAPI)
+  # 🐍 FastAPI Backend
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: myquotes-backend
     restart: always
-    depends_on:
-      - mysql
     env_file:
       - .env
+    depends_on:       # ✅ só inicia quando o MySQL estiver pronto
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
     working_dir: /app
     command: >
-      sh -c "./wait-for-db.sh && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "sh /app/wait-for-db.sh && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
     networks:
       - myquotes-network
 
+# ==========================================
+# 🔒 Volumes persistentes
+# ==========================================
 volumes:
   mysql_data:
 
+# ==========================================
+# 🌐 Rede compartilhada
+# ==========================================
 networks:
   myquotes-network:
     driver: bridge

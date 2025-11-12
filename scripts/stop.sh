@@ -1,23 +1,20 @@
 #!/bin/bash
 echo "🛑 Parando ambiente MyQuotes..."
 
-# Primeiro tenta parar normalmente
-docker compose down
+# Tenta parar normalmente
+docker compose down -v --remove-orphans >/dev/null 2>&1
 
 # Se ainda existirem containers, força parada
 running=$(docker ps --filter "name=myquotes" -q)
-
 if [ -n "$running" ]; then
     echo "⚠️ Containers ainda estão rodando. Forçando parada..."
-    docker kill $running 2>/dev/null
-    docker rm -f $running 2>/dev/null
+    docker kill $running >/dev/null 2>&1
+    docker rm -f $running >/dev/null 2>&1
 fi
 
-# Parar expo se estiver rodando (Ctrl+C ou:)
-pkill -f "expo" || true
-pkill -f "node" || true
+# Parar expo, node e backend dev se rodando
+pkill -f "expo" >/dev/null 2>&1 || true
+ps aux | grep node | grep myquotes | awk '{print $2}' | xargs -r kill -9
+pkill -f "uvicorn" >/dev/null 2>&1 || true
 
-# Parar backend dev se rodando
-pkill -f "uvicorn" || true
-
-echo "✅ Ambiente parado com sucesso!"
+echo "✅ Ambiente MyQuotes parado com sucesso!"
