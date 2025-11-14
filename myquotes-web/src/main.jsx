@@ -8,6 +8,7 @@ import MainLayout from "./layout/MainLayout.jsx";
 import Home from "./pages/Home.jsx";
 import Quotes from "./pages/Quotes.jsx";
 import Users from "./pages/Users.jsx";
+import CreateQuote from "./pages/CreateQuote.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -15,10 +16,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/quotes" element={<Quotes />} />
+        
+        {/* Rota para criar uma nova frase */}
+        <Route path="/quotes/new" element={<CreateQuote />} />
+
         <Route path="/users" element={<Users />} />
       </Route>
     </Routes>
   </BrowserRouter>
 );
-
-

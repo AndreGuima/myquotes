@@ -46,28 +46,20 @@ pytest -v backend/tests/
 Backend runs at: **[http://localhost:8000](http://localhost:8000)**
 http://localhost:8000/docs
 
-### 📱 Frontend — Expo
+### 📱 Frontend
 
 ```bash
-cd ~/MyQuotes/frontend
-npx expo start --clear
+cd ~/MyQuotes/myquotes-web/
+npm run dev
 ```
 
-Abra no celular com Expo Go ou via navegador:
 
-📱 Mobile: escaneie o QR Code
-
-💻 Web: http://localhost:8081
-
-
----
 
 ## 🧹 System Clean Up
 
 | Action                  | Command                                 |
 | ----------------------- | --------------------------------------- |
 | Stop backend containers | `./scripts/stop.sh`                     |
-| Clear Expo cache        | `cd frontend && npx expo start --clear` |
 | Remove Docker leftovers | `docker system prune -f`                |
 
 ---
