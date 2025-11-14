@@ -15,7 +15,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 # Aguarda backend responder
 echo ""
 echo "⏳ Aguardando backend iniciar..."
-for i in {1..10}; do
+for i in {1..20}; do
     if curl -s http://localhost:8000/docs >/dev/null; then
         echo "✅ API MyQuotes disponível em: http://localhost:8000/docs"
         break
