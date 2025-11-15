@@ -29,6 +29,8 @@ Starting prod-like env
 
 ```bash
 ./scripts/start.sh
+ou
+./scripts/start.sh --rebuild
 ```
 
 Starting dev mode env
