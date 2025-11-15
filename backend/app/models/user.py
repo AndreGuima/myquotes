@@ -12,16 +12,17 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    username: Mapped[str] = mapped_column(
+        String(50), unique=True, nullable=False, index=True
+    )
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
     created_at: Mapped[Optional[datetime]] = mapped_column(
         TIMESTAMP, server_default=func.current_timestamp()
     )
 
     # 🔗 Relacionamento com Quote (lazy="select" é padrão)
     quotes: Mapped[List["Quote"]] = relationship(
-        "Quote",
-        back_populates="user",
-        cascade="all, delete-orphan"
+        "Quote", back_populates="user", cascade="all, delete-orphan"
     )

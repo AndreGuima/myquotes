@@ -33,3 +33,7 @@ typing-inspection==0.4.2
 annotated-types==0.7.0
 pydantic_core==2.41.4
 annotated-doc==0.0.3
+
+passlib[bcrypt]
+python-jose
+

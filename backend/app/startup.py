@@ -1,24 +1,21 @@
-from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.user import User
+from app.core.security import hash_password
 
 
 def create_default_admin():
-    """Cria um usuário padrão se ainda não existir."""
-    db: Session = SessionLocal()
-    try:
-        existing = db.query(User).filter(User.email == "admin@example.com").first()
-        if not existing:
-            admin_user = User(
-                username="admin",
-                email="admin@example.com",
-                password_hash="admin123",  # Em produção, use hash seguro (ex: bcrypt)
-            )
-            db.add(admin_user)
-            db.commit()
-            print("✅ Usuário padrão criado: admin@example.com / admin123")
-        else:
-            print("ℹ️ Usuário padrão já existe, sem alterações.")
-    finally:
-        db.close()
+    db = SessionLocal()
+    admin = db.query(User).filter_by(username="admin").first()
 
+    if not admin:
+        admin = User(
+            username="admin",
+            email="andrepaivaguimaraes@gmail.com",
+            password_hash=hash_password("admin"),
+            role="admin"
+        )
+        db.add(admin)
+        db.commit()
+        db.refresh(admin)
+
+    db.close()
