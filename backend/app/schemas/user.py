@@ -40,5 +40,20 @@ class UserRead(BaseModel):
     created_at: Optional[datetime]
 
     class Config:
-        from_attributes = True   # <— importante para SQLAlchemy ORM
+        from_attributes = True
 
+
+# ==========================================
+# 🔐 LOGIN — (faltava!)
+# ==========================================
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+# ==========================================
+# 🎫 TOKEN — resposta do login
+# ==========================================
+class UserToken(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

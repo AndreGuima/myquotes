@@ -9,6 +9,7 @@ from app.routes.quotes import router as quotes_router
 from app.routes.users import router as users_router
 from app.settings import settings
 from app.startup import create_default_admin
+from app.routes.auth import router as auth_router
 
 
 # ==========================================
@@ -64,6 +65,7 @@ app.add_middleware(
 # ==========================================
 app.include_router(users_router)
 app.include_router(quotes_router)
+app.include_router(auth_router)
 
 
 # ==========================================

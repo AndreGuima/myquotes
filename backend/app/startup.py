@@ -2,20 +2,26 @@ from app.database import SessionLocal
 from app.models.user import User
 from app.core.security import hash_password
 
-
 def create_default_admin():
     db = SessionLocal()
-    admin = db.query(User).filter_by(username="admin").first()
 
-    if not admin:
-        admin = User(
-            username="admin",
-            email="andrepaivaguimaraes@gmail.com",
-            password_hash=hash_password("admin"),
-            role="admin"
-        )
-        db.add(admin)
-        db.commit()
-        db.refresh(admin)
+    # Aqui o username deve ser o mesmo do usuário que queremos garantir
+    existing_admin = db.query(User).filter(User.username == "admin").first()
+
+    if existing_admin:
+        print("⚠️ Admin já existe, pulando criação.")
+        db.close()
+        return
+
+    admin = User(
+        username="admin",                     # ✔ Agora cria um usuário "admin"
+        email="admin@example.com",
+        password_hash=hash_password("admin123"),
+        role="admin"
+    )
+
+    db.add(admin)
+    db.commit()
+    print("✅ Admin padrão criado.")
 
     db.close()
