@@ -33,7 +33,7 @@ Starting prod-like env
 
 Starting dev mode env
 ```bash
-docker compose up -d mysql # Sobe apenas o banco em docker
+docker compose up -d db
 cd ~/MyQuotes
 ./backend/run-dev.sh
 ```
