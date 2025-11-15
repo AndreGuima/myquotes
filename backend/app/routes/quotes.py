@@ -12,7 +12,32 @@ router = APIRouter(
 
 @router.get("/", response_model=list[QuoteRead])
 def list_quotes(db: Session = Depends(get_db)):
-    return db.query(Quote).all()
+    from app.models.user import User
+
+    # Join para trazer o nome do usuário
+    result = (
+        db.query(Quote, User.username.label("user_name"))
+        .join(User, User.id == Quote.user_id)
+        .order_by(Quote.id)
+        .all()
+    )
+
+    # Converte resultados
+    quotes = []
+    for quote, user_name in result:
+        quotes.append(
+            QuoteRead(
+                id=quote.id,
+                author=quote.author,
+                text=quote.text,
+                user_id=quote.user_id,
+                user_name=user_name,
+                created_at=quote.created_at,
+            )
+        )
+
+    return quotes
+
 
 @router.get("/{quote_id}", response_model=QuoteRead)
 def get_quote(quote_id: int, db: Session = Depends(get_db)):

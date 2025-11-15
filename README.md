@@ -46,32 +46,26 @@ pytest -v backend/tests/
 Backend runs at: **[http://localhost:8000](http://localhost:8000)**
 http://localhost:8000/docs
 
-### 📱 Frontend
+### 📱 Frontend VITE
 
 ```bash
 cd ~/MyQuotes/myquotes-web/
 npm run dev
+http://localhost:5173
 ```
 
 
 
-## 🧹 System Clean Up
+## 🧹 System Scripts
 
 | Action                  | Command                                 |
 | ----------------------- | --------------------------------------- |
 | Stop backend containers | `./scripts/stop.sh`                     |
-| Remove Docker leftovers | `docker system prune -f`                |
+| Status containers       | `./scripts/status.sh`                   |
+| Start containers        | `./scripts/start.sh`                    |
 
 ---
 
-## ✅ Status
-
-* CRUD quotes ✅
-* Integration tests ✅
-* Mobile + Web UI ✅
-* Docker runtime ✅
-
----
 
 Made with ❤️ and caffeine ☕
 

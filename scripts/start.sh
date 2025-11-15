@@ -7,7 +7,7 @@ fi
 echo "🚀 Iniciando ambiente MyQuotes..."
 
 # Inicia containers
-docker compose up -d --build >/dev/null 2>&1
+docker compose up -d >/dev/null 2>&1
 
 echo "✅ Containers iniciados!"
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"

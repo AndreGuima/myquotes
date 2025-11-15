@@ -6,6 +6,12 @@ export async function getQuotes() {
   return await res.json();
 }
 
+export async function getQuoteById(id) {
+  const res = await fetch(`${API_URL}/quotes/${id}`);
+  if (!res.ok) throw new Error("Erro ao buscar quote");
+  return await res.json();
+}
+
 export async function createQuote(data) {
   const res = await fetch(`${API_URL}/quotes`, {
     method: "POST",
