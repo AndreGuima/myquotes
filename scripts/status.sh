@@ -27,4 +27,4 @@ echo "🛠️ Logs recentes do backend:"
 docker compose logs backend --tail=5 | sed 's/^/   /'
 echo ""
 echo "🐬 Logs recentes do MySQL:"
-docker compose logs mysql --tail=5 | sed 's/^/   /'
+docker compose logs db --tail=5 | sed 's/^/   /'
