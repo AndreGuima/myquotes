@@ -2,36 +2,49 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import jwt
 
-# =========================================================
-# 🔐 Configurações de segurança
-# =========================================================
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-SECRET_KEY = "super-secret-key-change-this"  # 👉 depois vamos colocar isso no .env
+# Chave secreta — depois vamos mover para settings.py
+SECRET_KEY = "MYQUOTES_SUPER_SECRET_KEY_123"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
+# Para hashing de senha
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# =========================================================
-# 🔑 Hash e verificação de senha
-# =========================================================
+
+# ============================================================
+# 🔐 HASH / VERIFICAÇÃO DE SENHA
+# ============================================================
+
 def hash_password(password: str) -> str:
+    """Gera hash seguro pra armazenar no banco."""
     return pwd_context.hash(password)
 
 
-def verify_password(password: str, hashed: str) -> bool:
-    return pwd_context.verify(password, hashed)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Compara senha enviada com hash salvo."""
+    return pwd_context.verify(plain_password, hashed_password)
 
 
-# =========================================================
-# 🎟️ Criar JWT token
-# =========================================================
-def create_access_token(data: dict, expires_delta: int | None = None):
+# ============================================================
+# 🔐 JWT - CRIAR E VALIDAR TOKENS
+# ============================================================
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    """Cria um token JWT assinado."""
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(
-        minutes=expires_delta or ACCESS_TOKEN_EXPIRE_MINUTES
-    )
-    to_encode["exp"] = expire
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+
+    to_encode.update({"exp": expire})
+
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+    return encoded_jwt
+
+
+def decode_access_token(token: str):
+    """Valida e decodifica o token JWT."""
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except Exception:
+        return None

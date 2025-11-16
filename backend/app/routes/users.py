@@ -43,11 +43,13 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    new_user = User(**user.dict())
+    new_user = User(**user.model_dump())
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
+
 
 
 @router.get("/", response_model=List[UserRead])
