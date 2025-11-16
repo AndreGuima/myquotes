@@ -1,0 +1,601 @@
+==================== app/core/auth.py ====================
+
+==================== app/core/security.py ====================
+from passlib.context import CryptContext
+from datetime import datetime, timedelta
+from jose import jwt
+
+# Chave secreta — depois vamos mover para settings.py
+SECRET_KEY = "MYQUOTES_SUPER_SECRET_KEY_123"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+# Para hashing de senha
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+# ============================================================
+# 🔐 HASH / VERIFICAÇÃO DE SENHA
+# ============================================================
+
+def hash_password(password: str) -> str:
+    """Gera hash seguro pra armazenar no banco."""
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Compara senha enviada com hash salvo."""
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+# ============================================================
+# 🔐 JWT - CRIAR E VALIDAR TOKENS
+# ============================================================
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    """Cria um token JWT assinado."""
+    to_encode = data.copy()
+
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+
+    to_encode.update({"exp": expire})
+
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+    return encoded_jwt
+
+
+def decode_access_token(token: str):
+    """Valida e decodifica o token JWT."""
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except Exception:
+        return None
+
+==================== app/main.py ====================
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import SQLAlchemyError
+
+# Internos
+from app.database import Base, engine
+from app.routes.quotes import router as quotes_router
+from app.routes.users import router as users_router
+from app.settings import settings
+from app.startup import create_default_admin
+from app.routes.auth import router as auth_router
+
+
+# ==========================================
+# ⚙️ Lifespan moderno
+# ==========================================
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("🚀 Inicializando MyQuotes API...")
+
+    try:
+        # 🔧 Garante que as tabelas existam
+        Base.metadata.create_all(bind=engine)
+        print("✅ Tabelas verificadas/criadas com sucesso.")
+
+        # 👤 Cria admin padrão
+        create_default_admin()
+
+    except SQLAlchemyError as e:
+        print(f"❌ Erro ao inicializar o banco: {e}")
+
+    yield  # App rodando
+
+    print("🛑 Encerrando MyQuotes API...")
+
+
+# ==========================================
+# 🚀 Instância principal do app
+# ==========================================
+app = FastAPI(
+    title="MyQuotes API",
+    description="API para gerenciar frases e usuários do projeto MyQuotes.",
+    version="1.0.0",
+    contact={"name": "André Guimarães", "email": "andre@example.com"},
+    license_info={"name": "MIT License"},
+    lifespan=lifespan,
+)
+
+
+# ==========================================
+# 🌐 CORS Middleware
+# ==========================================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ==========================================
+# 🔗 Registro de rotas
+# ==========================================
+app.include_router(users_router)
+app.include_router(quotes_router)
+app.include_router(auth_router)
+
+
+# ==========================================
+# ✅ Health Check
+# ==========================================
+@app.get("/", tags=["Health"])
+def root():
+    return {"status": "ok", "message": "MyQuotes API is running 🚀"}
+
+==================== app/settings.py ====================
+from pydantic_settings import BaseSettings
+from pydantic import Field, ConfigDict
+
+
+class Settings(BaseSettings):
+    # 🔧 Configurações gerais do app
+    APP_ENV: str = Field(default="development")
+    APP_HOST: str = Field(default="0.0.0.0")
+    APP_PORT: int = Field(default=8000)
+
+    # 💾 Configurações do banco de dados
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_HOST: str = Field(default="mysql")
+    DB_PORT: int = Field(default=3306)
+    DB_NAME: str
+
+    # ⚙️ Configuração moderna do Pydantic v2
+    model_config = ConfigDict(
+        env_file=".env",   # lê variáveis de ambiente do .env
+        extra="allow"      # permite variáveis extras sem erro
+    )
+
+
+# ✅ Instância global de Settings
+settings = Settings()
+
+==================== app/schemas/user.py ====================
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, EmailStr, Field
+
+
+# ==========================================
+# 🧩 Base (campos comuns entre schemas)
+# ==========================================
+class UserBase(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    email: EmailStr
+    role: str = Field("user", pattern="^(admin|editor|user)$")
+
+
+# ==========================================
+# 📝 Schema para criação (input)
+# ==========================================
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=4)
+
+
+# ==========================================
+# 🔄 Schema para atualização (parcial)
+# ==========================================
+class UserUpdate(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[EmailStr] = None
+    password: Optional[str] = Field(None, min_length=4)
+    role: Optional[str] = Field(None, pattern="^(admin|editor|user)$")
+
+
+# ==========================================
+# 📤 Schema de leitura (output)
+# ==========================================
+class UserRead(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+    role: str
+    created_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================
+# 🔐 LOGIN — (faltava!)
+# ==========================================
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+# ==========================================
+# 🎫 TOKEN — resposta do login
+# ==========================================
+class UserToken(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+==================== app/schemas/quote.py ====================
+from pydantic import BaseModel, Field, ConfigDict
+from datetime import datetime
+from typing import Optional
+
+class QuoteBase(BaseModel):
+    author: str = Field(..., min_length=1, description="Author name cannot be empty")
+    text: str = Field(..., min_length=1, description="Quote text cannot be empty")
+
+
+class QuoteCreate(QuoteBase):
+    pass
+
+
+class QuoteUpdate(BaseModel):
+    author: Optional[str] = Field(None, min_length=1)
+    text: Optional[str] = Field(None, min_length=1)
+
+class QuoteRead(BaseModel):
+    id: int
+    author: str
+    text: str
+    user_id: int
+    user_name: str | None = None
+    created_at: datetime | None = None
+
+    class Config:
+        from_attributes = True
+
+
+==================== app/routes/users.py ====================
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from typing import List
+
+from app.database import get_db
+from app.models.user import User
+from pydantic import BaseModel, EmailStr, Field
+
+from datetime import datetime
+from pydantic import BaseModel, EmailStr, Field
+
+
+router = APIRouter(prefix="/users", tags=["Users"])
+
+
+# ==============================
+# 🧱 Schemas
+# ==============================
+
+class UserBase(BaseModel):
+    username: str = Field(..., min_length=3)
+    email: EmailStr
+
+
+class UserCreate(UserBase):
+    password_hash: str = Field(..., min_length=3)
+
+
+class UserRead(UserBase):
+    id: int
+    created_at: datetime  # ✅ tipo correto
+
+    model_config = {"from_attributes": True}  # ✅ substitui Config no Pydantic 2
+
+
+# ==============================
+# 🧩 CRUD Endpoints
+# ==============================
+
+@router.post("/", response_model=UserRead, status_code=201)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.email == user.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    new_user = User(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+
+@router.get("/", response_model=List[UserRead])
+def list_users(db: Session = Depends(get_db)):
+    return db.query(User).all()
+
+
+@router.get("/{user_id}", response_model=UserRead)
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@router.delete("/{user_id}", status_code=204)
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.delete(user)
+    db.commit()
+
+==================== app/routes/auth.py ====================
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.models.user import User
+from app.core.security import verify_password, create_access_token
+from app.schemas.user import UserLogin, UserRead
+
+
+router = APIRouter(
+    prefix="/auth",
+    tags=["Auth"]
+)
+
+
+@router.post("/login")
+def login(payload: UserLogin, db: Session = Depends(get_db)):
+    user = (
+        db.query(User)
+        .filter(User.username == payload.username)
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuário não encontrado")
+
+    if not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Senha incorreta")
+
+    # Criar token JWT
+    token = create_access_token({"sub": str(user.id)})
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": UserRead.model_validate(user)
+    }
+
+==================== app/routes/quotes.py ====================
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from ..models.quote import Quote
+from ..schemas.quote import QuoteCreate, QuoteRead, QuoteUpdate
+from ..database import get_db
+
+router = APIRouter(
+    prefix="/quotes",
+    tags=["Quotes"]
+)
+
+@router.get("/", response_model=list[QuoteRead])
+def list_quotes(db: Session = Depends(get_db)):
+    from app.models.user import User
+
+    # Join para trazer o nome do usuário
+    result = (
+        db.query(Quote, User.username.label("user_name"))
+        .join(User, User.id == Quote.user_id)
+        .order_by(Quote.id)
+        .all()
+    )
+
+    # Converte resultados
+    quotes = []
+    for quote, user_name in result:
+        quotes.append(
+            QuoteRead(
+                id=quote.id,
+                author=quote.author,
+                text=quote.text,
+                user_id=quote.user_id,
+                user_name=user_name,
+                created_at=quote.created_at,
+            )
+        )
+
+    return quotes
+
+
+@router.get("/{quote_id}", response_model=QuoteRead)
+def get_quote(quote_id: int, db: Session = Depends(get_db)):
+    q = db.query(Quote).filter(Quote.id == quote_id).first()
+    if not q:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    return q
+
+@router.post("/", response_model=QuoteRead, status_code=status.HTTP_201_CREATED)
+def create_quote(payload: QuoteCreate, db: Session = Depends(get_db)):
+    DEFAULT_TEST_USER_ID = 1  # temporário até implementarmos auth
+
+    q = Quote(
+        **payload.model_dump(),
+        user_id=DEFAULT_TEST_USER_ID
+    )
+    db.add(q)
+    db.commit()
+    db.refresh(q)
+    return q
+
+@router.put("/{quote_id}", response_model=QuoteRead)
+def update_quote(quote_id: int, payload: QuoteUpdate, db: Session = Depends(get_db)):
+    q = db.query(Quote).filter(Quote.id == quote_id).first()
+    if not q:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(q, key, value)
+
+    db.commit()
+    db.refresh(q)
+    return q
+
+@router.delete("/{quote_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_quote(quote_id: int, db: Session = Depends(get_db)):
+    q = db.query(Quote).filter(Quote.id == quote_id).first()
+    if not q:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    db.delete(q)
+    db.commit()
+
+==================== app/__init__.py ====================
+
+==================== app/models/__init__.py ====================
+from .quote import Quote, Base
+
+__all__ = ["Quote", "Base"]
+
+==================== app/models/user.py ====================
+from __future__ import annotations
+from datetime import datetime
+from typing import Optional, List
+
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Integer, TIMESTAMP, func
+
+from app.database import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(
+        String(50), unique=True, nullable=False, index=True
+    )
+    email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
+    created_at: Mapped[Optional[datetime]] = mapped_column(
+        TIMESTAMP, server_default=func.current_timestamp()
+    )
+
+    # 🔗 Relacionamento com Quote (lazy="select" é padrão)
+    quotes: Mapped[List["Quote"]] = relationship(
+        "Quote", back_populates="user", cascade="all, delete-orphan"
+    )
+
+==================== app/models/quote.py ====================
+from __future__ import annotations
+from datetime import datetime
+from typing import Optional
+
+from sqlalchemy import Integer, String, TIMESTAMP, func, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.database import Base
+
+
+class Quote(Base):
+    __tablename__ = "quotes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    author: Mapped[str] = mapped_column(String(100), nullable=False)
+    text: Mapped[str] = mapped_column(String(200), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[Optional[datetime]] = mapped_column(
+        TIMESTAMP, server_default=func.current_timestamp()
+    )
+
+    # 🔗 Relacionamento com User
+    user: Mapped["User"] = relationship("User", back_populates="quotes")
+
+
+# 👇 Import atrasado para evitar erro de dependência circular
+from app.models.user import User  # noqa: F401
+
+==================== app/startup.py ====================
+from app.database import SessionLocal
+from app.models.user import User
+from app.core.security import hash_password
+
+def create_default_admin():
+    db = SessionLocal()
+
+    # Aqui o username deve ser o mesmo do usuário que queremos garantir
+    existing_admin = db.query(User).filter(User.username == "admin").first()
+
+    if existing_admin:
+        print("⚠️ Admin já existe, pulando criação.")
+        db.close()
+        return
+
+    admin = User(
+        username="admin",                     # ✔ Agora cria um usuário "admin"
+        email="admin@example.com",
+        password_hash=hash_password("admin123"),
+        role="admin"
+    )
+
+    db.add(admin)
+    db.commit()
+    print("✅ Admin padrão criado.")
+
+    db.close()
+
+==================== app/security.py ====================
+from datetime import datetime, timedelta
+from jose import jwt
+from passlib.context import CryptContext
+
+SECRET_KEY = "super-secret-key"  # coloque no .env depois
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password):
+    return pwd.hash(password)
+
+def verify_password(password, hash):
+    return pwd.verify(password, hash)
+
+def create_jwt_token(data: dict):
+    to_encode = data.copy()
+    to_encode["exp"] = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+==================== app/config.py ====================
+from sqlalchemy import create_engine
+from .settings import settings
+
+DATABASE_URL = (
+    f"mysql+mysqlconnector://{settings.DB_USER}:{settings.DB_PASSWORD}@"
+    f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}?ssl_disabled=true"
+)
+
+engine = create_engine(DATABASE_URL, echo=False, future=True)
+
+==================== app/database.py ====================
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from app.settings import settings
+
+class Base(DeclarativeBase):
+    pass
+
+DATABASE_URL = (
+    f"mysql+mysqlconnector://{settings.DB_USER}:{settings.DB_PASSWORD}@"
+    f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+)
+
+engine = create_engine(DATABASE_URL, echo=False)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
