@@ -37,35 +37,47 @@
 ./scripts/start.sh
 # ou
 ./scripts/start.sh --rebuild
+```
 
-🛠 Ambiente Dev (sem Docker)
+### 🛠 Ambiente Dev (sem Docker)
+
+```bash
 docker compose up -d db
 
 cd ~/MyQuotes
 ./backend/run-dev.sh
+```
 
-🧪 Rodar Testes (100% passando 🎉)
+### 🧪 Rodar Testes (100% passando 🎉)
+
+```bash
 cd ~/MyQuotes
 source backend/venv/bin/activate
 pytest -v backend/tests/
+```
 
+➡️ API disponível em:  
+**http://localhost:8000**  
+**http://localhost:8000/docs** (Swagger)
 
-➡️ API disponível em:
-http://localhost:8000
+---
 
-http://localhost:8000/docs
- (Swagger)
+## 📱 Frontend — Expo (React Native)
 
-📱 Frontend — Expo (React Native)
+```bash
 cd ~/MyQuotes/myquotes-web
 npm install
 npm run dev
+```
 
+Frontend disponível em:  
+➡️ **http://localhost:5173**
 
-Frontend em:
-➡️ http://localhost:5173
+---
 
-🗂 Estrutura Geral do Projeto
+# 🗂 Estrutura Geral do Projeto
+
+```txt
 MyQuotes/
 │
 ├── backend/
@@ -83,31 +95,41 @@ MyQuotes/
 ├── myquotes-web/          # Frontend (React Native + Expo)
 │
 └── scripts/               # Docker / gerenciamento
-
-🧹 Scripts Úteis
-Ação	Comando
-Start containers	./scripts/start.sh
-Stop containers	./scripts/stop.sh
-Status geral	./scripts/status.sh
-Criar ambiente dev	./backend/run-dev.sh
-Rodar testes	pytest -v backend/tests/
-🔐 Destaques Técnicos
-
-JWT + Bearer Token
-
-Rotas protegidas por get_current_user
-
-Permissões: usuário só altera o que é dele (admin tem acesso total)
-
-Banco de testes isolado (SQLite in-memory)
-
-Testes rápidos com override de dependências FastAPI
-
-Estrutura moderna com Pydantic v2 + SQLAlchemy 2.x
-
-🤝 Contribuindo
-
-Pull requests são bem-vindos!
-Fique à vontade para sugerir melhorias, refatorações ou novas features.
 ```
-<p align="center"> Feito com ❤️ café ☕ e muita dedicação. </p> 
+
+---
+
+# 🧹 Scripts Úteis
+
+| Ação                  | Comando                      |
+|----------------------|------------------------------|
+| Start containers     | `./scripts/start.sh`         |
+| Stop containers      | `./scripts/stop.sh`          |
+| Status geral         | `./scripts/status.sh`        |
+| Criar ambiente dev   | `./backend/run-dev.sh`       |
+| Rodar testes         | `pytest -v backend/tests/`   |
+
+---
+
+# 🔐 Destaques Técnicos
+
+- JWT + Bearer Token  
+- Rotas protegidas por `get_current_user`  
+- Permissões por usuário (admin, editor, user)  
+- Banco de testes isolado (SQLite in-memory)  
+- Testes rápidos com override de dependências  
+- Estrutura moderna com Pydantic v2 + SQLAlchemy 2.x  
+- Docker para ambiente de produção e desenvolvimento  
+
+---
+
+# 🤝 Contribuindo
+
+Pull requests são bem-vindos!  
+Fique à vontade para sugerir melhorias, refatorações ou novas features.
+
+---
+
+<p align="center">
+ Feito com ❤️ café ☕ e muita dedicação.
+</p>
