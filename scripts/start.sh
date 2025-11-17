@@ -1,4 +1,5 @@
 #!/bin/bash
+
 if [ "$1" == "--rebuild" ]; then
   echo "🧱 Rebuildando imagens..."
   docker compose build --no-cache
@@ -6,30 +7,34 @@ fi
 
 echo "🚀 Iniciando ambiente MyQuotes..."
 
-# Inicia containers
-docker compose up -d >/dev/null 2>&1
+# Start containers
+docker compose up -d
 
 echo "✅ Containers iniciados!"
+echo ""
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-# Aguarda backend responder
+# Wait backend
 echo ""
 echo "⏳ Aguardando backend iniciar..."
 for i in {1..20}; do
     if curl -s http://localhost:8000/docs >/dev/null; then
-        echo "✅ API MyQuotes disponível em: http://localhost:8000/docs"
+        echo "✅ API disponível: http://localhost:8000/docs"
         break
     fi
     sleep 1
 done
 
-if ! curl -s http://localhost:8000/docs >/dev/null; then
-    echo "❌ Backend não respondeu após 10s."
-fi
+# Wait frontend
+echo ""
+echo "⏳ Aguardando frontend iniciar..."
+for i in {1..20}; do
+    if curl -s http://localhost:5173 >/dev/null; then
+        echo "🌐 Frontend disponível: http://localhost:5173"
+        break
+    fi
+    sleep 1
+done
 
 echo ""
-echo "🪵 Logs iniciais do backend:"
-docker compose logs backend --tail=10 | sed 's/^/   /'
-
-echo ""
-echo "📦 Ambiente ativo!"
+echo "📦 Ambiente MyQuotes ativo!"

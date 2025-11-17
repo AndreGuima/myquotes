@@ -7,16 +7,14 @@ from app.schemas.quote import QuoteCreate, QuoteRead, QuoteUpdate
 from app.database import get_db
 from app.core.dependencies import get_current_user
 
-
 router = APIRouter(prefix="/quotes", tags=["Quotes"])
 
 
 # ==============================
 # 🔍 LISTAR TODAS AS QUOTES
 # ==============================
-@router.get("/", response_model=list[QuoteRead])
+@router.get("", response_model=list[QuoteRead])
 def list_quotes(db: Session = Depends(get_db)):
-    # Join com usuário para trazer user_name
     result = (
         db.query(Quote, User.username.label("user_name"))
         .join(User, User.id == Quote.user_id)

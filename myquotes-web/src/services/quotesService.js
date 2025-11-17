@@ -1,41 +1,47 @@
-const API_URL = "http://localhost:8000"; // ajuste se necessário
+// -------------------------------------------------------------
+// 📌 MyQuotes Web - Quote Service
+// Camada responsável por todas as requisições relacionadas
+// às quotes: listar, buscar, criar, atualizar e deletar.
+// -------------------------------------------------------------
 
+import api from "./api";
+
+// ================================
+// 🔍 LISTAR TODAS AS QUOTES
+// ================================
 export async function getQuotes() {
-  const res = await fetch(`${API_URL}/quotes`);
-  if (!res.ok) throw new Error("Erro ao buscar quotes");
-  return await res.json();
+  const response = await api.get("/quotes");
+  return response.data;
 }
 
+// ================================
+// 🔍 BUSCAR QUOTE POR ID
+// ================================
 export async function getQuoteById(id) {
-  const res = await fetch(`${API_URL}/quotes/${id}`);
-  if (!res.ok) throw new Error("Erro ao buscar quote");
-  return await res.json();
+  const response = await api.get(`/quotes/${id}`);
+  return response.data;
 }
 
+// ================================
+// ➕ CRIAR NOVA QUOTE
+// ================================
 export async function createQuote(data) {
-  const res = await fetch(`${API_URL}/quotes`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Erro ao criar quote");
-  return await res.json();
+  const response = await api.post("/quotes", data);
+  return response.data;
 }
 
+// ================================
+// ✏️ ATUALIZAR QUOTE
+// ================================
 export async function updateQuote(id, data) {
-  const res = await fetch(`${API_URL}/quotes/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Erro ao atualizar quote");
-  return await res.json();
+  const response = await api.put(`/quotes/${id}`, data);
+  return response.data;
 }
 
+// ================================
+// ❌ DELETAR QUOTE
+// ================================
 export async function deleteQuote(id) {
-  const res = await fetch(`${API_URL}/quotes/${id}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) throw new Error("Erro ao deletar quote");
-  return true;
+  const response = await api.delete(`/quotes/${id}`);
+  return response.data;
 }
