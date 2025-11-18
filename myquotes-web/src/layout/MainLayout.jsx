@@ -9,7 +9,7 @@ export default function MainLayout() {
         <h2 className="text-xl font-bold mb-6">MyQuotes</h2>
 
         <nav className="flex flex-col gap-3">
-          <Link to="/" className="hover:text-blue-400">Dashboard</Link>
+          <Link to="/home" className="hover:text-blue-400">Dashboard</Link>
           <Link to="/quotes" className="hover:text-blue-400">Quotes</Link>
           <Link to="/users" className="hover:text-blue-400">Users</Link>
         </nav>
