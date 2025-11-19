@@ -21,8 +21,7 @@ class User(Base):
     created_at: Mapped[Optional[datetime]] = mapped_column(
         TIMESTAMP, server_default=func.current_timestamp()
     )
-
-    # 🔗 Relacionamento com Quote (lazy="select" é padrão)
+    
     quotes: Mapped[List["Quote"]] = relationship(
         "Quote", back_populates="user", cascade="all, delete-orphan"
     )

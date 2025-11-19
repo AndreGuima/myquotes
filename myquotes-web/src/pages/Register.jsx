@@ -2,42 +2,38 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
-export default function Login() {
+export default function Register() {
+  const navigate = useNavigate();
+
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const navigate = useNavigate();
-
-  async function handleLogin(e) {
+  async function handleRegister(e) {
     e.preventDefault();
     setError("");
 
     try {
-      const response = await api.post("/auth/login", {
-        username: email,
-        password: password,
+      await api.post("/auth/register", {
+        username,
+        email,
+        password,
       });
 
-      const token = response.data.access_token;
-      const user = response.data.user;
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-
-      navigate("/home");
-
+      // Depois de registrar, enviar para login
+      navigate("/login");
     } catch (err) {
-      setError("Credenciais inválidas");
+      setError("Não foi possível criar a conta.");
     }
   }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
-        <h1 className="text-3xl font-bold text-center mb-4">MyQuotes</h1>
+        <h1 className="text-3xl font-bold text-center mb-4">Criar Conta</h1>
         <p className="text-center text-gray-600 mb-6">
-          Entre para acessar suas frases favoritas!
+          Preencha os dados abaixo para se registrar.
         </p>
 
         {error && (
@@ -46,11 +42,22 @@ export default function Login() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleRegister} className="space-y-4">
+          <div>
+            <label className="block font-medium mb-1">Nome</label>
+            <input
+              type="text"
+              className="w-full border p-2 rounded"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+
           <div>
             <label className="block font-medium mb-1">Email</label>
             <input
-              type="text"
+              type="email"
               className="w-full border p-2 rounded"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -70,19 +77,18 @@ export default function Login() {
           </div>
 
           <button
-            type="submit"
             className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
           >
-            Entrar
+            Criar Conta
           </button>
         </form>
 
         <div className="text-center mt-4">
           <button
             className="text-blue-600 hover:underline"
-            onClick={() => navigate("/register")}
+            onClick={() => navigate("/login")}
           >
-            Criar conta
+            Já tenho conta
           </button>
         </div>
       </div>

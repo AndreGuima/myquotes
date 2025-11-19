@@ -32,13 +32,13 @@ fi
 echo ""
 
 # Logs
-echo "🪵 Logs Backend:"
-docker compose logs backend --tail=5 | sed 's/^/   /'
+echo "🪵 Logs Backend - últimas 20 linhas:"
+docker compose logs backend --tail=20 | sed 's/^/   /'
 
 echo ""
-echo "🪵 Logs Frontend:"
-docker compose logs myquotes-web --tail=5 | sed 's/^/   /'
+echo "🪵 Logs Frontend - últimas 20 linhas:"
+docker compose logs myquotes-web --tail=20 | sed 's/^/   /'
 
 echo ""
-echo "🪵 Logs MySQL:"
-docker compose logs db --tail=5 | sed 's/^/   /'
+echo "🪵 Logs MySQL - últimas 20 linhas:"
+docker compose logs db --tail=20 | sed 's/^/   /'
