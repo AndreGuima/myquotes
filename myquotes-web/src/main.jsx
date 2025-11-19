@@ -1,12 +1,11 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import "./index.css";
 
 import MainLayout from "./layout/MainLayout.jsx";
+import PrivateRoute from "./components/PrivateRoute.jsx";
 
-// 🆕 Páginas
 import Login from "./pages/Login.jsx";
 import Home from "./pages/Home.jsx";
 import Quotes from "./pages/Quotes.jsx";
@@ -17,11 +16,17 @@ import EditQuote from "./pages/EditQuote.jsx";
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <Routes>
-      {/* 🔐 Tela inicial = Login */}
       <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
 
-      {/* Rotas internas protegidas */}
-      <Route element={<MainLayout />}>
+      {/* Rotas protegidas */}
+      <Route
+        element={
+          <PrivateRoute>
+            <MainLayout />
+          </PrivateRoute>
+        }
+      >
         <Route path="/home" element={<Home />} />
         <Route path="/quotes" element={<Quotes />} />
         <Route path="/quotes/new" element={<CreateQuote />} />
