@@ -7,6 +7,7 @@ import MainLayout from "./layout/MainLayout.jsx";
 import PrivateRoute from "./components/PrivateRoute.jsx";
 
 import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
 import Home from "./pages/Home.jsx";
 import Quotes from "./pages/Quotes.jsx";
 import Users from "./pages/Users.jsx";
@@ -18,6 +19,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
 
       {/* Rotas protegidas */}
       <Route

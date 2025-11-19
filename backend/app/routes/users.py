@@ -7,56 +7,32 @@ from app.models.user import User
 from pydantic import BaseModel, EmailStr, Field
 
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field
-
 
 router = APIRouter(prefix="/users", tags=["Users"])
-
 
 # ==============================
 # 🧱 Schemas
 # ==============================
 
-class UserBase(BaseModel):
-    username: str = Field(..., min_length=3)
-    email: EmailStr
-
-
-class UserCreate(UserBase):
-    password_hash: str = Field(..., min_length=3)
-
-
-class UserRead(UserBase):
+class UserRead(BaseModel):
     id: int
-    created_at: datetime  # ✅ tipo correto
+    username: str
+    email: EmailStr
+    created_at: datetime
+    role: str
 
-    model_config = {"from_attributes": True}  # ✅ substitui Config no Pydantic 2
-
+    model_config = {"from_attributes": True}
 
 # ==============================
-# 🧩 CRUD Endpoints
+# 👁 GET LIST
 # ==============================
-
-@router.post("/", response_model=UserRead, status_code=201)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == user.email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    new_user = User(**user.model_dump())
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
-
-
-
 @router.get("/", response_model=List[UserRead])
 def list_users(db: Session = Depends(get_db)):
     return db.query(User).all()
 
-
+# ==============================
+# 🔍 GET BY ID
+# ==============================
 @router.get("/{user_id}", response_model=UserRead)
 def get_user(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
@@ -64,7 +40,9 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-
+# ==============================
+# ❌ DELETE USER
+# ==============================
 @router.delete("/{user_id}", status_code=204)
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()

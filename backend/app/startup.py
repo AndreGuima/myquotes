@@ -4,8 +4,7 @@ from app.core.security import hash_password
 
 def create_default_admin():
     db = SessionLocal()
-
-    # Aqui o username deve ser o mesmo do usuário que queremos garantir
+    
     existing_admin = db.query(User).filter(User.username == "admin").first()
 
     if existing_admin:
