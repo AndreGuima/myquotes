@@ -14,7 +14,7 @@ export default function CreateQuote() {
 
     try {
       await createQuote({ author, text });
-      navigate("/quotes");
+      navigate("/quotes/");
     } catch (err) {
       alert("Erro ao criar quote");
     } finally {
