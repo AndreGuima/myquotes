@@ -1,29 +1,9 @@
-from fastapi.testclient import TestClient
 from app.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
-
-# Gera payload único para cada teste
-def make_user_payload(username_suffix="1"):
-    return {
-        "username": f"user_{username_suffix}",
-        "email": f"user_{username_suffix}@example.com",
-        "password_hash": "abc123"
-    }
-
-
-def test_create_user(client):
-    payload = make_user_payload("create")
-    r = client.post("/users/", json=payload)
-
-    assert r.status_code == 201
-    data = r.json()
-
-    assert data["username"] == payload["username"]
-    assert data["email"] == payload["email"]
-    assert "id" in data
-    assert "created_at" in data
+# Não existe mais POST /users/, então removemos testes que criavam usuário aqui.
 
 
 def test_list_users(client):
@@ -33,50 +13,27 @@ def test_list_users(client):
 
 
 def test_get_user_by_id(client):
-    payload = make_user_payload("getid")
+    """
+    Em vez de criar um usuário via POST /users/ (que não existe mais),
+    vamos usar o usuário fake criado no conftest.py (id=1)
+    """
+    r = client.get("/users/1")
+    assert r.status_code == 200
+    assert r.json()["id"] == 1
+    assert r.json()["email"] == "test@example.com"
 
-    r = client.post("/users/", json=payload)
-    assert r.status_code == 201
-    new_user = r.json()
-
-    r2 = client.get(f"/users/{new_user['id']}")
-    assert r2.status_code == 200
-    assert r2.json()["email"] == payload["email"]
-
-
-def test_duplicate_email_not_allowed(client):
-    payload = make_user_payload("dup")
-
-    r1 = client.post("/users/", json=payload)
-    assert r1.status_code == 201
-
-    # tenta criar outro com mesmo email
-    payload2 = make_user_payload("dup")
-    r2 = client.post("/users/", json=payload2)
-
-    assert r2.status_code == 400
-    assert r2.json()["detail"] == "Email already registered"
 
 
 def test_delete_user(client):
-    payload = make_user_payload("delete")
-    r = client.post("/users/", json=payload)
-    assert r.status_code == 201
-    new_user = r.json()
+    """
+    Antes deletava um criado via POST. Agora deletamos o fake_user (id=1),
+    e o GET depois deve retornar 404
+    """
 
-    r = client.delete(f"/users/{new_user['id']}")
+    r = client.delete("/users/1")
     assert r.status_code == 204
 
-    r2 = client.get(f"/users/{new_user['id']}")
+    # Agora o usuário 1 deve não existir mais
+    r2 = client.get("/users/1")
     assert r2.status_code == 404
 
-
-def test_validation_invalid_email(client):
-    bad_payload = {
-        "username": "abc",
-        "email": "email-invalido",
-        "password_hash": "123"
-    }
-
-    r = client.post("/users/", json=bad_payload)
-    assert r.status_code == 422

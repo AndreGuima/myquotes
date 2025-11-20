@@ -15,15 +15,15 @@ export default function MainLayout() {
       <aside className="w-64 bg-gray-900 text-white flex flex-col p-4">
         <h2 className="text-xl font-bold mb-6">MyQuotes</h2>
 
-        <div className="bg-gray-800 p-3 rounded mb-4 text-sm">
-          Logado como: <span className="font-semibold">{user?.username}</span>
-        </div>
-
         <nav className="flex flex-col gap-3 flex-1">
           <Link to="/home" className="hover:text-blue-400">Dashboard</Link>
           <Link to="/quotes" className="hover:text-blue-400">Quotes</Link>
           <Link to="/users" className="hover:text-blue-400">Users</Link>
         </nav>
+
+        <div className="bg-gray-800 p-3 rounded mb-4 text-sm">
+          Logado como: <span className="font-semibold">{user?.username}</span>
+        </div>
 
         <button
           onClick={handleLogout}
