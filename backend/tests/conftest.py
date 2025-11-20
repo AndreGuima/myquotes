@@ -1,3 +1,6 @@
+import os
+os.environ["TESTING"] = "1"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -14,6 +17,8 @@ import app.database as app_db
 from app.database import Base, get_db
 from app.models.user import User
 from app.models.quote import Quote
+
+
 
 
 # ============================================================================

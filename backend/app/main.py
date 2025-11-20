@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
+import os
 
 # Internos
 from app.database import Base, engine
@@ -38,14 +39,25 @@ async def lifespan(app: FastAPI):
 # ==========================================
 # 🚀 Instância principal do app
 # ==========================================
-app = FastAPI(
-    title="MyQuotes API",
-    description="API para gerenciar frases e usuários do projeto MyQuotes.",
-    version="1.0.0",
-    contact={"name": "André Guimarães", "email": "andre@example.com"},
-    license_info={"name": "MIT License"},
-    lifespan=lifespan,
-)
+# 🚀 Instância principal do app
+if os.getenv("TESTING") == "1":
+    # Durante os testes: SEM lifespan
+    app = FastAPI(
+        title="MyQuotes API",
+        description="API para gerenciar frases e usuários do projeto MyQuotes.",
+        version="1.0.0",
+    )
+else:
+    # Em produção / docker: lifespan ativo
+    app = FastAPI(
+        title="MyQuotes API",
+        description="API para gerenciar frases e usuários do projeto MyQuotes.",
+        version="1.0.0",
+        contact={"name": "André Guimarães", "email": "andre@example.com"},
+        license_info={"name": "MIT License"},
+        lifespan=lifespan,          # 👈 Só aqui usamos lifespan
+    )
+
 
 
 # ==========================================

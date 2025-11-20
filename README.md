@@ -44,15 +44,16 @@
 ```bash
 docker compose up -d db
 
-cd ~/MyQuotes
+cd ~/repo/myquotes
 ./backend/run-dev.sh
 ```
 
 ### 🧪 Rodar Testes (100% passando 🎉)
 
 ```bash
-cd ~/MyQuotes
-source backend/venv/bin/activate
+cd ~/repo/myquotes
+source venv/bin/activate
+pip install -r backend/requirements.txt
 pytest -v backend/tests/
 ```
 
@@ -120,13 +121,6 @@ MyQuotes/
 - Testes rápidos com override de dependências  
 - Estrutura moderna com Pydantic v2 + SQLAlchemy 2.x  
 - Docker para ambiente de produção e desenvolvimento  
-
----
-
-# 🤝 Contribuindo
-
-Pull requests são bem-vindos!  
-Fique à vontade para sugerir melhorias, refatorações ou novas features.
 
 ---
 

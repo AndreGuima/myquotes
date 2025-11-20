@@ -51,7 +51,7 @@ def get_quote(quote_id: int, db: Session = Depends(get_db)):
 # ==============================
 # ➕ CRIAR QUOTE (AUTENTICADO)
 # ==============================
-@router.post("/", response_model=QuoteRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=QuoteRead, status_code=status.HTTP_201_CREATED)
 def create_quote(
     payload: QuoteCreate,
     db: Session = Depends(get_db),
