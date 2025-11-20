@@ -11,13 +11,20 @@ router = APIRouter(prefix="/quotes", tags=["Quotes"])
 
 
 # ==============================
-# 🔍 LISTAR TODAS AS QUOTES
+# 🔍 LISTAR TODAS AS QUOTES DO USUARIO LOGADO
 # ==============================
 @router.get("", response_model=list[QuoteRead])
-def list_quotes(db: Session = Depends(get_db)):
+def list_quotes(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     result = (
         db.query(Quote, User.username.label("user_name"))
         .join(User, User.id == Quote.user_id)
+        .filter(
+            (Quote.user_id == current_user.id) |
+            (current_user.role == "admin")
+        )
         .order_by(Quote.id)
         .all()
     )
@@ -37,14 +44,24 @@ def list_quotes(db: Session = Depends(get_db)):
     return quotes
 
 
+
 # ==============================
 # 🔍 OBTER UMA QUOTE
 # ==============================
 @router.get("/{quote_id}", response_model=QuoteRead)
-def get_quote(quote_id: int, db: Session = Depends(get_db)):
+def get_quote(
+    quote_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     q = db.query(Quote).filter(Quote.id == quote_id).first()
+
     if not q:
         raise HTTPException(404, "Quote not found")
+
+    if q.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(403, "Você não pode acessar esta quote.")
+
     return q
 
 

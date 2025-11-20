@@ -42,8 +42,6 @@
 ### 🛠 Ambiente Dev (sem Docker)
 
 ```bash
-docker compose up -d db
-
 cd ~/repo/myquotes
 ./backend/run-dev.sh
 ```
@@ -66,7 +64,7 @@ pytest -v backend/tests/
 ## 📱 Frontend — Expo (React Native)
 
 ```bash
-cd ~/MyQuotes/myquotes-web
+cd ~/repo/myquotes/myquotes-web
 npm install
 npm run dev
 ```
