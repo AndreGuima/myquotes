@@ -12,11 +12,13 @@ from app.core.security import (
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
+
 # =====================================================
 # 🔐 LOGIN
 # =====================================================
 @router.post("/login")
 def login(payload: UserLogin, db: Session = Depends(get_db)):
+    # Buscar usuário por username
     user = (
         db.query(User)
         .filter(User.username == payload.username)
@@ -29,12 +31,17 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
     if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Senha incorreta")
 
-    token = create_access_token({"sub": str(user.id)})
+    # 🔥 CRIA TOKEN COMPLETO: inclui sub, username e role
+    token = create_access_token({
+        "sub": str(user.id),
+        "username": user.username,
+        "role": user.role,
+    })
 
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": UserRead.model_validate(user)
+        "user": UserRead.model_validate(user),
     }
 
 
@@ -43,8 +50,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 # =====================================================
 @router.post("/register", status_code=201)
 def register(payload: UserCreate, db: Session = Depends(get_db)):
-
-    # Verificar duplicidade username OR email
+    # Verificar se username ou email já existem
     existing = (
         db.query(User)
         .filter(
@@ -57,11 +63,12 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(400, "Usuário já existe")
 
+    # Criar usuário novo
     new_user = User(
         username=payload.username,
         email=payload.email,
         password_hash=hash_password(payload.password),
-        role=payload.role if payload.role else "user",
+        role=payload.role if payload.role else "user",  # padrão: user
     )
 
     db.add(new_user)
@@ -70,5 +77,5 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
 
     return {
         "message": "Usuário criado com sucesso",
-        "user": UserRead.model_validate(new_user)
+        "user": UserRead.model_validate(new_user),
     }
