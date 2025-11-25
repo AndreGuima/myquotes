@@ -26,7 +26,7 @@ class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class UserLogin(BaseModel):
-    username: str
+    email: EmailStr
     password: str
 
 class UserToken(BaseModel):

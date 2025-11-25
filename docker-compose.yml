@@ -14,14 +14,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD}"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 10s
     networks:
       - myquotes-network
 
@@ -35,15 +28,17 @@ services:
     env_file:
       - .env
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
+      - ./backend/app:/app/src/app
+      - ./backend/wait-for-db.sh:/app/src/wait-for-db.sh
+      - ./backend/migrations:/app/migrations
+      - ./backend/alembic.ini:/app/alembic.ini
     working_dir: /app
     command: >
-      sh -c "sh /app/wait-for-db.sh && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "/app/src/wait-for-db.sh && uvicorn src.app.main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - myquotes-network
 
@@ -55,19 +50,13 @@ services:
     ports:
       - "5173:80"
     depends_on:
-      - backend        # ← ajuste importante
+      - backend
     networks:
       - myquotes-network
 
-# ==========================================
-# 🔒 Volumes persistentes
-# ==========================================
 volumes:
   mysql_data:
 
-# ==========================================
-# 🌐 Rede compartilhada
-# ==========================================
 networks:
   myquotes-network:
     driver: bridge

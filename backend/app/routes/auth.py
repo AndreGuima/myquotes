@@ -1,29 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserRead, UserLogin
-from app.core.security import (
-    verify_password,
-    create_access_token,
-    hash_password,
-)
+from app.core.security import verify_password, create_access_token, hash_password
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 # =====================================================
-# 🔐 LOGIN
+# 🔐 LOGIN (AGORA POR EMAIL)
 # =====================================================
 @router.post("/login")
 def login(payload: UserLogin, db: Session = Depends(get_db)):
-    # Buscar usuário por username
-    user = (
-        db.query(User)
-        .filter(User.username == payload.username)
-        .first()
-    )
+    # Buscar usuário por email
+    user = db.query(User).filter(User.email == payload.email).first()
 
     if not user:
         raise HTTPException(status_code=401, detail="Usuário não encontrado")
@@ -31,10 +23,8 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
     if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Senha incorreta")
 
-    # 🔥 CRIA TOKEN COMPLETO: inclui sub, username e role
     token = create_access_token({
         "sub": str(user.id),
-        "username": user.username,
         "role": user.role,
     })
 
@@ -50,25 +40,17 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 # =====================================================
 @router.post("/register", status_code=201)
 def register(payload: UserCreate, db: Session = Depends(get_db)):
-    # Verificar se username ou email já existem
-    existing = (
-        db.query(User)
-        .filter(
-            (User.username == payload.username) |
-            (User.email == payload.email)
-        )
-        .first()
-    )
-
+    # Verificar se email já existe
+    existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
-        raise HTTPException(400, "Usuário já existe")
+        raise HTTPException(400, "Email já está registrado")
 
-    # Criar usuário novo
+    # Criar novo usuário
     new_user = User(
         username=payload.username,
         email=payload.email,
         password_hash=hash_password(payload.password),
-        role=payload.role if payload.role else "user",  # padrão: user
+        role=payload.role or "user",
     )
 
     db.add(new_user)

@@ -5,47 +5,55 @@ from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# Load .env from backend folder
-base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-env_file = os.path.join(base_dir, ".env")
-load_dotenv(env_file)
+# -----------------------------------------------------
+# 1. Load .env from project root
+# -----------------------------------------------------
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+env_path = os.path.join(base_dir, ".env")
+load_dotenv(env_path)
 
-from app.database import Base, settings
-from app.database import engine
-
+# -----------------------------------------------------
+# 2. Load Alembic config
+# -----------------------------------------------------
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Inject DB URL from settings into Alembic config
-config.set_main_option(
-    "sqlalchemy.url",
-    f"mysql+mysqlconnector://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+# -----------------------------------------------------
+# 3. Build DATABASE_URL manually (no Settings dependency!)
+# -----------------------------------------------------
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+
+database_url = (
+    f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}"
+    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    f"?ssl_disabled=true"
 )
+
+
+config.set_main_option("sqlalchemy.url", database_url)
+
+# -----------------------------------------------------
+# 4. Load metadata without importing Settings()
+# -----------------------------------------------------
+from app.database import Base
+
+# Importar modelos é essencial para o Alembic enxergar as tabelas!
+from app.models.user import User
+from app.models.quote import Quote
 
 target_metadata = Base.metadata
 
 
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
-
-
+# -----------------------------------------------------
+# 5. Offline migration
+# -----------------------------------------------------
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -58,15 +66,13 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+# -----------------------------------------------------
+# 6. Online migration
+# -----------------------------------------------------
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
 
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
@@ -80,6 +86,9 @@ def run_migrations_online() -> None:
             context.run_migrations()
 
 
+# -----------------------------------------------------
+# 7. Run
+# -----------------------------------------------------
 if context.is_offline_mode():
     run_migrations_offline()
 else:

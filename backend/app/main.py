@@ -21,9 +21,8 @@ async def lifespan(app: FastAPI):
     print("🚀 Inicializando MyQuotes API...")
 
     try:
-        # 🔧 Garante que as tabelas existam
-        Base.metadata.create_all(bind=engine)
-        print("✅ Tabelas verificadas/criadas com sucesso.")
+        # ❌ REMOVIDO: criação automática de tabelas
+        # Base.metadata.create_all(bind=engine)
 
         # 👤 Cria admin padrão
         create_default_admin()
@@ -39,7 +38,6 @@ async def lifespan(app: FastAPI):
 # ==========================================
 # 🚀 Instância principal do app
 # ==========================================
-# 🚀 Instância principal do app
 if os.getenv("TESTING") == "1":
     # Durante os testes: SEM lifespan
     app = FastAPI(
@@ -55,10 +53,8 @@ else:
         version="1.0.0",
         contact={"name": "André Guimarães", "email": "andre@example.com"},
         license_info={"name": "MIT License"},
-        lifespan=lifespan,          # 👈 Só aqui usamos lifespan
+        lifespan=lifespan,
     )
-
-
 
 # ==========================================
 # 🌐 CORS Middleware
@@ -71,14 +67,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # ==========================================
 # 🔗 Registro de rotas
 # ==========================================
 app.include_router(users_router)
 app.include_router(quotes_router)
 app.include_router(auth_router)
-
 
 # ==========================================
 # ✅ Health Check

@@ -6,8 +6,9 @@ class Base(DeclarativeBase):
     pass
 
 DATABASE_URL = (
-    f"mysql+mysqlconnector://{settings.DB_USER}:{settings.DB_PASSWORD}@"
-    f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+    f"mysql+mysqlconnector://{settings.DB_USER}:{settings.DB_PASSWORD}"
+    f"@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+    f"?ssl_disabled=true"
 )
 
 engine = create_engine(DATABASE_URL, echo=False)

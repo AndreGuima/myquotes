@@ -1,2 +1,0 @@
--- Legacy init script.
--- Database schema now handled by Alembic migrations.
