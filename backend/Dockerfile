@@ -2,34 +2,32 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install MySQL client + system deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
       default-mysql-client \
       build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Optimize Python runtime behavior
 ENV PYTHONUNBUFFERED=1
 
-# Upgrade pip
 RUN python3 -m pip install --upgrade pip
 
-# Copy dependency list
-COPY requirements.txt .
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+COPY alembic.ini /app/alembic.ini
+COPY migrations /app/migrations
 
-# Copy app code after deps
-COPY . .
+# Copiar apenas o backend, não o diretório inteiro
+COPY app /app/src/app
+COPY wait-for-db.sh /app/src/wait-for-db.sh
 
-# Ensure wait script is executable
-RUN chmod +x /app/wait-for-db.sh
+ENV PYTHONPATH="/app/src"
 
-# Security: run as non-root
+RUN chmod +x /app/src/wait-for-db.sh
+
 RUN useradd -m appuser
 USER appuser
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "./wait-for-db.sh && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
+CMD ["sh", "-c", "/app/src/wait-for-db.sh && uvicorn src.app.main:app --host 0.0.0.0 --port 8000 --reload"]
