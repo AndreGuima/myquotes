@@ -15,8 +15,8 @@ export default function Login() {
 
     try {
       const response = await api.post("/auth/login", {
-        email: email,
-        password: password,
+        email,
+        password
       });
 
       const token = response.data.access_token;

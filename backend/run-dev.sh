@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-# Go to backend directory
 cd "$(dirname "$0")"
 
 # Check venv exists
@@ -28,16 +27,18 @@ EOF
   exit 1
 fi
 
-# Load dev environment variables
+# Load environment variables
 export $(grep -v '^#' .env.dev | xargs)
 
-echo "🔍 Verificando MySQL local no Docker..."
+echo "📌 Usando DB_HOST=$DB_HOST"
+echo "📌 Usando DB_NAME=$DB_NAME"
+
+echo "🔍 Verificando MySQL em Docker..."
 
 # Check if container exists
 if docker ps -a --format '{{.Names}}' | grep -q "^myquotes-db$"; then
     echo "📦 Container myquotes-db encontrado."
 
-    # Check if it's running
     if docker ps --format '{{.Names}}' | grep -q "^myquotes-db$"; then
         echo "🐬 MySQL já está rodando."
     else
@@ -58,17 +59,15 @@ else
         mysql:8.0
 fi
 
-# Wait for MySQL to be available
-echo "⏳ Aguardando MySQL iniciar..."
-until docker exec myquotes-db mysqladmin ping -h "localhost" -p"$DB_PASSWORD" --silent; do
+# Wait for MySQL to accept connections (inside container)
+echo "⏳ Aguardando MySQL responder (no container)..."
+until docker exec myquotes-db sh -c "mysqladmin ping -uroot -p$DB_PASSWORD --silent"; do
     printf "."
     sleep 2
 done
-
 echo ""
-echo "🐬 MySQL disponível! (container: myquotes-db)"
+echo "🐬 MySQL disponível!"
 
-echo "✅ Ambiente DEV carregado (.env.dev)"
-echo "🚀 Iniciando FastAPI em modo DEV: http://127.0.0.1:8000/docs"
+echo "🚀 Iniciando FastAPI DEV: http://127.0.0.1:8000/docs"
 
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000

@@ -4,8 +4,7 @@ echo "📊 Status dos containers MyQuotes..."
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 echo ""
 
-# Test API
-echo "🧪 Testando API FastAPI..."
+echo "🧪 Testando Backend..."
 if curl -s http://localhost:8000/docs >/dev/null; then
     echo "✅ Backend OK → http://localhost:8000/docs"
 else
@@ -13,7 +12,6 @@ else
 fi
 echo ""
 
-# Test Frontend
 echo "🧪 Testando Frontend..."
 if curl -s http://localhost:5173 >/dev/null; then
     echo "🌐 Frontend OK → http://localhost:5173"
@@ -22,23 +20,9 @@ else
 fi
 echo ""
 
-# Test MySQL
-echo "🐬 Testando MySQL..."
+echo "🧪 Testando MySQL..."
 if docker exec myquotes-db mysql -umyquotes_user -pmyquotes_pass -e "SELECT 1;" >/dev/null 2>&1; then
     echo "🐬 MySQL OK"
 else
     echo "❌ MySQL INDISPONÍVEL!"
 fi
-echo ""
-
-# Logs
-echo "🪵 Logs Backend - últimas 20 linhas:"
-docker compose logs backend --tail=20 | sed 's/^/   /'
-
-echo ""
-echo "🪵 Logs Frontend - últimas 20 linhas:"
-docker compose logs myquotes-web --tail=20 | sed 's/^/   /'
-
-echo ""
-echo "🪵 Logs MySQL - últimas 20 linhas:"
-docker compose logs db --tail=20 | sed 's/^/   /'

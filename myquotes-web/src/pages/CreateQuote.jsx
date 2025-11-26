@@ -8,6 +8,8 @@ export default function CreateQuote() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const TEXT_LIMIT = 200;
+
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
@@ -16,7 +18,7 @@ export default function CreateQuote() {
       await createQuote({ author, text });
       navigate("/quotes/");
     } catch (err) {
-      alert("Erro ao criar quote");
+      alert("Erro ao salvar a frase: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -34,8 +36,14 @@ export default function CreateQuote() {
             className="w-full border p-2 rounded"
             value={text}
             onChange={(e) => setText(e.target.value)}
+            maxLength={TEXT_LIMIT}
+            rows={4}
             required
           ></textarea>
+
+          <div className="text-right text-sm text-gray-500 mt-1">
+            {text.length}/{TEXT_LIMIT}
+          </div>
         </div>
 
         <div>

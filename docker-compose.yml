@@ -31,20 +31,14 @@ services:
       - db
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend/app:/app/src/app
-      - ./backend/wait-for-db.sh:/app/src/wait-for-db.sh
-      - ./backend/migrations:/app/migrations
-      - ./backend/alembic.ini:/app/alembic.ini
-    working_dir: /app
-    command: >
-      sh -c "/app/src/wait-for-db.sh && uvicorn src.app.main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - myquotes-network
 
   # 🌐 Vite + React Frontend
   myquotes-web:
-    build: ./myquotes-web
+    build:
+      context: ./myquotes-web
+      dockerfile: Dockerfile
     container_name: myquotes-web
     restart: unless-stopped
     ports:
@@ -53,6 +47,7 @@ services:
       - backend
     networks:
       - myquotes-network
+      
 
 volumes:
   mysql_data:
