@@ -24,3 +24,8 @@ export async function deleteQuote(id) {
   const response = await api.delete(`/quotes/${id}`);
   return response.data;
 }
+
+export async function getQuoteOfTheDay() {
+  const response = await api.get("/quotes/of-the-day");
+  return response.data;
+}
