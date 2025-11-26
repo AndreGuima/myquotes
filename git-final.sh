@@ -29,9 +29,9 @@ read -p "📝 Digite a mensagem do commit: " MSG
 # commit
 git commit -m "$MSG"
 
-# push
-echo "🚀 Enviando para origin $BRANCH..."
-git push origin "$BRANCH"
+# push manual
+echo "🚀 Enviar para origin $BRANCH rode:"
+echo "git push origin "$BRANCH""
 
 echo "✅ Finalizado!"
 
