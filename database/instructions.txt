@@ -1,5 +1,9 @@
-# colect logs from container
+# entrar dentro do container
+docker exec -it myquotes-backend bash
+
+
 docker compose exec db mysql -umyquotes_user -pmyquotes_pass myquotes_db
+
 
 SHOW TABLES;
 DESCRIBE users;

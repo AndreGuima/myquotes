@@ -15,19 +15,18 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY alembic.ini /app/alembic.ini
-COPY migrations /app/migrations
+COPY migrations/ /app/migrations/
 
-# Copiar apenas o backend, não o diretório inteiro
-COPY app /app/src/app
-COPY wait-for-db.sh /app/src/wait-for-db.sh
+# 👇 copia o backend REAL
+COPY app/ /app/app/
 
-ENV PYTHONPATH="/app/src"
-
-RUN chmod +x /app/src/wait-for-db.sh
+# 👇 copia o script na pasta certa
+COPY wait-for-db.sh /app/wait-for-db.sh
+RUN chmod +x /app/wait-for-db.sh
 
 RUN useradd -m appuser
 USER appuser
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "/app/src/wait-for-db.sh && uvicorn src.app.main:app --host 0.0.0.0 --port 8000 --reload"]
+CMD ["sh", "-c", "/app/wait-for-db.sh && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

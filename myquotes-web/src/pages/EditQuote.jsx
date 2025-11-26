@@ -10,6 +10,8 @@ export default function EditQuote() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const TEXT_LIMIT = 200;
+
   async function loadData() {
     try {
       const q = await getQuoteById(id);
@@ -50,9 +52,14 @@ export default function EditQuote() {
           <textarea
             className="w-full border p-2 rounded"
             value={text}
+            maxLength={TEXT_LIMIT}
             onChange={(e) => setText(e.target.value)}
+            rows={4}
             required
           ></textarea>
+          <div className="text-right text-sm text-gray-500 mt-1">
+            {text.length}/{TEXT_LIMIT}
+          </div>
         </div>
 
         <div>

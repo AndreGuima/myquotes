@@ -1,0 +1,2 @@
+# entrar dentro do container
+docker exec -it myquotes-backend bash
