@@ -18,8 +18,13 @@ export default function MainLayout() {
         <nav className="flex flex-col gap-3 flex-1">
           <Link to="/home" className="hover:text-blue-400">Dashboard</Link>
           <Link to="/quotes" className="hover:text-blue-400">Quotes</Link>
-          <Link to="/users" className="hover:text-blue-400">Users</Link>
+
+          {/* Só aparece se for admin */}
+          {user?.role === "admin" && (
+            <Link to="/users" className="hover:text-blue-400">Users</Link>
+          )}
         </nav>
+
 
         <div className="bg-gray-800 p-3 rounded mb-4 text-sm">
           Logado como: <span className="font-semibold">{user?.username}</span>

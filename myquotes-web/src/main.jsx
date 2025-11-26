@@ -5,6 +5,7 @@ import "./index.css";
 
 import MainLayout from "./layout/MainLayout.jsx";
 import PrivateRoute from "./components/PrivateRoute.jsx";
+import AdminRoute from "./components/AdminRoute.jsx";
 
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
@@ -34,7 +35,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/quotes" element={<Quotes />} />
         <Route path="/quotes/new" element={<CreateQuote />} />
         <Route path="/quotes/:id/edit" element={<EditQuote />} />
-        <Route path="/users" element={<Users />} />
+
+        <Route
+          path="/users"
+          element={
+            <AdminRoute>
+              <Users />
+            </AdminRoute>
+          }
+        />
+
       </Route>
     </Routes>
   </BrowserRouter>
