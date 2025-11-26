@@ -11,24 +11,37 @@ router = APIRouter(prefix="/quotes", tags=["Quotes"])
 
 
 # ==============================
-# 🔍 LISTAR TODAS AS QUOTES DO USUARIO LOGADO
+# 🔍 LISTAR QUOTES
 # ==============================
 @router.get("", response_model=list[QuoteRead])
 def list_quotes(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    result = (
-        db.query(Quote, User.username.label("user_name"))
-        .join(User, User.id == Quote.user_id)
-        .filter(
-            (Quote.user_id == current_user.id) |
-            (current_user.role == "admin")
+    # ===========================
+    # ADMIN: retorna todas as quotes
+    # ===========================
+    if current_user.role == "admin":
+        result = (
+            db.query(Quote, User.username.label("user_name"))
+            .join(User, User.id == Quote.user_id)
+            .order_by(Quote.id)
+            .all()
         )
-        .order_by(Quote.id)
-        .all()
-    )
 
+    # ===========================
+    # USUÁRIO NORMAL: retorna apenas suas quotes
+    # ===========================
+    else:
+        result = (
+            db.query(Quote, User.username.label("user_name"))
+            .join(User, User.id == Quote.user_id)
+            .filter(Quote.user_id == current_user.id)
+            .order_by(Quote.id)
+            .all()
+        )
+
+    # Converte o resultado
     quotes = [
         QuoteRead(
             id=quote.id,
@@ -42,27 +55,6 @@ def list_quotes(
     ]
 
     return quotes
-
-
-
-# ==============================
-# 🔍 OBTER UMA QUOTE
-# ==============================
-@router.get("/{quote_id}", response_model=QuoteRead)
-def get_quote(
-    quote_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    q = db.query(Quote).filter(Quote.id == quote_id).first()
-
-    if not q:
-        raise HTTPException(404, "Quote not found")
-
-    if q.user_id != current_user.id and current_user.role != "admin":
-        raise HTTPException(403, "Você não pode acessar esta quote.")
-
-    return q
 
 
 # ==============================
@@ -131,3 +123,52 @@ def delete_quote(
 
     db.delete(q)
     db.commit()
+
+# ==============================
+# ⭐ QUOTE OF THE DAY (DETERMINÍSTICO)
+# ==============================
+@router.get("/of-the-day", response_model=QuoteRead)
+def quote_of_the_day(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    quotes = (
+        db.query(Quote)
+        .filter(Quote.user_id == current_user.id)
+        .order_by(Quote.id)
+        .all()
+    )
+
+    if not quotes:
+        raise HTTPException(404, "Nenhuma quote encontrada para este usuário.")
+
+    from datetime import date
+    from hashlib import sha256
+
+    today = date.today().isoformat()
+    key = f"{current_user.id}-{today}"
+
+    digest = sha256(key.encode()).hexdigest()
+    index = int(digest, 16) % len(quotes)
+
+    return quotes[index]
+
+
+# ==============================
+# 🔍 OBTER UMA QUOTE
+# ==============================
+@router.get("/{quote_id:int}", response_model=QuoteRead)
+def get_quote(
+    quote_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    q = db.query(Quote).filter(Quote.id == quote_id).first()
+
+    if not q:
+        raise HTTPException(404, "Quote not found")
+
+    if q.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(403, "Você não pode acessar esta quote.")
+
+    return q
