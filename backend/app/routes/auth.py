@@ -23,6 +23,13 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
     if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Senha incorreta")
 
+    # 🚨 BLOQUEAR LOGIN SE O EMAIL NÃO FOR VERIFICADO
+    if not user.is_verified and user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Você precisa verificar seu email antes de fazer login."
+        )
+
     token = create_access_token({
         "sub": str(user.id),
         "role": user.role,
@@ -51,6 +58,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
         email=payload.email,
         password_hash=hash_password(payload.password),
         role="user",
+        is_verified=False  # 🔥 importante
     )
 
     db.add(new_user)
@@ -58,7 +66,6 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return {
-        "message": "Usuário criado com sucesso",
+        "message": "Usuário criado com sucesso. Verifique seu email para ativar sua conta.",
         "user": UserRead.model_validate(new_user),
     }
-

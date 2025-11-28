@@ -48,3 +48,8 @@ def decode_access_token(token: str):
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except Exception:
         return None
+
+def create_email_verification_token(user_id: int):
+    expire = datetime.utcnow() + timedelta(hours=24)
+    data = {"sub": str(user_id), "type": "verify", "exp": expire}
+    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)

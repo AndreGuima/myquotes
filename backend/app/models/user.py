@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, TIMESTAMP, func
+from sqlalchemy import Boolean, String, Integer, TIMESTAMP, func
 
 from app.database import Base
 
@@ -23,6 +23,13 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
+
+
+    is_verified: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default="0",
+        default=False)
 
     created_at: Mapped[Optional[datetime]] = mapped_column(
         TIMESTAMP, server_default=func.current_timestamp()
