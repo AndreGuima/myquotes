@@ -20,7 +20,7 @@ class UserRead(BaseModel):
     email: EmailStr
     created_at: datetime
     role: str
-
+    is_verified: bool
     model_config = {"from_attributes": True}
 
 # ==============================
