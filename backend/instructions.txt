@@ -1,2 +1,5 @@
 # entrar dentro do container
 docker exec -it myquotes-backend bash
+
+# coleta de logs
+docker logs myquotes-backend --tail 20
