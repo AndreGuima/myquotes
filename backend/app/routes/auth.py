@@ -50,7 +50,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
         username=payload.username,
         email=payload.email,
         password_hash=hash_password(payload.password),
-        role=payload.role or "user",
+        role="user",
     )
 
     db.add(new_user)
@@ -61,3 +61,4 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
         "message": "Usuário criado com sucesso",
         "user": UserRead.model_validate(new_user),
     }
+

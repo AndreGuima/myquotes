@@ -7,21 +7,37 @@ export default function Register() {
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [error, setError] = useState("");
 
   async function handleRegister(e) {
     e.preventDefault();
     setError("");
 
+    // ===========================
+    // 🔐 Validações Frontend
+    // ===========================
+    if (password.length < 8) {
+      setError("A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem.");
+      return;
+    }
+
     try {
       await api.post("/auth/register", {
         username,
         email,
         password,
+        confirm_password: confirmPassword,
       });
 
-      // Depois de registrar, enviar para login
       navigate("/login");
     } catch (err) {
       setError("Não foi possível criar a conta.");
@@ -31,6 +47,7 @@ export default function Register() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
+
         <h1 className="text-3xl font-bold text-center mb-4">Criar Conta</h1>
         <p className="text-center text-gray-600 mb-6">
           Preencha os dados abaixo para se registrar.
@@ -74,10 +91,32 @@ export default function Register() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <p className="text-sm text-gray-500 mt-1">
+              Mínimo de 8 caracteres
+            </p>
+          </div>
+
+          <div>
+            <label className="block font-medium mb-1">Confirmar Senha</label>
+            <input
+              type="password"
+              className="w-full border p-2 rounded"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
           </div>
 
           <button
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            disabled={
+              !username ||
+              !email ||
+              !password ||
+              !confirmPassword ||
+              password !== confirmPassword ||
+              password.length < 8
+            }
           >
             Criar Conta
           </button>
