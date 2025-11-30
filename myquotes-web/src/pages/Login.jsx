@@ -28,7 +28,10 @@ export default function Login() {
       navigate("/home");
 
     } catch (err) {
-      setError("Credenciais inválidas");
+      const backendMessage =
+        err.response?.data?.detail || "Erro ao fazer login. Tente novamente.";
+
+      setError(backendMessage);
     }
   }
 
