@@ -38,7 +38,7 @@ export default function Register() {
         confirm_password: confirmPassword,
       });
 
-      navigate("/login");
+      navigate("/verify-instructions");
     } catch (err) {
       setError("Não foi possível criar a conta.");
     }

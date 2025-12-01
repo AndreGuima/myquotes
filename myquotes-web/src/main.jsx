@@ -14,6 +14,11 @@ import Quotes from "./pages/Quotes.jsx";
 import Users from "./pages/Users.jsx";
 import CreateQuote from "./pages/CreateQuote.jsx";
 import EditQuote from "./pages/EditQuote.jsx";
+import VerifyInstructions from "./pages/VerifyInstructions";
+import VerifySuccess from "./pages/VerifySuccess";
+import VerifyError from "./pages/VerifyError";
+import VerifyEmail from "./pages/VerifyEmail.jsx";
+
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -21,7 +26,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-
+      <Route path="/verify-instructions" element={<VerifyInstructions />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/verify-success" element={<VerifySuccess />} />
+      <Route path="/verify-error" element={<VerifyError />} />
 
       {/* Rotas protegidas */}
       <Route
