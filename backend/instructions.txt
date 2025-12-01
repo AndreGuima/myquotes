@@ -3,3 +3,10 @@ docker exec -it myquotes-backend bash
 
 # coleta de logs
 docker logs myquotes-backend --tail 20
+
+# gerar token para o login
+docker exec -i myquotes-backend python3 << 'EOF'
+from app.core.security import create_email_verification_token
+print(create_email_verification_token(NOVO_ID_AQUI))
+EOF
+
