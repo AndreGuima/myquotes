@@ -54,6 +54,9 @@ htmlcov/
 # Banco local ou SQLite
 *.sqlite3
 *.db
+file::memory:
+file::memory:*
+
 
 # Logs e arquivos gerados
 uvicorn.log
