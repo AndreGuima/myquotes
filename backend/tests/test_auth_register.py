@@ -1,14 +1,17 @@
 from fastapi.testclient import TestClient
 from app.main import app
+from app.models.user import User
+from app.core.security import create_email_verification_token
 
 client = TestClient(app)
 
 
-def make_register_payload(suffix="1"):
+def make_register_payload(prefix):
     return {
-        "username": f"user_{suffix}",
-        "email": f"user_{suffix}@example.com",
-        "password": "abc123"
+        "username": f"user_{prefix}",
+        "email": f"user_{prefix}@example.com",
+        "password": "12345678",
+        "confirm_password": "12345678",
     }
 
 
@@ -46,7 +49,37 @@ def test_login_after_register(client):
     client.post("/auth/register", json=payload)
 
     r = client.post("/auth/login", json={
-        "username": payload["username"],
+        "email": payload["email"],
+        "password": payload["password"]
+    })
+
+    assert r.status_code == 403  # agora é o comportamento esperado
+
+def test_login_blocked_until_verified(client):
+    payload = make_register_payload("block")
+
+    client.post("/auth/register", json=payload)
+
+    r = client.post("/auth/login", json={
+        "email": payload["email"],
+        "password": payload["password"]
+    })
+
+    assert r.status_code == 403
+    assert "verificar seu email" in r.json()["detail"]
+
+def test_login_after_email_verified(client, db_session):
+    payload = make_register_payload("verify")
+
+    client.post("/auth/register", json=payload)
+
+    # marca como verificado
+    user = db_session.query(User).filter_by(email=payload["email"]).first()
+    user.is_verified = True
+    db_session.commit()
+
+    r = client.post("/auth/login", json={
+        "email": payload["email"],
         "password": payload["password"]
     })
 

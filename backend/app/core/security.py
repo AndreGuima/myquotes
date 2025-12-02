@@ -1,13 +1,15 @@
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from jose import jwt
 
-# Chave secreta — depois vamos mover para settings.py
+# ============================================================
+# 🔧 Configurações de segurança
+# ============================================================
+
 SECRET_KEY = "MYQUOTES_SUPER_SECRET_KEY_123"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-# Para hashing de senha
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -16,7 +18,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # ============================================================
 
 def hash_password(password: str) -> str:
-    """Gera hash seguro pra armazenar no banco."""
+    """Gera hash seguro para armazenar no banco."""
     return pwd_context.hash(password)
 
 
@@ -26,30 +28,38 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 # ============================================================
-# 🔐 JWT - CRIAR E VALIDAR TOKENS
+# 🔐 JWT - CRIAÇÃO E VALIDAÇÃO DE TOKENS
 # ============================================================
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    """Cria um token JWT assinado."""
+    """Cria um token JWT assinado (para login)."""
     to_encode = data.copy()
 
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now(UTC) + (
+        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
 
     to_encode.update({"exp": expire})
 
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def decode_access_token(token: str):
-    """Valida e decodifica o token JWT."""
+    """Valida e decodifica um token JWT."""
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except Exception:
         return None
 
+
 def create_email_verification_token(user_id: int):
-    expire = datetime.utcnow() + timedelta(hours=24)
-    data = {"sub": str(user_id), "type": "verify", "exp": expire}
-    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+    """Cria um token JWT para verificação de email (válido por 24h)."""
+    expire = datetime.now(UTC) + timedelta(hours=24)
+
+    payload = {
+        "sub": str(user_id),
+        "type": "verify",
+        "exp": expire,
+    }
+
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
