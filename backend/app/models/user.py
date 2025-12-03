@@ -16,20 +16,18 @@ class User(Base):
     username: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
-        unique=False,
-        index=False
     )
 
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
 
-
     is_verified: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         server_default="0",
-        default=False)
+        default=False
+    )
 
     created_at: Mapped[Optional[datetime]] = mapped_column(
         TIMESTAMP, server_default=func.current_timestamp()

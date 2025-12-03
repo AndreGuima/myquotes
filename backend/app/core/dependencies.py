@@ -27,3 +27,12 @@ def get_current_user(
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
     return user
+
+def admin_required(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso permitido apenas para administradores",
+        )
+    return current_user
+

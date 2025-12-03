@@ -2,6 +2,7 @@ from app.database import SessionLocal
 from app.models.user import User
 from app.core.security import hash_password
 
+
 def create_default_admin():
     db = SessionLocal()
     
@@ -13,8 +14,8 @@ def create_default_admin():
         return
 
     admin = User(
-        username="admin",                     # ✔ Agora cria um usuário "admin"
-        email="admin@example.com",
+        username="admin",
+        email="admin@example.com",    # ✔ corrigido — email válido (antes era .local)
         password_hash=hash_password("admin123"),
         role="admin"
     )
