@@ -1,26 +1,36 @@
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
+
+
+# ============================================================
+# ENUM DE ROLES
+# ============================================================
+class RoleEnum(str, Enum):
+    admin = "admin"
+    editor = "editor"
+    user = "user"
+
 
 # ============================================================
 # BASE
 # ============================================================
-
 class UserBase(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
-    email: EmailStr
-    role: str = Field("user", pattern="^(admin|editor|user)$")
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[RoleEnum] = None
 
 
 # ============================================================
 # CREATE — REGISTRO (não herda UserBase!)
 # ============================================================
-
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
     password: str
     confirm_password: str
+    role: RoleEnum = RoleEnum.user
 
     @field_validator("password")
     def validate_password_length(cls, v):
@@ -37,34 +47,32 @@ class UserCreate(BaseModel):
 
 
 # ============================================================
-# UPDATE (opcional)
+# UPDATE
 # ============================================================
-
 class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     password: Optional[str] = Field(None, min_length=8)
-    role: Optional[str] = Field(None, pattern="^(admin|editor|user)$")
+    role: Optional[RoleEnum] = None
 
 
 # ============================================================
 # READ (retorno)
 # ============================================================
-
 class UserRead(BaseModel):
     id: int
     username: str
     email: EmailStr
-    role: str
+    role: RoleEnum
     created_at: Optional[datetime]
 
+    # equivale ao antigo orm_mode=True
     model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================
 # LOGIN
 # ============================================================
-
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
@@ -73,7 +81,6 @@ class UserLogin(BaseModel):
 # ============================================================
 # TOKEN
 # ============================================================
-
 class UserToken(BaseModel):
     access_token: str
     token_type: str = "bearer"

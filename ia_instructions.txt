@@ -1,0 +1,3 @@
+segue a estrutura atual do meu projeto
+tree -L 4
+ls -la

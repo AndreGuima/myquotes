@@ -11,6 +11,7 @@ from app.routes.users import router as users_router
 from app.settings import settings
 from app.startup import create_default_admin
 from app.routes.auth import router as auth_router
+from app.routes.admin_users import router as admin_users_router
 
 
 # ==========================================
@@ -70,9 +71,12 @@ app.add_middleware(
 # ==========================================
 # 🔗 Registro de rotas
 # ==========================================
+
 app.include_router(users_router)
 app.include_router(quotes_router)
 app.include_router(auth_router)
+app.include_router(admin_users_router)
+
 
 # ==========================================
 # ✅ Health Check
