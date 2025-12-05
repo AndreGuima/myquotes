@@ -1,3 +1,3 @@
-from .quote import Quote, Base
+from .quote import Base, Quote
 
 __all__ = ["Quote", "Base"]

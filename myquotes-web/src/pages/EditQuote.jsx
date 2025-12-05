@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getQuoteById, updateQuote } from "../services/quotesService";
 import { useNavigate, useParams } from "react-router-dom";
+
+const TEXT_LIMIT = 200; // pode ficar fora do componente
 
 export default function EditQuote() {
   const { id } = useParams();
@@ -10,30 +12,28 @@ export default function EditQuote() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const TEXT_LIMIT = 200;
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       const q = await getQuoteById(id);
       setAuthor(q.author);
       setText(q.text);
-    } catch (err) {
+    } catch {
       alert("Erro ao carregar quote");
     } finally {
       setLoading(false);
     }
-  }
+  }, [id]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     try {
       await updateQuote(id, { author, text });
       navigate("/quotes");
-    } catch (err) {
+    } catch {
       alert("Erro ao atualizar");
     }
   }
@@ -79,4 +79,3 @@ export default function EditQuote() {
     </div>
   );
 }
-

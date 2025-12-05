@@ -1,6 +1,7 @@
-from passlib.context import CryptContext
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
+
 from jose import jwt
+from passlib.context import CryptContext
 
 # ============================================================
 # 🔧 Configurações de segurança
@@ -17,6 +18,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # 🔐 HASH / VERIFICAÇÃO DE SENHA
 # ============================================================
 
+
 def hash_password(password: str) -> str:
     """Gera hash seguro para armazenar no banco."""
     return pwd_context.hash(password)
@@ -30,6 +32,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # ============================================================
 # 🔐 JWT - CRIAÇÃO E VALIDAÇÃO DE TOKENS
 # ============================================================
+
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     """Cria um token JWT assinado (para login)."""

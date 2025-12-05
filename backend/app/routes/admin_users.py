@@ -1,16 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database import get_db
-from app.models.user import User
-from app.schemas.user import UserUpdate, UserRead
 from app.core.dependencies import admin_required
 from app.core.security import pwd_context
+from app.database import get_db
+from app.models.user import User
+from app.schemas.user import UserRead, UserUpdate
 
-router = APIRouter(
-    prefix="/admin/users",
-    tags=["Admin - Users"]
-)
+router = APIRouter(prefix="/admin/users", tags=["Admin - Users"])
 
 
 @router.get("/", response_model=list[UserRead], dependencies=[Depends(admin_required)])
@@ -18,7 +15,9 @@ def list_users(db: Session = Depends(get_db)):
     return db.query(User).all()
 
 
-@router.put("/{user_id}", response_model=UserRead, dependencies=[Depends(admin_required)])
+@router.put(
+    "/{user_id}", response_model=UserRead, dependencies=[Depends(admin_required)]
+)
 def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
