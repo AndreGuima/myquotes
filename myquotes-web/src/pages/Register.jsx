@@ -54,7 +54,63 @@ export default function Register() {
         )}
 
         <form onSubmit={handleRegister} className="space-y-4">
-          {/* Campos iguais aos que você já tinha */}
+          <div>
+            <label className="block font-medium mb-1">Nome</label>
+            <input
+              type="text"
+              className="w-full border p-2 rounded"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium mb-1">Email</label>
+            <input
+              type="email"
+              className="w-full border p-2 rounded"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium mb-1">Senha</label>
+            <input
+              type="password"
+              className="w-full border p-2 rounded"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium mb-1">Confirmar Senha</label>
+            <input
+              type="password"
+              className="w-full border p-2 rounded"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <button
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            disabled={
+              !username ||
+              !email ||
+              !password ||
+              !confirmPassword ||
+              password !== confirmPassword ||
+              password.length < 8
+            }
+          >
+            Criar Conta
+          </button>
         </form>
 
         <div className="text-center mt-4">
