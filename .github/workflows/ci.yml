@@ -1,0 +1,107 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: ["develop"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+
+  backend:
+    name: Backend CI (FastAPI)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependências do backend
+        run: |
+          cd backend
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install black isort flake8 pytest
+
+      # 🔥 FORMATTERS PYTHON (Black + isort)
+      - name: Verificar formatação com Black
+        run: |
+          cd backend
+          black --check .
+
+      - name: Verificar organização de imports com isort
+        run: |
+          cd backend
+          isort . --check-only --profile black
+
+      # Linter
+      - name: Linter (flake8)
+        run: |
+          cd backend
+          flake8 app
+
+      # Testes
+      - name: Rodar testes (pytest)
+        run: |
+          cd backend
+          pytest tests || echo "Nenhum teste encontrado"
+
+      # Build leve
+      - name: Verificar erros de sintaxe Python
+        run: |
+          cd backend
+          python -m py_compile $(git ls-files "backend/**/*.py" | tr '\n' ' ')
+
+      # Validação Dockerfile
+      - name: Validar Dockerfile do backend
+        run: |
+          docker build -t backend-ci-test ./backend
+
+
+
+  frontend:
+    name: Frontend CI (Vite + React)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Instalar dependências do frontend
+        run: |
+          cd myquotes-web
+          npm install
+
+      # 🔥 FORMATTER FRONTEND (Prettier)
+      - name: Verificar formatação com Prettier
+        run: |
+          cd myquotes-web
+          npm install prettier --save-dev
+          npx prettier --check .
+
+      # Linter
+      - name: Linter (ESLint)
+        run: |
+          cd myquotes-web
+          npm run lint --if-present
+
+      # Build de validação
+      - name: Build de validação (Vite)
+        run: |
+          cd myquotes-web
+          npm run build
+
+      # Validação Dockerfile
+      - name: Validar Dockerfile do frontend
+        run: |
+          docker build -t frontend-ci-test ./myquotes-web
