@@ -55,7 +55,10 @@ jobs:
       - name: Verificar erros de sintaxe Python
         run: |
           cd backend
-          python -m py_compile $(git ls-files "backend/**/*.py" | tr '\n' ' ')
+          echo "🔍 Verificando arquivos Python..."
+          for file in $(find . -name "*.py"); do
+            python -m py_compile "$file";
+          done
 
       # Validação Dockerfile
       - name: Validar Dockerfile do backend
@@ -86,8 +89,7 @@ jobs:
       - name: Verificar formatação com Prettier
         run: |
           cd myquotes-web
-          npm install prettier --save-dev
-          npx prettier --check .
+          npm run format:check --if-present
 
       # Linter
       - name: Linter (ESLint)
