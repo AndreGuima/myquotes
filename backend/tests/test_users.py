@@ -1,5 +1,6 @@
-from app.main import app
 from fastapi.testclient import TestClient
+
+from app.main import app
 
 client = TestClient(app)
 
@@ -23,7 +24,6 @@ def test_get_user_by_id(client):
     assert r.json()["email"] == "test@example.com"
 
 
-
 def test_delete_user(client):
     """
     Antes deletava um criado via POST. Agora deletamos o fake_user (id=1),
@@ -36,4 +36,3 @@ def test_delete_user(client):
     # Agora o usuário 1 deve não existir mais
     r2 = client.get("/users/1")
     assert r2.status_code == 404
-

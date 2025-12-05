@@ -1,9 +1,9 @@
-from logging.config import fileConfig
 import os
-from dotenv import load_dotenv
+from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
 from alembic import context
+from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
 
 # -----------------------------------------------------
 # 1. Load .env from project root
@@ -42,10 +42,10 @@ config.set_main_option("sqlalchemy.url", database_url)
 # 4. Load metadata without importing Settings()
 # -----------------------------------------------------
 from app.database import Base
+from app.models.quote import Quote
 
 # Importar modelos é essencial para o Alembic enxergar as tabelas!
 from app.models.user import User
-from app.models.quote import Quote
 
 target_metadata = Base.metadata
 
@@ -78,9 +78,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

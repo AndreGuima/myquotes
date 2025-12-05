@@ -1,17 +1,18 @@
+import os
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
-import os
 
 # Internos
 from app.database import Base, engine
+from app.routes.admin_users import router as admin_users_router
+from app.routes.auth import router as auth_router
 from app.routes.quotes import router as quotes_router
 from app.routes.users import router as users_router
 from app.settings import settings
 from app.startup import create_default_admin
-from app.routes.auth import router as auth_router
-from app.routes.admin_users import router as admin_users_router
 
 
 # ==========================================

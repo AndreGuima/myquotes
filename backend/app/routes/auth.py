@@ -1,10 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.security import (
+    create_access_token,
+    decode_access_token,
+    hash_password,
+    verify_password,
+)
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserRead, UserLogin
-from app.core.security import verify_password, create_access_token, hash_password, decode_access_token
+from app.schemas.user import UserCreate, UserLogin, UserRead
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -27,13 +32,15 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
     if not user.is_verified and user.role != "admin":
         raise HTTPException(
             status_code=403,
-            detail="Você precisa verificar seu email antes de fazer login."
+            detail="Você precisa verificar seu email antes de fazer login.",
         )
 
-    token = create_access_token({
-        "sub": str(user.id),
-        "role": user.role,
-    })
+    token = create_access_token(
+        {
+            "sub": str(user.id),
+            "role": user.role,
+        }
+    )
 
     return {
         "access_token": token,
@@ -58,7 +65,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
         email=payload.email,
         password_hash=hash_password(payload.password),
         role="user",
-        is_verified=False  # 🔥 importante
+        is_verified=False,  # 🔥 importante
     )
 
     db.add(new_user)
@@ -69,6 +76,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
         "message": "Usuário criado com sucesso. Verifique seu email para ativar sua conta.",
         "user": UserRead.model_validate(new_user),
     }
+
 
 # =====================================================
 # 🔐 VERIFICAÇÃO DE EMAIL

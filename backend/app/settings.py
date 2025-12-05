@@ -1,5 +1,5 @@
+from pydantic import ConfigDict, Field
 from pydantic_settings import BaseSettings
-from pydantic import Field, ConfigDict
 
 
 class Settings(BaseSettings):
@@ -17,8 +17,8 @@ class Settings(BaseSettings):
 
     # ⚙️ Configuração moderna do Pydantic v2
     model_config = ConfigDict(
-        env_file=".env",   # lê variáveis de ambiente do .env
-        extra="allow"      # permite variáveis extras sem erro
+        env_file=".env",  # lê variáveis de ambiente do .env
+        extra="allow",  # permite variáveis extras sem erro
     )
 
 

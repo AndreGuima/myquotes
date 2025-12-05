@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine
+
 from .settings import settings
 
 DATABASE_URL = (

@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.dependencies import get_current_user
+from app.database import get_db
 from app.models.quote import Quote
 from app.models.user import User
 from app.schemas.quote import QuoteCreate, QuoteRead, QuoteUpdate
-from app.database import get_db
-from app.core.dependencies import get_current_user
 
 router = APIRouter(prefix="/quotes", tags=["Quotes"])
 
@@ -15,8 +15,7 @@ router = APIRouter(prefix="/quotes", tags=["Quotes"])
 # ==============================
 @router.get("", response_model=list[QuoteRead])
 def list_quotes(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     # ===========================
     # ADMIN: retorna todas as quotes
@@ -124,13 +123,13 @@ def delete_quote(
     db.delete(q)
     db.commit()
 
+
 # ==============================
 # ⭐ QUOTE OF THE DAY (DETERMINÍSTICO)
 # ==============================
 @router.get("/of-the-day", response_model=QuoteRead)
 def quote_of_the_day(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     quotes = (
         db.query(Quote)
@@ -161,7 +160,7 @@ def quote_of_the_day(
 def get_quote(
     quote_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     q = db.query(Quote).filter(Quote.id == quote_id).first()
 

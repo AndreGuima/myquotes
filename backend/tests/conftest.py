@@ -1,24 +1,24 @@
 import os
+
 os.environ["TESTING"] = "1"
+
+import sys
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import sys
-from pathlib import Path
 
 # Add backend path so imports work
 backend_path = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(backend_path))
 
-from app.main import app
 import app.database as app_db
 from app.database import Base, get_db
-from app.models.user import User
+from app.main import app
 from app.models.quote import Quote
-
-
+from app.models.user import User
 
 
 # ============================================================================
@@ -80,7 +80,7 @@ def client(engine, db_sessionmaker, monkeypatch):
         username="testuser",
         email="test@example.com",
         password_hash="hashed",
-        role="user"
+        role="user",
     )
     test_db.add(fake_user)
     test_db.commit()
@@ -97,6 +97,7 @@ def client(engine, db_sessionmaker, monkeypatch):
 
     with TestClient(app) as c:
         yield c
+
 
 @pytest.fixture
 def db_session(db_sessionmaker):

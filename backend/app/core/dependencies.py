@@ -1,5 +1,5 @@
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models.user import User
 
 bearer_scheme = HTTPBearer()
+
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
@@ -28,6 +29,7 @@ def get_current_user(
 
     return user
 
+
 def admin_required(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(
@@ -35,4 +37,3 @@ def admin_required(current_user: User = Depends(get_current_user)):
             detail="Acesso permitido apenas para administradores",
         )
     return current_user
-
