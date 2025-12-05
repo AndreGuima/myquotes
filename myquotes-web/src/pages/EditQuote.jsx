@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from "react";
 import { getQuoteById, updateQuote } from "../services/quotesService";
 import { useNavigate, useParams } from "react-router-dom";
 
+const TEXT_LIMIT = 200; // pode ficar fora do componente
+
 export default function EditQuote() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -9,8 +11,6 @@ export default function EditQuote() {
   const [author, setAuthor] = useState("");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
-
-  const TEXT_LIMIT = 200;
 
   const loadData = useCallback(async () => {
     try {
