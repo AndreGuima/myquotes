@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getQuotes, deleteQuote } from "../services/quotesService";
 import { Link } from "react-router-dom";
 
@@ -7,21 +7,21 @@ export default function Quotes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getQuotes();
       setQuotes(data);
-    } catch (err) {
+    } catch {
       setError("Erro ao carregar quotes");
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   async function handleDelete(id) {
     if (!confirm("Tem certeza que deseja deletar esta frase?")) return;
@@ -29,7 +29,7 @@ export default function Quotes() {
     try {
       await deleteQuote(id);
       loadData();
-    } catch (err) {
+    } catch {
       alert("Erro ao deletar");
     }
   }
@@ -46,7 +46,7 @@ export default function Quotes() {
 
   return (
     <div className="p-6">
-      {/* Cabeçalho */}
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Quotes</h1>
 
@@ -58,7 +58,6 @@ export default function Quotes() {
         </button>
       </div>
 
-      {/* Lista */}
       {quotes.length === 0 ? (
         <p className="text-gray-600">Nenhuma frase cadastrada.</p>
       ) : (
@@ -67,7 +66,7 @@ export default function Quotes() {
             <tr className="border-b bg-gray-100">
               <th className="p-3">Texto</th>
               <th className="p-3">Autor</th>
-              <th className="p-3">Criado por</th>   {/* 👈 NOVA COLUNA */}
+              <th className="p-3">Criado por</th>
               <th className="p-3 w-32">Ações</th>
             </tr>
           </thead>
@@ -77,8 +76,6 @@ export default function Quotes() {
               <tr key={q.id} className="border-b">
                 <td className="p-3">{q.text}</td>
                 <td className="p-3">{q.author}</td>
-
-                {/* 👇 Exibe o nome do usuário dono da quote */}
                 <td className="p-3 text-blue-700 font-medium">
                   {q.user_name ?? "—"}
                 </td>

@@ -17,7 +17,7 @@ export default function VerifyEmail() {
       try {
         await api.get(`/auth/verify-email?token=${token}`);
         navigate("/verify-success");
-      } catch (err) {
+      } catch {
         navigate("/verify-error");
       }
     }
