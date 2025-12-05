@@ -26,5 +26,5 @@ class Quote(Base):
     user: Mapped["User"] = relationship("User", back_populates="quotes")
 
 
-# 👇 Import atrasado para evitar erro de dependência circular
-from app.models.user import User  # noqa: F401
+# 👇 Import atrasado para evitar import circular
+from app.models.user import User  # noqa: E402,F401
