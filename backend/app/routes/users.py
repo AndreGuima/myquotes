@@ -1,12 +1,11 @@
 from datetime import datetime
 from typing import List
 
+from app.database import get_db
+from app.models.user import User
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
-
-from app.database import get_db
-from app.models.user import User
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

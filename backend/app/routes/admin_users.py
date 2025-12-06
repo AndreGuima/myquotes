@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-
 from app.core.dependencies import admin_required
 from app.core.security import pwd_context
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserRead, UserUpdate
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/admin/users", tags=["Admin - Users"])
 

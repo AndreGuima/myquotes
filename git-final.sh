@@ -8,6 +8,18 @@ BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 echo "📌 Branch atual: $BRANCH"
 
+# -------------------------------
+# 🧹 FORMATADORES AUTOMÁTICOS
+# -------------------------------
+echo "✨ Rodando isort..."
+isort . --profile black
+
+echo "✨ Rodando black..."
+black .
+
+echo "✔ Código formatado com isort + black!"
+echo ""
+
 # mostrar status
 echo "🔍 Git status:"
 git status
@@ -31,7 +43,4 @@ git commit -m "$MSG"
 
 # push manual
 echo "🚀 Enviar para origin $BRANCH rode:"
-echo "git push origin "$BRANCH""
-
-
-
+echo "git push origin \"$BRANCH\""

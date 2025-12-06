@@ -1,5 +1,3 @@
-import os
-
 from pydantic import ConfigDict, Field
 from pydantic_settings import BaseSettings
 
