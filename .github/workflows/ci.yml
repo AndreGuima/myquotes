@@ -49,7 +49,8 @@ jobs:
       - name: Rodar testes (pytest)
         run: |
           cd backend
-          pytest tests || echo "Nenhum teste encontrado"
+          pytest -v tests
+          echo "✅ Testes concluídos com sucesso!"
 
       # Build leve
       - name: Verificar erros de sintaxe Python
