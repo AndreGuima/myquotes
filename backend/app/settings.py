@@ -1,4 +1,5 @@
 import os
+
 from pydantic import ConfigDict, Field
 from pydantic_settings import BaseSettings
 
@@ -9,6 +10,7 @@ class Settings(BaseSettings):
     APP_HOST: str = Field(default="0.0.0.0")
     APP_PORT: int = Field(default=8000)
 
+    # 🎯 Modo de teste
     TESTING: bool = Field(default=False)
 
     # 💾 Configurações do banco de dados
@@ -18,7 +20,7 @@ class Settings(BaseSettings):
     DB_PORT: int = Field(default=3306)
     DB_NAME: str = Field(default="test_db")
 
-    # ⚙️ Configuração moderna do Pydantic v2
+    # ⚙️ Configurações do Pydantic v2
     model_config = ConfigDict(
         env_file=".env",
         extra="allow",
