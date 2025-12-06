@@ -29,7 +29,6 @@ export default function CreateQuote() {
       <h1 className="text-3xl font-bold mb-6">Criar Quote</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-
         <div>
           <label className="block mb-1 font-medium">Texto</label>
           <textarea
@@ -62,7 +61,6 @@ export default function CreateQuote() {
         >
           {loading ? "Salvando..." : "Salvar"}
         </button>
-
       </form>
     </div>
   );

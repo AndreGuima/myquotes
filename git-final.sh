@@ -1,30 +1,78 @@
 #!/bin/bash
 
-# parar em erro
+# Parar em erro
 set -e
 
-# descobrir branch atual
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
+# -------------------------------
+# 📍 IR SEMPRE PARA A RAIZ DO REPO
+# -------------------------------
+cd "$(git rev-parse --show-toplevel)"
 
-echo "📌 Branch atual: $BRANCH"
+echo "📌 Iniciando pré-commit profissional (full check)"
 
 # -------------------------------
-# 🧹 FORMATADORES AUTOMÁTICOS
+# 🧹 FORMATADORES BACKEND
 # -------------------------------
-echo "✨ Rodando isort..."
-isort . --profile black
+echo "✨ Rodando isort no backend..."
+isort backend --profile black
 
-echo "✨ Rodando black..."
-black .
+echo "✨ Rodando black no backend..."
+black backend
 
-echo "✔ Código formatado com isort + black!"
-echo ""
+# -------------------------------
+# 🔍 LINTER BACKEND
+# -------------------------------
+echo "🔎 Rodando flake8..."
+flake8 backend/app
 
-# mostrar status
+# -------------------------------
+# 🧪 TESTES BACKEND
+# -------------------------------
+echo "🧪 Rodando pytest..."
+pytest backend/tests -q
+
+# -------------------------------
+# 🧹 FORMATADOR FRONTEND (Prettier)
+# -------------------------------
+if [ -d "myquotes-web" ]; then
+  echo "✨ Rodando Prettier no frontend..."
+  cd myquotes-web
+  npm run format || npx prettier --write .
+  cd ..
+fi
+
+# -------------------------------
+# 🔍 LINTER FRONTEND (ESLint)
+# -------------------------------
+if [ -d "myquotes-web" ]; then
+  echo "🔎 Rodando ESLint..."
+  cd myquotes-web
+  npm run lint || npx eslint . --fix
+  cd ..
+fi
+
+# -------------------------------
+# 🛠️ BUILD CHECK BACKEND
+# -------------------------------
+echo "🏗️ Validando Docker build do backend..."
+docker build -t backend-local-ci-test ./backend >/dev/null
+
+# -------------------------------
+# 🛠️ BUILD CHECK FRONTEND
+# -------------------------------
+if [ -d "myquotes-web" ]; then
+  echo "🏗️ Validando build do frontend..."
+  cd myquotes-web
+  npm run build
+  cd ..
+fi
+
+# -------------------------------
+# 🔍 STATUS E COMMIT
+# -------------------------------
 echo "🔍 Git status:"
 git status
 
-# adicionar tudo
 echo "➕ Adicionando tudo..."
 git add .
 
@@ -34,13 +82,11 @@ if git diff --cached --quiet; then
     exit 0
 fi
 
-# pedir mensagem
 echo ""
 read -p "📝 Digite a mensagem do commit: " MSG
 
-# commit
 git commit -m "$MSG"
 
-# push manual
-echo "🚀 Enviar para origin $BRANCH rode:"
-echo "git push origin \"$BRANCH\""
+echo ""
+echo "🚀 Commit finalizado! Para enviar ao repositório:"
+echo "git push origin $(git rev-parse --abbrev-ref HEAD)"

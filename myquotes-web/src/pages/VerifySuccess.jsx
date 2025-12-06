@@ -11,8 +11,8 @@ export default function VerifySuccess() {
         </h1>
 
         <p className="text-gray-700 mb-6">
-          Sua conta foi ativada com sucesso.  
-          Agora você já pode fazer login no sistema.
+          Sua conta foi ativada com sucesso. Agora você já pode fazer login no
+          sistema.
         </p>
 
         <button

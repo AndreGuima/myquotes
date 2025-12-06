@@ -41,12 +41,10 @@ export default function Quotes() {
       </div>
     );
 
-  if (error)
-    return <div className="p-4 text-red-600 font-bold">{error}</div>;
+  if (error) return <div className="p-4 text-red-600 font-bold">{error}</div>;
 
   return (
     <div className="p-6">
-
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Quotes</h1>
 

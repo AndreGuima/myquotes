@@ -72,7 +72,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return {
-        "message": "Usuário criado com sucesso. Verifique seu email para ativar sua conta.",
+        "message": "Usuário criado com sucesso. Verifique seu email.",
         "user": UserRead.model_validate(new_user),
     }
 
@@ -103,7 +103,7 @@ def verify_email(token: str, db: Session = Depends(get_db)):
 
     # 4) Se já verificado
     if user.is_verified:
-        return {"message": "Este email já foi verificado previamente."}
+        return {"message": ("Este email já foi verificado previamente.")}
 
     # 5) Marca como verificado
     user.is_verified = True

@@ -11,8 +11,8 @@ export default function VerifyError() {
         </h1>
 
         <p className="text-gray-700 mb-6">
-          Não foi possível validar seu email.  
-          Talvez o link tenha sido usado antes ou já expirou.
+          Não foi possível validar seu email. Talvez o link tenha sido usado
+          antes ou já expirou.
         </p>
 
         <button

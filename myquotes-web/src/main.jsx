@@ -19,7 +19,6 @@ import VerifySuccess from "./pages/VerifySuccess";
 import VerifyError from "./pages/VerifyError";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 
-
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <Routes>
@@ -52,8 +51,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             </AdminRoute>
           }
         />
-
       </Route>
     </Routes>
-  </BrowserRouter>
+  </BrowserRouter>,
 );

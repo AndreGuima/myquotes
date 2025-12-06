@@ -1,22 +1,22 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import { defineConfig, globalIgnores } from 'eslint/config'
+import js from "@eslint/js";
+import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
 
   // 🟦 ---------------------------------------------
   // CONFIGURAÇÃO PARA TAILWIND (CommonJS)
   // -----------------------------------------------
   {
-    files: ['tailwind.config.js'],
+    files: ["tailwind.config.js"],
     languageOptions: {
       ecmaVersion: 2020,
-      sourceType: 'script',      // 🟢 Usa module.exports
+      sourceType: "script", // 🟢 Usa module.exports
       globals: {
-        ...globals.node,        // 🟢 Libera module, require, etc
+        ...globals.node, // 🟢 Libera module, require, etc
       },
     },
   },
@@ -25,10 +25,10 @@ export default defineConfig([
   // CONFIGURAÇÃO PARA VITE (ESM)
   // -----------------------------------------------
   {
-    files: ['vite.config.js'],
+    files: ["vite.config.js"],
     languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',      // 🟢 Vite.config usa import/export
+      ecmaVersion: "latest",
+      sourceType: "module", // 🟢 Vite.config usa import/export
       globals: {
         ...globals.node,
       },
@@ -39,10 +39,10 @@ export default defineConfig([
   // FRONTEND (React)
   // -----------------------------------------------
   {
-    files: ['**/*.{js,jsx}'],
+    files: ["**/*.{js,jsx}"],
 
     // evitar que regras frontend rodem nos configs Node
-    ignores: ['tailwind.config.js', 'vite.config.js'],
+    ignores: ["tailwind.config.js", "vite.config.js"],
 
     extends: [
       js.configs.recommended,
@@ -52,18 +52,18 @@ export default defineConfig([
 
     languageOptions: {
       ecmaVersion: 2020,
-      sourceType: 'module',
+      sourceType: "module",
       globals: {
         ...globals.browser,
       },
       parserOptions: {
-        ecmaVersion: 'latest',
+        ecmaVersion: "latest",
         ecmaFeatures: { jsx: true },
       },
     },
 
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z_]" }],
     },
   },
-])
+]);
