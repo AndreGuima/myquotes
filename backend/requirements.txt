@@ -39,3 +39,10 @@ annotated-doc==0.0.3
 passlib[bcrypt]==1.7.4
 bcrypt==3.2.2
 python-jose[cryptography]==3.3.0
+
+# -------------------------------
+# 🧹 DEV & CI TOOLS (formatters, linters, etc)
+# -------------------------------
+black==24.4.2
+isort==5.13.2
+flake8==7.1.0

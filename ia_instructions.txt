@@ -5,8 +5,6 @@ ls -la
 # Como rodar Black e isort corretamente
 cd ~/repo/myquotes
 source venv/bin/activate
-cd backend
-black .
-isort . --profile black
+./git-final.sh
 
 deactivate
