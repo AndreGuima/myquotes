@@ -11,6 +11,18 @@ cd "$(git rev-parse --show-toplevel)"
 echo "📌 Iniciando pré-commit profissional (full check)"
 
 # -------------------------------
+# 🐍 ATIVAR VENV AUTOMATICAMENTE
+# -------------------------------
+if [ -d "venv" ]; then
+  echo "🐍 Ativando ambiente virtual (venv)..."
+  source venv/bin/activate
+else
+  echo "❌ ERRO: venv não encontrado na raiz do projeto!"
+  echo "Crie com: python3 -m venv venv"
+  exit 1
+fi
+
+# -------------------------------
 # 🧹 FORMATADORES BACKEND
 # -------------------------------
 echo "✨ Rodando isort no backend..."
