@@ -3,9 +3,8 @@ tree -L 3
 ls -la
 
 # Como rodar Black e isort corretamente
-cd backend
+cd ~/repo/myquotes
 source venv/bin/activate
+./git-final.sh
 
-black .
-isort . --profile black
 deactivate

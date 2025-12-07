@@ -34,4 +34,3 @@ echo "🚀 Enviar para origin $BRANCH rode:"
 echo "git push origin "$BRANCH""
 
 
-

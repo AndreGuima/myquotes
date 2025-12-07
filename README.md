@@ -34,19 +34,14 @@
 ### ▶️ Ambiente Prod-like (Docker)
 
 ```bash
+cd ~/repo/myquotes
 ./scripts/start.sh
 # ou
+cd ~/repo/myquotes
 ./scripts/start.sh --rebuild
 ```
 
-### 🛠 Ambiente Dev (sem Docker)
-
-```bash
-cd ~/repo/myquotes
-./backend/run-dev.sh
-```
-
-### 🧪 Rodar Testes (100% passando 🎉)
+### 🧪 Rodar Testes
 
 ```bash
 cd ~/repo/myquotes

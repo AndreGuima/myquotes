@@ -5,8 +5,8 @@ export default function VerifyInstructions() {
         <h1 className="text-3xl font-bold mb-4">Verifique seu email</h1>
 
         <p className="text-gray-700 mb-6">
-          Enviamos um link de confirmação para o seu email.  
-          Clique no link para ativar sua conta antes de fazer login.
+          Enviamos um link de confirmação para o seu email. Clique no link para
+          ativar sua conta antes de fazer login.
         </p>
 
         <p className="text-sm text-gray-500">

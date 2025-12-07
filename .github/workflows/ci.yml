@@ -21,14 +21,22 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Instalar dependências do backend
+      - name: Instalar dependências do backend + ferramentas de desenvolvimento
         run: |
           cd backend
           pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install black isort flake8 pytest
+          pip install -r requirements.txt          
 
-      # 🔥 FORMATTERS PYTHON (Black + isort)
+      - name: Debug versões instaladas
+        run: |
+          cd backend
+          echo "isort: $(isort --version-number)"
+          echo "black: $(black --version)"
+          echo "flake8: $(flake8 --version)"
+          echo "pytest: $(pytest --version)"
+
+
+      # FORMATTERS
       - name: Verificar formatação com Black
         run: |
           cd backend
@@ -39,19 +47,20 @@ jobs:
           cd backend
           isort . --check-only --profile black
 
-      # Linter
+      # LINTER
       - name: Linter (flake8)
         run: |
           cd backend
           flake8 app
 
-      # Testes
+      # TESTES
       - name: Rodar testes (pytest)
         run: |
           cd backend
-          pytest tests || echo "Nenhum teste encontrado"
+          pytest -v tests
+          echo "✅ Testes concluídos com sucesso!"
 
-      # Build leve
+      # BUILD CHECK PYTHON
       - name: Verificar erros de sintaxe Python
         run: |
           cd backend
@@ -60,7 +69,7 @@ jobs:
             python -m py_compile "$file";
           done
 
-      # Validação Dockerfile
+      # DOCKERFILE
       - name: Validar Dockerfile do backend
         run: |
           docker build -t backend-ci-test ./backend
@@ -85,25 +94,21 @@ jobs:
           cd myquotes-web
           npm install
 
-      # 🔥 FORMATTER FRONTEND (Prettier)
       - name: Verificar formatação com Prettier
         run: |
           cd myquotes-web
           npm run format:check --if-present
 
-      # Linter
       - name: Linter (ESLint)
         run: |
           cd myquotes-web
           npm run lint --if-present
 
-      # Build de validação
       - name: Build de validação (Vite)
         run: |
           cd myquotes-web
           npm run build
 
-      # Validação Dockerfile
       - name: Validar Dockerfile do frontend
         run: |
           docker build -t frontend-ci-test ./myquotes-web

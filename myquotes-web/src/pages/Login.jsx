@@ -16,7 +16,7 @@ export default function Login() {
     try {
       const response = await api.post("/auth/login", {
         email,
-        password
+        password,
       });
 
       const token = response.data.access_token;
@@ -26,7 +26,6 @@ export default function Login() {
       localStorage.setItem("user", JSON.stringify(user));
 
       navigate("/home");
-
     } catch (err) {
       const backendMessage =
         err.response?.data?.detail || "Erro ao fazer login. Tente novamente.";
