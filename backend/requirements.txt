@@ -62,5 +62,5 @@ python-jose[cryptography]==3.3.0
 # 🧹 Ferramentas de Desenvolvimento (CI, formatters, linters)
 # =====================================================
 black==24.4.2
-isort[colors]==5.13.2
+isort==5.13.2
 flake8==7.1.0
