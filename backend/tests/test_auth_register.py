@@ -1,8 +1,7 @@
-from fastapi.testclient import TestClient
-
 from app.core.security import create_email_verification_token
 from app.main import app
 from app.models.user import User
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
