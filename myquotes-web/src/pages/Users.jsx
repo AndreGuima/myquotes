@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import usersService from "../services/usersService";
+import DataTable from "../components/DataTable";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
-  const [editing, setEditing] = useState(null); // usuário sendo editado
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -13,7 +14,6 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Carregar lista de usuários ao abrir a página
   const loadUsers = async () => {
     try {
       const response = await usersService.getAll();
@@ -29,7 +29,6 @@ export default function Users() {
     loadUsers();
   }, []);
 
-  // Abrir modal de edição
   const startEdit = (user) => {
     setEditing(user.id);
     setForm({
@@ -40,7 +39,6 @@ export default function Users() {
     });
   };
 
-  // Salvar alterações
   const save = async () => {
     setSaving(true);
     try {
@@ -50,80 +48,71 @@ export default function Users() {
         role: form.role,
       };
 
-      if (form.password.trim() !== "") {
-        payload.password = form.password;
-      }
+      if (form.password.trim() !== "") payload.password = form.password;
 
       await usersService.update(editing, payload);
       await loadUsers();
       setEditing(null);
     } catch (err) {
-      alert("Erro ao salvar alterações");
+      alert("Erro ao salvar");
       console.error(err);
     } finally {
       setSaving(false);
     }
   };
 
-  // Apagar usuário
   const removeUser = async (id) => {
-    if (!confirm("Tem certeza que deseja remover este usuário?")) return;
-
-    try {
-      await usersService.remove(id);
-      loadUsers();
-    } catch (err) {
-      alert("Erro ao remover usuário");
-      console.error(err);
-    }
+    if (!confirm("Tem certeza?")) return;
+    await usersService.remove(id);
+    loadUsers();
   };
 
   if (loading) return <p>Carregando usuários...</p>;
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Gerenciar Usuários</h1>
+    <>
+      <DataTable
+        title="Gerenciar Usuários"
+        createLabel={null}
+        createLink={null}
+        enableSearch={true}
+        searchPlaceholder="Buscar por username, email ou role..."
+        searchKeys={["username", "email", "role"]}
+        columns={[
+          { key: "id", label: "ID", width: "60px" },
+          { key: "username", label: "Username" },
+          { key: "email", label: "Email" },
+          { key: "role", label: "Role" },
+          { key: "actions", label: "Ações", width: "120px" },
+        ]}
+        data={users}
+        renderRow={(u) => (
+          <tr key={u.id} className="border">
+            <td className="p-2 border">{u.id}</td>
+            <td className="p-2 border">{u.username}</td>
+            <td className="p-2 border">{u.email}</td>
+            <td className="p-2 border">{u.role}</td>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border text-left">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-2 border">ID</th>
-              <th className="p-2 border">Username</th>
-              <th className="p-2 border">Email</th>
-              <th className="p-2 border">Role</th>
-              <th className="p-2 border w-40">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className="border">
-                <td className="p-2 border">{u.id}</td>
-                <td className="p-2 border">{u.username}</td>
-                <td className="p-2 border">{u.email}</td>
-                <td className="p-2 border">{u.role}</td>
-                <td className="p-2 border flex gap-2">
-                  <button
-                    onClick={() => startEdit(u)}
-                    className="px-2 py-1 bg-blue-500 text-white rounded"
-                  >
-                    Editar
-                  </button>
+            <td className="p-2 border flex gap-2">
+              <button
+                onClick={() => startEdit(u)}
+                className="px-2 py-1 bg-blue-500 text-white rounded"
+              >
+                Editar
+              </button>
 
-                  <button
-                    onClick={() => removeUser(u.id)}
-                    className="px-2 py-1 bg-red-500 text-white rounded"
-                  >
-                    Remover
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              <button
+                onClick={() => removeUser(u.id)}
+                className="px-2 py-1 bg-red-500 text-white rounded"
+              >
+                Remover
+              </button>
+            </td>
+          </tr>
+        )}
+      />
 
-      {/* Modal de edição */}
+      {/* Modal permanece igual */}
       {editing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded shadow-xl w-96">
@@ -182,6 +171,6 @@ export default function Users() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

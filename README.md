@@ -1,6 +1,6 @@
 # ✨ MyQuotes — Full-Stack Quotes App
 
-> 📝 Aplicação completa para gerenciamento de frases com **FastAPI + React Native (Expo) + MySQL + Pytest + Docker**.  
+> 📝 Aplicação completa para gerenciamento de habitos feita com **FastAPI + React Native + MySQL + Pytest + Docker**.  
 > Focada em boas práticas, arquitetura simples e ambiente moderno de desenvolvimento.
 
 <p align="center">

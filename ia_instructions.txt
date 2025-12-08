@@ -1,8 +1,8 @@
 segue a estrutura atual do meu projeto
-tree -L 3
+tree -L 3  | xclip -selection clipboard
 ls -la
 
-# Como rodar Black e isort corretamente
+# commitar
 cd ~/repo/myquotes
 source venv/bin/activate
 ./git-final.sh
