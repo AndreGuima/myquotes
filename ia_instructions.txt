@@ -1,5 +1,5 @@
 segue a estrutura atual do meu projeto
-tree -L 3
+tree -L 3  | xclip -selection clipboard
 ls -la
 
 # Como rodar Black e isort corretamente
