@@ -7,7 +7,7 @@ export default function DataTable({
   columns,
   data,
   renderRow,
-  pageSize = 10,        // quantidade padrão por página
+  pageSize = 10, // quantidade padrão por página
 }) {
   const [page, setPage] = useState(1);
 
@@ -80,7 +80,6 @@ export default function DataTable({
 
       {/* Paginação */}
       <div className="flex items-center justify-between mt-4">
-
         {/* Info */}
         <span className="text-gray-600">
           Página {currentPage} de {totalPages} — Total: {data.length}

@@ -1,0 +1,5 @@
+### verificar
+npm run format:check
+
+### consertar
+npm run format
