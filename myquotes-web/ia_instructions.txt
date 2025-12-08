@@ -1,4 +1,5 @@
 ### verificar
+cd ~/repo/myquotes/myquotes-web/
 npm run format:check
 
 ### consertar

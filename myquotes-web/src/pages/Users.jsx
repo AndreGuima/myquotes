@@ -73,8 +73,11 @@ export default function Users() {
     <>
       <DataTable
         title="Gerenciar Usuários"
-        createLabel={null} // não tem botão de criar usuário
+        createLabel={null}
         createLink={null}
+        enableSearch={true}
+        searchPlaceholder="Buscar por username, email ou role..."
+        searchKeys={["username", "email", "role"]}
         columns={[
           { key: "id", label: "ID", width: "60px" },
           { key: "username", label: "Username" },

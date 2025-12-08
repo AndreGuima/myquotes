@@ -38,10 +38,13 @@ export default function Quotes() {
       title="Gerenciar Quotes"
       createLabel="+ Criar Quote"
       createLink="/quotes/new"
+      enableSearch={true}
+      searchPlaceholder="Buscar por texto, autor ou criador..."
+      searchKeys={["text", "author", "user_name"]}
       columns={[
         { key: "text", label: "Texto" },
         { key: "author", label: "Autor" },
-        { key: "user", label: "Criado por" },
+        { key: "user_name", label: "Criado por" },
         { key: "actions", label: "Ações", width: 120 },
       ]}
       data={quotes}
@@ -52,6 +55,7 @@ export default function Quotes() {
           <td className="p-2 border text-blue-700 font-medium">
             {q.user_name ?? "—"}
           </td>
+
           <td className="p-2 border flex gap-2">
             <Link
               to={`/quotes/${q.id}/edit`}

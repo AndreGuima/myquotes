@@ -7,23 +7,43 @@ export default function DataTable({
   columns,
   data,
   renderRow,
-  pageSize = 10, // quantidade padrão por página
+  pageSize = 10,
+
+  // NOVOS PARAMETROS
+  enableSearch = false,
+  searchPlaceholder = "Buscar...",
+  searchKeys = [], // ex: ["text", "author"]
 }) {
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
 
-  // Total de páginas calculado automaticamente
-  const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+  // -----------------------------
+  // 1) APLICAR FILTRO
+  // -----------------------------
+  const filteredData = useMemo(() => {
+    if (!enableSearch || search.trim() === "") return data;
 
-  // Garante que a página atual existe
+    const query = search.toLowerCase();
+
+    return data.filter((row) =>
+      searchKeys.some((key) => {
+        const value = row[key];
+        return value?.toString().toLowerCase().includes(query);
+      }),
+    );
+  }, [search, data, enableSearch, searchKeys]);
+
+  // -----------------------------
+  // 2) PAGINAÇÃO
+  // -----------------------------
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
   const currentPage = Math.min(page, totalPages);
 
-  // Dados visíveis na página
   const pageData = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return data.slice(start, start + pageSize);
-  }, [data, currentPage, pageSize]);
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage, pageSize]);
 
-  // Handlers
   const goPrev = () => setPage((p) => Math.max(1, p - 1));
   const goNext = () => setPage((p) => Math.min(totalPages, p + 1));
   const goTo = (p) => setPage(p);
@@ -43,6 +63,22 @@ export default function DataTable({
           </a>
         )}
       </div>
+
+      {/* Barra de busca */}
+      {enableSearch && (
+        <div className="mb-4">
+          <input
+            type="text"
+            className="border p-2 rounded w-full"
+            placeholder={searchPlaceholder}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1); // resetar página ao buscar
+            }}
+          />
+        </div>
+      )}
 
       {/* Tabela */}
       <div className="overflow-x-auto">
@@ -80,12 +116,11 @@ export default function DataTable({
 
       {/* Paginação */}
       <div className="flex items-center justify-between mt-4">
-        {/* Info */}
         <span className="text-gray-600">
-          Página {currentPage} de {totalPages} — Total: {data.length}
+          Página {currentPage} de {totalPages} — Total filtrado:{" "}
+          {filteredData.length}
         </span>
 
-        {/* Controles */}
         <div className="flex gap-2">
           <button
             onClick={goPrev}
