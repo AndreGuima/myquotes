@@ -83,6 +83,7 @@ export default function Users() {
           { key: "username", label: "Username" },
           { key: "email", label: "Email" },
           { key: "role", label: "Role" },
+          { key: "is_active", label: "Status", width: "120px" },
           { key: "actions", label: "Ações", width: "120px" },
         ]}
         data={users}
@@ -93,6 +94,18 @@ export default function Users() {
             <td className="p-2 border">{u.email}</td>
             <td className="p-2 border">{u.role}</td>
 
+            <td className="p-2 border">
+              {u.is_active ? (
+                <span className="px-2 py-1 bg-green-200 text-green-800 rounded text-sm">
+                  Ativo
+                </span>
+              ) : (
+                <span className="px-2 py-1 bg-red-200 text-red-800 rounded text-sm">
+                  Inativo
+                </span>
+              )}
+            </td>
+
             <td className="p-2 border flex gap-2">
               <button
                 onClick={() => startEdit(u)}
@@ -101,12 +114,24 @@ export default function Users() {
                 Editar
               </button>
 
-              <button
-                onClick={() => removeUser(u.id)}
-                className="px-2 py-1 bg-red-500 text-white rounded"
-              >
-                Remover
-              </button>
+              {u.is_active ? (
+                <button
+                  onClick={() => removeUser(u.id)}
+                  className="px-2 py-1 bg-red-500 text-white rounded"
+                >
+                  Desativar
+                </button>
+              ) : (
+                <button
+                  onClick={async () => {
+                    await usersService.restore(u.id);
+                    loadUsers();
+                  }}
+                  className="px-2 py-1 bg-green-500 text-white rounded"
+                >
+                  Restaurar
+                </button>
+              )}
             </td>
           </tr>
         )}

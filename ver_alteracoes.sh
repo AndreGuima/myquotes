@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Veja todos os meus arquivos que trabalhei nessa tarefa, e corrija se algum estiver errado."
+
 # Lista arquivos modificados ou não monitorados
 files=$(git status --porcelain | awk '{print $2}')
 
