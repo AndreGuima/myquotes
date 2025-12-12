@@ -4,7 +4,5 @@ ls -la
 
 # commitar
 cd ~/repo/myquotes
-source venv/bin/activate
 ./git-final.sh
 
-deactivate

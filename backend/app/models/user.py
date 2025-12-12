@@ -22,6 +22,10 @@ class User(Base):
         Boolean, nullable=False, server_default="0", default=False
     )
 
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="1", default=True
+    )
+
     created_at: Mapped[Optional[datetime]] = mapped_column(
         TIMESTAMP, server_default=func.current_timestamp()
     )
@@ -31,5 +35,4 @@ class User(Base):
     )
 
 
-# 👇 Import atrasado para resolver o F821 sem gerar loop
 from app.models.quote import Quote  # noqa: E402,F401

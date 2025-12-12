@@ -15,7 +15,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 # =====================================================
-# 🔐 LOGIN (AGORA POR EMAIL)
+# 🔐 LOGIN 
 # =====================================================
 @router.post("/login")
 def login(payload: UserLogin, db: Session = Depends(get_db)):
@@ -25,16 +25,25 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="Usuário não encontrado")
 
+    # 🚫 Impedir login se o usuário estiver desativado (deleção lógica)
+    if not user.is_active:
+        raise HTTPException(
+            status_code=403,
+            detail="Usuário desativado. Contate o administrador."
+        )
+
+    # Verifica senha
     if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Senha incorreta")
 
-    # 🚨 BLOQUEAR LOGIN SE O EMAIL NÃO FOR VERIFICADO
+    # 🚫 Impedir login se email não estiver verificado (exceto admin)
     if not user.is_verified and user.role != "admin":
         raise HTTPException(
             status_code=403,
             detail="Você precisa verificar seu email antes de fazer login.",
         )
 
+    # Gera token
     token = create_access_token(
         {
             "sub": str(user.id),
