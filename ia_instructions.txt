@@ -3,7 +3,7 @@ tree -L 3  | xclip -selection clipboard
 ls -la
 
 # commitar
-cd myquotes-web
+cd ~/repo/myquotes/myquotes-web
 npx prettier --write .
 
 
