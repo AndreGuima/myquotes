@@ -3,6 +3,10 @@ tree -L 3  | xclip -selection clipboard
 ls -la
 
 # commitar
+cd myquotes-web
+npx prettier --write .
+
+
 cd ~/repo/myquotes
 ./git-final.sh
 

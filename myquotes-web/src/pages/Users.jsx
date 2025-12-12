@@ -106,7 +106,6 @@ export default function Users() {
               )}
             </td>
 
-
             <td className="p-2 border flex gap-2">
               <button
                 onClick={() => startEdit(u)}
@@ -134,7 +133,6 @@ export default function Users() {
                 </button>
               )}
             </td>
-
           </tr>
         )}
       />
