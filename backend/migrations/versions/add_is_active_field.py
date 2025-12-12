@@ -17,4 +17,3 @@ def upgrade():
 
 def downgrade():
     op.drop_column("users", "is_active")
-

@@ -15,7 +15,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 # =====================================================
-# 🔐 LOGIN 
+# 🔐 LOGIN
 # =====================================================
 @router.post("/login")
 def login(payload: UserLogin, db: Session = Depends(get_db)):
@@ -28,8 +28,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
     # 🚫 Impedir login se o usuário estiver desativado (deleção lógica)
     if not user.is_active:
         raise HTTPException(
-            status_code=403,
-            detail="Usuário desativado. Contate o administrador."
+            status_code=403, detail="Usuário desativado. Contate o administrador."
         )
 
     # Verifica senha

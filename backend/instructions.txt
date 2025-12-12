@@ -11,3 +11,9 @@ print(create_email_verification_token(3))
 EOF
 
 http://localhost:8000/auth/verify-email?token=<abc>
+
+
+### rodar black
+cd ~/repo/myquotes
+source venv/bin/activate
+black .
