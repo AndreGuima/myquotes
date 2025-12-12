@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
+from app.core.security import hash_password
 from app.database import get_db
 from app.models.user import User
-from app.core.security import hash_password
 
 router = APIRouter(prefix="/admin/users", tags=["Users"])
 
@@ -23,6 +23,7 @@ class UserRead(BaseModel):
     role: str
     is_verified: bool
     is_active: bool
+
     model_config = {"from_attributes": True}
 
 
@@ -45,7 +46,6 @@ def restore_user(user_id: int, db: Session = Depends(get_db)):
 
     user.is_active = True
     db.commit()
-
     return {"message": "User restored successfully"}
 
 
