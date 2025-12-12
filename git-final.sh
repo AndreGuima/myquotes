@@ -3,6 +3,12 @@
 # parar em erro
 set -e
 
+# ativar venv e rodar testes
+cd ~/repo/myquotes
+source venv/bin/activate
+pip install -r backend/requirements.txt
+pytest -v backend/tests/
+
 # descobrir branch atual
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
