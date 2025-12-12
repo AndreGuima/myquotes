@@ -4,35 +4,34 @@ from app.main import app
 
 client = TestClient(app)
 
-# Não existe mais POST /users/, então removemos testes que criavam usuário aqui.
+# tests/test_users.py
 
 
 def test_list_users(client):
-    r = client.get("/users/")
+    r = client.get("/admin/users/")
     assert r.status_code == 200
     assert isinstance(r.json(), list)
 
 
 def test_get_user_by_id(client):
     """
-    Em vez de criar um usuário via POST /users/ (que não existe mais),
-    vamos usar o usuário fake criado no conftest.py (id=1)
+    O conftest já cria um usuário fake com id=1
     """
-    r = client.get("/users/1")
+    r = client.get("/admin/users/1")
     assert r.status_code == 200
-    assert r.json()["id"] == 1
-    assert r.json()["email"] == "test@example.com"
+    data = r.json()
+    assert data["id"] == 1
+    assert "username" in data
 
 
 def test_delete_user(client):
     """
-    Antes deletava um criado via POST. Agora deletamos o fake_user (id=1),
-    e o GET depois deve retornar 404
+    Agora testamos a deleção lógica do usuário id=1
     """
-
-    r = client.delete("/users/1")
+    r = client.delete("/admin/users/1")
     assert r.status_code == 204
 
-    # Agora o usuário 1 deve não existir mais
-    r2 = client.get("/users/1")
-    assert r2.status_code == 404
+    # Após deleção lógica, o usuário deve aparecer como inativo
+    r2 = client.get("/admin/users/1")
+    assert r2.status_code == 200
+    assert r2.json()["is_active"] is False
