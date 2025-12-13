@@ -1,12 +1,12 @@
-segue a estrutura atual do meu projeto
+#documentacao pessoal de lembretes
+#segue a estrutura atual do meu projeto
 tree -L 3  | xclip -selection clipboard
-ls -la
+
+# obter alteracoes
+cd repo/myquotes/
+./ver_alteracoes.sh | xclip -selection clipboard
 
 # commitar
-cd ~/repo/myquotes/myquotes-web
-npx prettier --write .
-
-
 cd ~/repo/myquotes
 ./git-final.sh
 

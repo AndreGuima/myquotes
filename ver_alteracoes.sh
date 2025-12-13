@@ -1,16 +1,19 @@
 #!/bin/bash
 
-echo "Veja todos os meus arquivos que trabalhei nessa tarefa, e corrija se algum estiver errado."
+echo "Veja todos os meus arquivos que trabalhei nessa tarefa, corrija se algum estiver errado."
 
-# Lista arquivos modificados ou não monitorados
-files=$(git status --porcelain | awk '{print $2}')
-
-# Itera sobre cada arquivo encontrado
-for f in $files; do
-    if [ -f "$f" ]; then
-        echo ">>> cat $f"
-        cat "$f"
+# Usa while para ler status e arquivo
+git status --porcelain | while read status file; do
+    if [ -f "$file" ]; then
+        echo ">>> [$status] $file"
+        cat "$file"
         echo -e "\n----------------------------------------\n"
+    elif [ -d "$file" ]; then
+        # Se for diretório, percorre os arquivos dentro
+        find "$file" -type f | while read subf; do
+            echo ">>> [$status] $subf"
+            cat "$subf"
+            echo -e "\n----------------------------------------\n"
+        done
     fi
 done
-
