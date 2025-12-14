@@ -41,11 +41,11 @@ config.set_main_option("sqlalchemy.url", database_url)
 # -----------------------------------------------------
 # 4. Load metadata without importing Settings()
 # -----------------------------------------------------
-from app.database import Base
-from app.models.quote import Quote
+from database import Base
+from models.quote import Quote
 
 # Importar modelos é essencial para o Alembic enxergar as tabelas!
-from app.models.user import User
+from models.user import User
 
 target_metadata = Base.metadata
 

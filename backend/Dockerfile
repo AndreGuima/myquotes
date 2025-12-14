@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 RUN python3 -m pip install --upgrade pip
 
@@ -17,10 +18,10 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY alembic.ini /app/alembic.ini
 COPY migrations/ /app/migrations/
 
-# 👇 copia o backend REAL
-COPY app/ /app/app/
+# ✅ Opção B correta
+COPY app/ /app
+COPY templates/ /app/templates/
 
-# 👇 copia o script na pasta certa
 COPY wait-for-db.sh /app/wait-for-db.sh
 RUN chmod +x /app/wait-for-db.sh
 
@@ -29,4 +30,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "/app/wait-for-db.sh && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "/app/wait-for-db.sh && alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]

@@ -1,6 +1,7 @@
 #!/bin/bash
 
-echo "Veja todos os meus arquivos que trabalhei nessa tarefa, corrija se algum estiver errado."
+echo "Vamos fazer um checkpoint."
+echo "Veja todos os arquivos que trabalhamos nessa tarefa, revise e corrija caso seja necessário."
 
 # Usa while para ler status e arquivo
 git status --porcelain | while read status file; do

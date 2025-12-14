@@ -1,0 +1,74 @@
+#################################################
+###### backend ##################################
+#################################################
+### entrar dentro do container
+    docker exec -it myquotes-backend bash
+
+### coleta de logs
+    docker logs myquotes-backend --tail 20
+
+### gerar token para o login
+    docker exec -i myquotes-backend python3 << 'EOF'
+    from app.core.security import create_email_verification_token
+    print(create_email_verification_token(3))
+    EOF
+
+    http://localhost:8000/auth/verify-email?token=<abc>
+
+
+### rodar black
+    cd ~/repo/myquotes
+    source venv/bin/activate
+    black .
+
+#################################################
+####### Database ################################
+#################################################
+    # entrar dentro do container
+    docker exec -it myquotes-backend bash
+
+
+    docker compose exec db mysql -umyquotes_user -pmyquotes_pass myquotes_db
+
+
+    SHOW TABLES;
+    DESCRIBE users;
+    SELECT * FROM users;
+    SELECT * FROM users ORDER BY id DESC LIMIT 10;
+
+    DESCRIBE quotes;
+    SELECT * FROM quotes;
+    SELECT * FROM quotes ORDER BY id DESC LIMIT 10;
+
+    ### gerar nova migration
+    gere a migration respeitando meu setup atual e a ordem das migrations.
+    cd ./backenddocker ps/migrations/
+    ll
+    ll ./versions/
+
+    ### Na pasta backend (com venv ativo):
+    alembic revision -m "add receive_daily_quote to users"
+
+
+#################################################
+######## documentacao pessoal de lembretes ######
+#################################################
+### Segue a estrutura atual do meu projeto Docker-first
+    cd repo/myquotes/
+    tree -L 3  | xclip -selection clipboard
+
+### obter alteracoes
+    cd repo/myquotes/
+    ./ver_alteracoes.sh | xclip -selection clipboard
+
+### commitar
+    cd ~/repo/myquotes
+    ./git-final.sh
+
+### envio de email manual
+    ### com o projeto rodando (./scripts/start.sh --rebuild)
+        docker exec -it myquotes-backend bash
+        python -m app.jobs.send_daily_quote
+
+
+

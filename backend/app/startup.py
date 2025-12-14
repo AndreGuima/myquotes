@@ -1,7 +1,6 @@
-from app.core.security import hash_password
-from app.database import SessionLocal
-from app.models.user import User
-
+from core.security import hash_password
+from database import SessionLocal
+from models.user import User
 
 def create_default_admin():
     db = SessionLocal()

@@ -6,8 +6,7 @@ from typing import Optional
 from sqlalchemy import TIMESTAMP, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
-
+from database import Base
 
 class Quote(Base):
     __tablename__ = "quotes"
@@ -27,4 +26,4 @@ class Quote(Base):
 
 
 # 👇 Import atrasado para evitar import circular
-from app.models.user import User  # noqa: E402,F401
+from models.user import User  # noqa: E402,F401
