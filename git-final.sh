@@ -23,6 +23,9 @@ isort . --profile black
 echo "🎨 Rodando Black..."
 black .
 
+echo "🔍 Rodando flake8..."
+flake8 app
+
 # ======================================
 # Backend - Testes
 # ======================================

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from database import Base
-from sqlalchemy import TIMESTAMP, Boolean, Column, Integer, String, func
+from sqlalchemy import TIMESTAMP, Boolean, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
