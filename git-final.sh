@@ -1,73 +1,60 @@
 #!/bin/bash
-
-# sair se usar variável não definida
 set -u
+set -e
 
 echo "🚀 Iniciando script de validação..."
 
+ROOT=~/repo/myquotes
+
 # ======================================
-# Backend - Testes
+# Ambiente
 # ======================================
-cd ~/repo/myquotes
+cd $ROOT
 source venv/bin/activate
-pip install -r backend/requirements.txt
-
-echo "🧪 Rodando testes backend..."
-if ! pytest -v backend/tests/; then
-    echo "❌ Testes falharam. Commit abortado."
-    exit 1
-fi
-
-echo "✅ Testes OK"
 
 # ======================================
-# Backend - Black
+# Backend - isort + black
 # ======================================
-cd ~/repo/myquotes
-source venv/bin/activate
 cd backend
+
+echo "📦 Rodando isort..."
+isort . --profile black
+
 echo "🎨 Rodando Black..."
 black .
 
 # ======================================
+# Backend - Testes
+# ======================================
+echo "🧪 Rodando testes backend..."
+pytest -v tests
+echo "✅ Testes OK"
+
+# ======================================
 # Frontend - Prettier
 # ======================================
-cd ~/repo/myquotes/myquotes-web
+cd $ROOT/myquotes-web
 
 echo "🎨 Rodando Prettier..."
-if ! npx prettier --check .; then
-    echo "❌ Prettier encontrou problemas de formatação."
-    echo "👉 Rode: npx prettier --write ."
-    exit 1
-fi
+npx prettier --check .
 
 echo "✅ Prettier OK"
 
 # ======================================
 # Git
 # ======================================
-cd ~/repo/myquotes
+cd $ROOT
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-echo "📌 Branch atual: $BRANCH"
-
-echo "🔍 Git status:"
 git status
-
-echo "➕ Adicionando tudo..."
 git add .
 
 if git diff --cached --quiet; then
-    echo "✔ Nada para commitar. Working tree clean."
-    exit 0
+  echo "✔ Nada para commitar."
+  exit 0
 fi
 
-echo ""
-read -p "📝 Digite a mensagem do commit: " MSG
-
+read -p "📝 Mensagem do commit: " MSG
 git commit -m "$MSG"
 
-echo ""
-echo "🚀 Para enviar:"
-echo "git push origin $BRANCH"
+echo "🚀 git push origin $BRANCH"

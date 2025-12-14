@@ -1,9 +1,8 @@
 from datetime import date
 from hashlib import sha256
 
-from sqlalchemy.orm import Session
-
 from models.quote import Quote
+from sqlalchemy.orm import Session
 
 
 def get_quote_of_the_day_for_user(db: Session, user_id: int) -> Quote:

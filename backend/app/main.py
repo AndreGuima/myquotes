@@ -3,13 +3,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.exc import SQLAlchemyError
 
 # Internos
 from routes.admin_users import router as admin_users_router
 from routes.auth import router as auth_router
 from routes.quotes import router as quotes_router
 from routes.users import router as users_router
+from sqlalchemy.exc import SQLAlchemyError
 from startup import create_default_admin
 
 

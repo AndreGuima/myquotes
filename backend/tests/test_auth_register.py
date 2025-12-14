@@ -1,6 +1,5 @@
-from fastapi.testclient import TestClient
-
 from core.security import create_email_verification_token
+from fastapi.testclient import TestClient
 from main import app
 from models.user import User
 

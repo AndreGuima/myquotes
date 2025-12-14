@@ -3,10 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from database import Base
 from sqlalchemy import TIMESTAMP, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from database import Base
 
 
 class Quote(Base):

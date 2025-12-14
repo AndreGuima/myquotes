@@ -9,16 +9,15 @@ os.environ["TESTING"] = "1"
 APP_PATH = Path(__file__).resolve().parents[1] / "app"
 sys.path.insert(0, str(APP_PATH))
 
+import database as app_db
 import pytest
+from database import Base, get_db
 from fastapi.testclient import TestClient
+from main import app
+from models.quote import Quote
+from models.user import User
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-import database as app_db
-from database import Base, get_db
-from main import app
-from models.user import User
-from models.quote import Quote
 
 
 # ============================================================================

@@ -3,10 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import TIMESTAMP, Boolean, Integer, String, func, Column
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from database import Base
+from sqlalchemy import TIMESTAMP, Boolean, Column, Integer, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class User(Base):

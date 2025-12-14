@@ -13,14 +13,9 @@
     print(create_email_verification_token(3))
     EOF
 
-    http://localhost:8000/auth/verify-email?token=<abc>
+    # Exemplo de uso no navegador:
+    http://localhost:8000/auth/verify-email?token=<TOKEN_GERADO>
 
-
-### rodar black
-    cd ~/repo/myquotes
-    source venv/bin/activate
-    cd backend
-    black .
 
 #################################################
 ####### Database ################################
@@ -59,8 +54,7 @@
     tree -L 3  | xclip -selection clipboard
 
 ### obter alteracoes
-    cd repo/myquotes/
-    ./ver_alteracoes.sh | xclip -selection clipboard
+    /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
 
 ### commitar
     cd ~/repo/myquotes

@@ -1,9 +1,9 @@
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 
-from database import SessionLocal
-from models.user import User
 from core.email import send_html_email
+from database import SessionLocal
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from models.user import User
 from services.quote_of_the_day import get_quote_of_the_day_for_user
 
 # --------------------------------------------------------------------
