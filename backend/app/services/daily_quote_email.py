@@ -4,12 +4,13 @@ from core.email import send_html_email
 from database import SessionLocal
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from models.user import User
+from services.daily_quote_lock import acquire_daily_email_lock
 from services.quote_of_the_day import get_quote_of_the_day_for_user
 
 # --------------------------------------------------------------------
 # 📨 Template engine (Jinja2)
 # --------------------------------------------------------------------
-BASE_DIR = Path(__file__).resolve().parents[2]
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 TEMPLATE_ENV = Environment(
     loader=FileSystemLoader(BASE_DIR / "templates"),
@@ -18,11 +19,6 @@ TEMPLATE_ENV = Environment(
 
 
 def send_daily_quote_emails():
-    """
-    Envia a Quote of the Day por email para todos os usuários
-    ativos e opt-in.
-    """
-
     db = SessionLocal()
 
     try:
@@ -42,6 +38,8 @@ def send_daily_quote_emails():
         for user in users:
             try:
                 quote = get_quote_of_the_day_for_user(db, user.id)
+                if not quote:
+                    continue
 
                 html = template.render(
                     text=quote.text,
@@ -51,12 +49,14 @@ def send_daily_quote_emails():
 
                 send_html_email(
                     to=user.email,
-                    subject="📜 Quote of the Day",
+                    subject="📜 Sua Quote of the Day",
                     html=html,
                 )
 
+                # 🔒 Lock diário SOMENTE após envio OK
+                acquire_daily_email_lock(db, user.id)
+
             except Exception as e:
-                # ⚠️ Um erro não deve parar o envio inteiro
                 print(f"❌ Erro ao enviar para {user.email}: {e}")
 
     finally:

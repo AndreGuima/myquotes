@@ -20,25 +20,27 @@
 #################################################
 ####### Database ################################
 #################################################
-    # entrar dentro do container
-    docker exec -it myquotes-backend bash
+    ### Entrar dentro do container
+        docker exec -it myquotes-backend bash
 
+    ### Entrar ja logado no banco
+        docker compose exec db mysql -umyquotes_user -pmyquotes_pass myquotes_db
 
-    docker compose exec db mysql -umyquotes_user -pmyquotes_pass myquotes_db
+    ### Exemplos de queries
+        SHOW TABLES;
+        DESCRIBE users;
+        SELECT * FROM users;
+        SELECT * FROM users ORDER BY id DESC LIMIT 10;
 
+        DESCRIBE quotes;
+        SELECT * FROM quotes;
+        SELECT * FROM quotes ORDER BY id DESC LIMIT 10;
 
-    SHOW TABLES;
-    DESCRIBE users;
-    SELECT * FROM users;
-    SELECT * FROM users ORDER BY id DESC LIMIT 10;
-
-    DESCRIBE quotes;
-    SELECT * FROM quotes;
-    SELECT * FROM quotes ORDER BY id DESC LIMIT 10;
+        DESCRIBE daily_quote_email_logs;
 
     ### gerar nova migration
     gere a migration respeitando meu setup atual e a ordem das migrations.
-    cd ./backenddocker ps/migrations/
+    cd ./backend/migrations/
     ll
     ll ./versions/
 
@@ -49,21 +51,27 @@
 #################################################
 ######## documentacao pessoal de lembretes ######
 #################################################
-### Segue a estrutura atual do meu projeto Docker-first
-    cd repo/myquotes/
+### Segue a estrutura atual do meu projeto Docker-first.
+    Vamos continuar com a feature de envio de email da quotes_of_the_day
+    cd ~/repo/myquotes/
     tree -L 3  | xclip -selection clipboard
 
-### obter alteracoes
+### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
 
 ### commitar
-    cd ~/repo/myquotes
-    ./git-final.sh
+    /home/andre/repo/myquotes/git-final.sh
 
 ### envio de email manual
-    ### com o projeto rodando (./scripts/start.sh --rebuild)
+    ### com o projeto rodando prod-like
+        /home/andre/repo/myquotes/scripts/stop.sh
+        /home/andre/repo/myquotes/scripts/start.sh --rebuild
         docker exec -it myquotes-backend bash
-        python -m app.jobs.send_daily_quote
+        ### Teste de sanidade
+            python -c "import services, models, core; print('packages OK')"
+
+        ### Teste de envio de email manual
+            python -m jobs.send_daily_quote
 
 
 
