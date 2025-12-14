@@ -25,7 +25,7 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="1", default=True
     )
-    
+
     receive_daily_quote: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="1", default=True
     )

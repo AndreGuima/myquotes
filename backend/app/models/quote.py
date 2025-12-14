@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
 
+
 class Quote(Base):
     __tablename__ = "quotes"
 

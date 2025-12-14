@@ -2,6 +2,7 @@ from core.security import hash_password
 from database import SessionLocal
 from models.user import User
 
+
 def create_default_admin():
     db = SessionLocal()
 

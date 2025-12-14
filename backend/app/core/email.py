@@ -24,4 +24,3 @@ def send_html_email(to: str, subject: str, html: str):
         server.starttls()
         server.login(settings.EMAIL_USER, settings.EMAIL_PASSWORD)
         server.send_message(msg)
-

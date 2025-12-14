@@ -10,7 +10,6 @@ echo "🚀 Iniciando script de validação..."
 # ======================================
 cd ~/repo/myquotes
 source venv/bin/activate
-
 pip install -r backend/requirements.txt
 
 echo "🧪 Rodando testes backend..."
@@ -20,6 +19,15 @@ if ! pytest -v backend/tests/; then
 fi
 
 echo "✅ Testes OK"
+
+# ======================================
+# Backend - Black
+# ======================================
+cd ~/repo/myquotes
+source venv/bin/activate
+cd backend
+echo "🎨 Rodando Black..."
+black .
 
 # ======================================
 # Frontend - Prettier

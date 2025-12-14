@@ -86,6 +86,7 @@ def client(engine, db_sessionmaker, monkeypatch):
     with TestClient(app) as c:
         yield c
 
+
 @pytest.fixture
 def db_session(db_sessionmaker):
     """Sessão de banco usada diretamente pelos testes."""

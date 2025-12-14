@@ -19,6 +19,7 @@
 ### rodar black
     cd ~/repo/myquotes
     source venv/bin/activate
+    cd backend
     black .
 
 #################################################
