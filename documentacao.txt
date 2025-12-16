@@ -36,30 +36,42 @@
         SELECT * FROM quotes;
         SELECT * FROM quotes ORDER BY id DESC LIMIT 10;
 
+        select * from daily_quote_email_logs;
         DESCRIBE daily_quote_email_logs;
 
     ### gerar nova migration
-    gere a migration respeitando meu setup atual e a ordem das migrations.
-    cd ./backend/migrations/
-    ll
-    ll ./versions/
-
+        gere a migration respeitando meu setup atual e a ordem das migrations.
+        cd ./backend/migrations/
+        ll
+        ### observar qual é a ultima
+            ll -altr ./versions/
+    
     ### Na pasta backend (com venv ativo):
-    alembic revision -m "add receive_daily_quote to users"
+        cd ~/repo/myquotes
+        source venv/bin/activate
+        cd ./backend/
+        alembic revision -m "add daily quote time to users"
+        
+    ### Aplicar Alembic dentro do container
+        docker exec -it myquotes-backend bash        
+        alembic upgrade head
+
+
 
 
 #################################################
 ######## documentacao pessoal de lembretes ######
 #################################################
-### Segue a estrutura atual do meu projeto Docker-first.
+### Antes de comecar a trabalhar
     Vamos continuar com a feature de envio de email da quotes_of_the_day
-    cd ~/repo/myquotes/
+    Segue a estrutura atual do meu projeto Docker-first.
+    cat ./docker-compose.yml | xclip -selection clipboard
     tree -L 3  | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
 
-### commitar
+### para commitar, no final do dia
     /home/andre/repo/myquotes/git-final.sh
 
 ### envio de email manual
