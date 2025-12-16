@@ -18,13 +18,14 @@ class Settings(BaseSettings):
     DB_PORT: int = Field(default=3306)
     DB_NAME: str = Field(default="test_db")
 
-    # ✉️ Configurações de Email
+    # ✉️ Email (SMTP)
     EMAIL_ENABLED: bool = Field(default=False)
-    EMAIL_HOST: str = Field(default="smtp.gmail.com")
-    EMAIL_PORT: int = Field(default=587)
-    EMAIL_USER: str | None = Field(default=None)
-    EMAIL_PASSWORD: str | None = Field(default=None)
-    EMAIL_FROM: str = Field(default="MyQuotes <no-reply@myquotes.com>")
+    EMAIL_FROM: str = Field(default="MyQuotes <no-reply@myquotes.dev>")
+
+    SMTP_HOST: str = Field(default="mailhog")
+    SMTP_PORT: int = Field(default=1025)
+    SMTP_USER: str | None = Field(default=None)
+    SMTP_PASSWORD: str | None = Field(default=None)
 
     # ⚙️ Configurações do Pydantic v2
     model_config = ConfigDict(

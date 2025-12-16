@@ -79,12 +79,7 @@
     ### com o projeto rodando prod-like
         /home/andre/repo/myquotes/scripts/stop.sh
         /home/andre/repo/myquotes/scripts/start.sh --rebuild
-        docker exec -it myquotes-backend bash
-        ### Teste de sanidade
-            python -c "import services, models, core; print('packages OK')"
-
-        ### Teste de envio de email manual
-            python -m jobs.send_daily_quote
+        docker exec -it myquotes-backend python -m jobs.send_daily_quote
 
 
 
