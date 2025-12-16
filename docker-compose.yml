@@ -47,10 +47,21 @@ services:
       - backend
     networks:
       - myquotes-network
-      
+
+  # 📧 MailHog for Email Testing #
+  mailhog:
+    image: mailhog/mailhog
+    container_name: myquotes-mailhog
+    ports:
+      - "8025:8025" # Web UI
+      - "1025:1025" # SMTP
+    networks:
+      - myquotes-network
+
 
 volumes:
   mysql_data:
+
 
 networks:
   myquotes-network:

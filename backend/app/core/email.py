@@ -7,11 +7,8 @@ from settings import settings
 
 def send_html_email(to: str, subject: str, html: str):
     if not settings.EMAIL_ENABLED:
-        print(f"📭 EMAIL DESABILITADO (TESTING): {to} | {subject}")
+        print(f"📭 EMAIL DESABILITADO: {to} | {subject}")
         return
-
-    if not settings.EMAIL_USER or not settings.EMAIL_PASSWORD:
-        raise RuntimeError("Configurações de email não definidas")
 
     msg = MIMEMultipart("alternative")
     msg["From"] = settings.EMAIL_FROM
@@ -20,7 +17,15 @@ def send_html_email(to: str, subject: str, html: str):
 
     msg.attach(MIMEText(html, "html"))
 
-    with smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT, timeout=10) as server:
-        server.starttls()
-        server.login(settings.EMAIL_USER, settings.EMAIL_PASSWORD)
+    with smtplib.SMTP(
+        settings.SMTP_HOST,
+        settings.SMTP_PORT,
+        timeout=10,
+    ) as server:
+
+        # 🔐 LOGIN apenas se existir (MailHog não precisa)
+        if settings.SMTP_USER and settings.SMTP_PASSWORD:
+            server.starttls()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+
         server.send_message(msg)
