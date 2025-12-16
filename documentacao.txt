@@ -36,10 +36,11 @@
         SELECT * FROM quotes;
         SELECT * FROM quotes ORDER BY id DESC LIMIT 10;
 
-        select * from daily_quote_email_logs;
         DESCRIBE daily_quote_email_logs;
+        select * from daily_quote_email_logs;
+        
 
-    ### gerar nova migration
+    ### gerar nova migration utilizando alembic stamp
         gere a migration respeitando meu setup atual e a ordem das migrations.
         cd ./backend/migrations/
         ll
@@ -53,7 +54,7 @@
         alembic revision -m "add daily quote time to users"
         
     ### Aplicar Alembic dentro do container
-        docker exec -it myquotes-backend bash        
+        docker exec -it myquotes-backend bash
         alembic upgrade head
 
 

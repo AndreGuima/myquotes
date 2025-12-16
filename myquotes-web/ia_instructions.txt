@@ -1,6 +1,0 @@
-### verificar
-cd ~/repo/myquotes/myquotes-web/
-npm run format:check
-
-### consertar
-npm run format

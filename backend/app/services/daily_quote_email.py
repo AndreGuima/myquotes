@@ -1,15 +1,14 @@
+# from datetime import timedelta
+from datetime import datetime, time
 from pathlib import Path
 
 from core.email import send_html_email
 from database import SessionLocal
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from models.user import User
-from services.daily_quote_lock import acquire_daily_email_lock
+from services.daily_quote_lock import try_acquire_daily_email_lock
 from services.quote_of_the_day import get_quote_of_the_day_for_user
 
-# --------------------------------------------------------------------
-# 📨 Template engine (Jinja2)
-# --------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 TEMPLATE_ENV = Environment(
@@ -29,16 +28,30 @@ def send_daily_quote_emails():
             .all()
         )
 
-        if not users:
-            print("ℹ️ Nenhum usuário elegível para envio diário.")
-            return
-
         template = TEMPLATE_ENV.get_template("emails/daily_quote.html")
+        now = datetime.now()
 
         for user in users:
             try:
+                # ⏰ horário do usuário
+                user_time = user.daily_quote_time or time(8, 0)
+                scheduled = datetime.combine(now.date(), user_time)
+
+                # if not (scheduled <= now < scheduled + timedelta(minutes=5)):
+                #    continue
+                # ✅ regra sem perda
+                if now < scheduled:
+                    continue
+
+                # 🔒 tenta adquirir lock (SEM commit)
+                lock = try_acquire_daily_email_lock(db, user.id)
+                if not lock:
+                    continue
+
+                # 📜 quote do dia
                 quote = get_quote_of_the_day_for_user(db, user.id)
                 if not quote:
+                    db.rollback()
                     continue
 
                 html = template.render(
@@ -47,17 +60,20 @@ def send_daily_quote_emails():
                     username=user.username,
                 )
 
+                # 📨 envio
                 send_html_email(
                     to=user.email,
                     subject="📜 Sua Quote of the Day",
                     html=html,
                 )
 
-                # 🔒 Lock diário SOMENTE após envio OK
-                acquire_daily_email_lock(db, user.id)
+                # ✅ somente agora confirma tudo
+                db.commit()
+                print(f"✅ Email enviado para {user.email}")
 
             except Exception as e:
-                print(f"❌ Erro ao enviar para {user.email}: {e}")
+                db.rollback()
+                print(f"❌ Erro ao processar {user.email}: {e}")
 
     finally:
         db.close()

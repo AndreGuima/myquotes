@@ -5,10 +5,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 
-def acquire_daily_email_lock(
+def try_acquire_daily_email_lock(
     db: Session,
     user_id: int,
-) -> bool:
+) -> DailyQuoteEmailLog | None:
     lock = DailyQuoteEmailLog(
         user_id=user_id,
         date=date.today(),
@@ -17,8 +17,9 @@ def acquire_daily_email_lock(
     db.add(lock)
 
     try:
-        db.commit()
-        return True
+        # flush valida UNIQUE sem commit
+        db.flush()
+        return lock
     except IntegrityError:
         db.rollback()
-        return False
+        return None
