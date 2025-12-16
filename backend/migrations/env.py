@@ -1,4 +1,5 @@
 import os
+import sys
 from logging.config import fileConfig
 
 from alembic import context
@@ -6,14 +7,23 @@ from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
 # -----------------------------------------------------
+# 0. Paths (backend/ and backend/app)
+# -----------------------------------------------------
+BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+APP_DIR = os.path.join(BACKEND_DIR, "app")
+
+sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, APP_DIR)
+
+# -----------------------------------------------------
 # 1. Load .env from project root
 # -----------------------------------------------------
-base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-env_path = os.path.join(base_dir, ".env")
+PROJECT_ROOT = os.path.abspath(os.path.join(BACKEND_DIR, ".."))
+env_path = os.path.join(PROJECT_ROOT, ".env")
 load_dotenv(env_path)
 
 # -----------------------------------------------------
-# 2. Load Alembic config
+# 2. Alembic config
 # -----------------------------------------------------
 config = context.config
 
@@ -21,7 +31,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # -----------------------------------------------------
-# 3. Build DATABASE_URL manually (no Settings dependency!)
+# 3. Database URL (NO Settings dependency)
 # -----------------------------------------------------
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
@@ -35,28 +45,24 @@ database_url = (
     f"?ssl_disabled=true"
 )
 
-
 config.set_main_option("sqlalchemy.url", database_url)
 
 # -----------------------------------------------------
-# 4. Load metadata without importing Settings()
+# 4. Metadata
 # -----------------------------------------------------
-from app.database import Base
-from app.models.quote import Quote
-
-# Importar modelos é essencial para o Alembic enxergar as tabelas!
-from app.models.user import User
+from database import Base
+from models.quote import Quote
+from models.user import User
 
 target_metadata = Base.metadata
 
 
 # -----------------------------------------------------
-# 5. Offline migration
+# 5. Offline migrations
 # -----------------------------------------------------
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url=config.get_main_option("sqlalchemy.url"),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -67,10 +73,9 @@ def run_migrations_offline() -> None:
 
 
 # -----------------------------------------------------
-# 6. Online migration
+# 6. Online migrations
 # -----------------------------------------------------
 def run_migrations_online() -> None:
-
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
@@ -78,7 +83,10 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+        )
 
         with context.begin_transaction():
             context.run_migrations()

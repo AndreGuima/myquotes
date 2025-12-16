@@ -3,10 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from database import Base
 from sqlalchemy import TIMESTAMP, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
 
 
 class Quote(Base):
@@ -27,4 +26,4 @@ class Quote(Base):
 
 
 # 👇 Import atrasado para evitar import circular
-from app.models.user import User  # noqa: E402,F401
+from models.user import User  # noqa: E402,F401

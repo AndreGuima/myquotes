@@ -1,5 +1,5 @@
 services:
-  # 🐬 MySQL 8.0
+  # 🐬 MySQL 8.0 #
   db:
     image: mysql:8.0
     container_name: myquotes-db
@@ -18,7 +18,7 @@ services:
     networks:
       - myquotes-network
 
-  # 🐍 FastAPI Backend
+  # 🐍 FastAPI Backend #
   backend:
     build:
       context: ./backend
@@ -34,7 +34,7 @@ services:
     networks:
       - myquotes-network
 
-  # 🌐 Vite + React Frontend
+  # 🌐 Vite + React Frontend #
   myquotes-web:
     build:
       context: ./myquotes-web

@@ -1,0 +1,90 @@
+#################################################
+###### backend ##################################
+#################################################
+### entrar dentro do container
+    docker exec -it myquotes-backend bash
+
+### coleta de logs
+    docker logs myquotes-backend --tail 20
+
+### gerar token para o login
+    docker exec -i myquotes-backend python3 << 'EOF'
+    from app.core.security import create_email_verification_token
+    print(create_email_verification_token(3))
+    EOF
+
+    # Exemplo de uso no navegador:
+    http://localhost:8000/auth/verify-email?token=<TOKEN_GERADO>
+
+
+#################################################
+####### Database ################################
+#################################################
+    ### Entrar dentro do container
+        docker exec -it myquotes-backend bash
+
+    ### Entrar ja logado no banco
+        docker compose exec db mysql -umyquotes_user -pmyquotes_pass myquotes_db
+
+    ### Exemplos de queries
+        SHOW TABLES;
+        DESCRIBE users;
+        SELECT * FROM users;
+        SELECT * FROM users ORDER BY id DESC LIMIT 10;
+
+        DESCRIBE quotes;
+        SELECT * FROM quotes;
+        SELECT * FROM quotes ORDER BY id DESC LIMIT 10;
+
+        DESCRIBE daily_quote_email_logs;
+        select * from daily_quote_email_logs;
+        
+
+    ### gerar nova migration utilizando alembic stamp
+        gere a migration respeitando meu setup atual e a ordem das migrations.
+        cd ./backend/migrations/
+        ll
+        ### observar qual é a ultima
+            ll -altr ./versions/
+    
+    ### Na pasta backend (com venv ativo):
+        cd ~/repo/myquotes
+        source venv/bin/activate
+        cd ./backend/
+        alembic revision -m "add daily quote time to users"
+        
+    ### Aplicar Alembic dentro do container
+        docker exec -it myquotes-backend bash
+        alembic upgrade head
+
+
+
+
+#################################################
+######## documentacao pessoal de lembretes ######
+#################################################
+### Antes de comecar a trabalhar
+    Vamos continuar com a feature de envio de email da quotes_of_the_day
+    Segue a estrutura atual do meu projeto Docker-first.
+    cat ./docker-compose.yml | xclip -selection clipboard
+    tree -L 3  | xclip -selection clipboard
+
+### obter alteracoes e checkpoint
+    /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
+
+### para commitar, no final do dia
+    /home/andre/repo/myquotes/git-final.sh
+
+### envio de email manual
+    ### com o projeto rodando prod-like
+        /home/andre/repo/myquotes/scripts/stop.sh
+        /home/andre/repo/myquotes/scripts/start.sh --rebuild
+        docker exec -it myquotes-backend bash
+        ### Teste de sanidade
+            python -c "import services, models, core; print('packages OK')"
+
+        ### Teste de envio de email manual
+            python -m jobs.send_daily_quote
+
+
+

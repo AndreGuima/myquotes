@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, time
 from typing import List, Optional
 
-from sqlalchemy import TIMESTAMP, Boolean, Integer, String, func
+from database import Base
+from sqlalchemy import TIMESTAMP, Boolean, Integer, String, Time, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
 
 
 class User(Base):
@@ -26,6 +25,13 @@ class User(Base):
         Boolean, nullable=False, server_default="1", default=True
     )
 
+    receive_daily_quote: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="1", default=True
+    )
+
+    # ✅ ESTA LINHA ESTAVA FALTANDO
+    daily_quote_time: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
+
     created_at: Mapped[Optional[datetime]] = mapped_column(
         TIMESTAMP, server_default=func.current_timestamp()
     )
@@ -35,4 +41,4 @@ class User(Base):
     )
 
 
-from app.models.quote import Quote  # noqa: E402,F401
+from models.quote import Quote  # noqa: E402,F401

@@ -1,42 +1,63 @@
 #!/bin/bash
-
-# parar em erro
+set -u
 set -e
 
-# ativar venv e rodar testes
-cd ~/repo/myquotes
+echo "🚀 Iniciando script de validação..."
+
+ROOT=~/repo/myquotes
+
+# ======================================
+# Ambiente
+# ======================================
+cd $ROOT
 source venv/bin/activate
-pip install -r backend/requirements.txt
-pytest -v backend/tests/
 
-# descobrir branch atual
+# ======================================
+# Backend - isort + black
+# ======================================
+cd backend
+
+echo "📦 Rodando isort..."
+isort . --profile black
+
+echo "🎨 Rodando Black..."
+black .
+
+echo "🔍 Rodando flake8..."
+flake8 app
+
+# ======================================
+# Backend - Testes
+# ======================================
+echo "🧪 Rodando testes backend..."
+pytest -v tests
+echo "✅ Testes OK"
+
+# ======================================
+# Frontend - Prettier
+# ======================================
+cd $ROOT/myquotes-web
+
+echo "🎨 Rodando Prettier..."
+npx prettier --check .
+
+echo "✅ Prettier OK"
+
+# ======================================
+# Git
+# ======================================
+cd $ROOT
+
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-echo "📌 Branch atual: $BRANCH"
-
-# mostrar status
-echo "🔍 Git status:"
 git status
-
-# adicionar tudo
-echo "➕ Adicionando tudo..."
 git add .
 
-# verificar se há algo pra commitar
 if git diff --cached --quiet; then
-    echo "✔ Nada para commitar. Working tree clean."
-    exit 0
+  echo "✔ Nada para commitar."
+  exit 0
 fi
 
-# pedir mensagem
-echo ""
-read -p "📝 Digite a mensagem do commit: " MSG
-
-# commit
+read -p "📝 Mensagem do commit: " MSG
 git commit -m "$MSG"
 
-# push manual
-echo "🚀 Enviar para origin $BRANCH rode:"
-echo "git push origin "$BRANCH""
-
-
+echo "🚀 git push origin $BRANCH"

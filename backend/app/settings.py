@@ -18,6 +18,14 @@ class Settings(BaseSettings):
     DB_PORT: int = Field(default=3306)
     DB_NAME: str = Field(default="test_db")
 
+    # ✉️ Configurações de Email
+    EMAIL_ENABLED: bool = Field(default=False)
+    EMAIL_HOST: str = Field(default="smtp.gmail.com")
+    EMAIL_PORT: int = Field(default=587)
+    EMAIL_USER: str | None = Field(default=None)
+    EMAIL_PASSWORD: str | None = Field(default=None)
+    EMAIL_FROM: str = Field(default="MyQuotes <no-reply@myquotes.com>")
+
     # ⚙️ Configurações do Pydantic v2
     model_config = ConfigDict(
         env_file=".env",
@@ -36,3 +44,6 @@ if settings.TESTING:
     settings.DB_NAME = "test_db"
     settings.DB_HOST = "localhost"
     settings.DB_PORT = 3306
+
+    # ❌ Nunca enviar email em testes
+    settings.EMAIL_ENABLED = False
