@@ -4,8 +4,6 @@ services:
     image: mysql:8.0
     container_name: myquotes-db
     restart: always
-    env_file:
-      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
@@ -25,12 +23,12 @@ services:
       dockerfile: Dockerfile
     container_name: myquotes-backend
     restart: always
-    env_file:
-      - .env
     depends_on:
       - db
     ports:
       - "8000:8000"
+    env_file:
+      - ${ENV_FILE}
     networks:
       - myquotes-network
 
@@ -48,20 +46,8 @@ services:
     networks:
       - myquotes-network
 
-  # 📧 MailHog for Email Testing #
-  mailhog:
-    image: mailhog/mailhog
-    container_name: myquotes-mailhog
-    ports:
-      - "8025:8025" # Web UI
-      - "1025:1025" # SMTP
-    networks:
-      - myquotes-network
-
-
 volumes:
   mysql_data:
-
 
 networks:
   myquotes-network:
