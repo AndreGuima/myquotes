@@ -1,35 +1,49 @@
 #!/bin/bash
+set -e
 
-if [ "$1" == "--rebuild" ]; then
-  echo "🧱 Rebuildando imagens..."
-  docker compose build --no-cache
+ENV=${1:-dev}
+
+if [ "$ENV" = "dev" ]; then
+  COMPOSE_FILES="-f docker-compose.yml -f docker-compose.dev.yml"
+  ENV_FILE=".env"
+elif [ "$ENV" = "prod" ]; then
+  COMPOSE_FILES="-f docker-compose.yml"
+  ENV_FILE=".env.production"
+else
+  echo "❌ Ambiente inválido. Use: dev ou prod"
+  exit 1
 fi
 
-echo "🚀 Iniciando ambiente MyQuotes..."
-docker compose up -d
+export ENV_FILE
+
+if [ "$2" == "--rebuild" ]; then
+  echo "🧱 Rebuildando imagens..."
+  docker compose $COMPOSE_FILES --env-file $ENV_FILE build --no-cache
+fi
+
+echo "🚀 Iniciando MyQuotes ($ENV)..."
+docker compose $COMPOSE_FILES --env-file $ENV_FILE up -d
 
 echo ""
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 echo ""
 
-echo "⏳ Aguardando backend iniciar..."
+echo "⏳ Aguardando backend..."
 for i in {1..30}; do
-    if curl -s http://localhost:8000/docs >/dev/null; then
-        echo "✅ API disponível: http://localhost:8000/docs"
-        break
-    fi
-    sleep 1
+  if curl -s http://localhost:8000/docs >/dev/null; then
+    echo "✅ API disponível"
+    break
+  fi
+  sleep 1
 done
 
-echo ""
-echo "⏳ Aguardando frontend iniciar..."
+echo "⏳ Aguardando frontend..."
 for i in {1..30}; do
-    if curl -s http://localhost:5173 >/dev/null; then
-        echo "🌐 Frontend disponível: http://localhost:5173"
-        break
-    fi
-    sleep 1
+  if curl -s http://localhost:5173 >/dev/null; then
+    echo "🌐 Frontend disponível"
+    break
+  fi
+  sleep 1
 done
 
-echo ""
-echo "📦 Ambiente MyQuotes ativo!"
+echo "📦 Ambiente MyQuotes ($ENV) ativo!"

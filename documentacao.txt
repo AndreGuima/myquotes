@@ -29,12 +29,10 @@
     ### Exemplos de queries
         SHOW TABLES;
         DESCRIBE users;
-        SELECT * FROM users;
-        SELECT * FROM users ORDER BY id DESC LIMIT 10;
+        SELECT * FROM users;        
 
         DESCRIBE quotes;
-        SELECT * FROM quotes;
-        SELECT * FROM quotes ORDER BY id DESC LIMIT 10;
+        SELECT * FROM quotes;        
 
         DESCRIBE daily_quote_email_logs;
         select * from daily_quote_email_logs;
@@ -66,7 +64,9 @@
 ### Antes de comecar a trabalhar
     Vamos continuar com a feature de envio de email da quotes_of_the_day
     Segue a estrutura atual do meu projeto Docker-first.
+    esse é meu docker-compose
     cat ./docker-compose.yml | xclip -selection clipboard
+    esse é minha estrutura de pastas e arquivos
     tree -L 3  | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
@@ -77,8 +77,14 @@
 
 ### envio de email manual
     ### com o projeto rodando prod-like
-        /home/andre/repo/myquotes/scripts/stop.sh
-        /home/andre/repo/myquotes/scripts/start.sh --rebuild
+        ./scripts/stop.sh dev
+        ./scripts/stop.sh prod
+
+        ./scripts/start.sh dev
+        ./scripts/start.sh prod
+        ./scripts/start.sh dev --rebuild
+        ./scripts/start.sh prod --rebuild
+
         docker exec -it myquotes-backend python -m jobs.send_daily_quote
 
 

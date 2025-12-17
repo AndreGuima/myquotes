@@ -1,8 +1,22 @@
 #!/bin/bash
+set -e
 
-echo "🛑 Parando ambiente MyQuotes..."
-docker compose down --remove-orphans
-echo "✅ Ambiente parado!"
+ENV=${1:-dev}
 
-#docker system prune -af --volumes
+if [ "$ENV" = "dev" ]; then
+  COMPOSE_FILES="-f docker-compose.yml -f docker-compose.dev.yml"
+  ENV_FILE=".env"
+elif [ "$ENV" = "prod" ]; then
+  COMPOSE_FILES="-f docker-compose.yml"
+  ENV_FILE=".env.production"
+else
+  echo "❌ Ambiente inválido. Use: dev ou prod"
+  exit 1
+fi
 
+export ENV_FILE
+
+echo "🛑 Parando ambiente MyQuotes ($ENV)..."
+docker compose $COMPOSE_FILES down --remove-orphans
+
+echo "✅ Ambiente MyQuotes ($ENV) parado!"
