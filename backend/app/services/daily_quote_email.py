@@ -1,4 +1,3 @@
-# from datetime import timedelta
 from datetime import datetime, time
 from pathlib import Path
 
@@ -31,26 +30,30 @@ def send_daily_quote_emails():
         template = TEMPLATE_ENV.get_template("emails/daily_quote.html")
         now = datetime.now()
 
+        print(f"⏰ Cron iniciado em {now.isoformat()} (UTC)")
+        print(f"👥 Usuários elegíveis: {len(users)}")
+
         for user in users:
             try:
                 # ⏰ horário do usuário
                 user_time = user.daily_quote_time or time(8, 0)
                 scheduled = datetime.combine(now.date(), user_time)
 
-                # if not (scheduled <= now < scheduled + timedelta(minutes=5)):
-                #    continue
                 # ✅ regra sem perda
                 if now < scheduled:
+                    print(f"⏭️ {user.email} — agora={now.time()} agendado={user_time}")
                     continue
 
                 # 🔒 tenta adquirir lock (SEM commit)
                 lock = try_acquire_daily_email_lock(db, user.id)
                 if not lock:
+                    print(f"🔒 Lock já existe para {user.email}, pulando envio")
                     continue
 
                 # 📜 quote do dia
                 quote = get_quote_of_the_day_for_user(db, user.id)
                 if not quote:
+                    print(f"⚠️ Nenhuma quote encontrada para {user.email}")
                     db.rollback()
                     continue
 
@@ -74,6 +77,8 @@ def send_daily_quote_emails():
             except Exception as e:
                 db.rollback()
                 print(f"❌ Erro ao processar {user.email}: {e}")
+
+        print("🏁 Execução do cron finalizada")
 
     finally:
         db.close()

@@ -2,13 +2,24 @@ import os
 import sys
 from pathlib import Path
 
-# Ativa modo de teste
+from dotenv import load_dotenv
+
+# ============================================================================
+# 🔑 Carregar .env (prod-like) ANTES de importar o app
+# ============================================================================
+ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(ROOT / ".env")
+
+# Flag opcional (se ainda for usada em algum lugar)
 os.environ["TESTING"] = "1"
 
+# ============================================================================
 # 👇 backend/app vira o ROOT do Python
+# ============================================================================
 APP_PATH = Path(__file__).resolve().parents[1] / "app"
 sys.path.insert(0, str(APP_PATH))
 
+# ⚠️ Somente agora podemos importar o app
 import database as app_db
 import pytest
 from database import Base, get_db

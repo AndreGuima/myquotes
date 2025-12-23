@@ -34,11 +34,12 @@ COPY wait-for-db.sh /app/wait-for-db.sh
 RUN chmod +x /app/wait-for-db.sh
 
 # -------------------------
-# Cron
+# Cron via cron.d
 # -------------------------
 COPY cron/daily_quote /etc/cron.d/daily_quote
 RUN chmod 0644 /etc/cron.d/daily_quote \
-    && crontab /etc/cron.d/daily_quote \
+    && chown root:root /etc/cron.d/daily_quote \
+    && sed -i -e '$a\' /etc/cron.d/daily_quote \
     && touch /var/log/cron.log
 
 # -------------------------
@@ -52,5 +53,6 @@ EXPOSE 8000
 # -------------------------
 # Start
 # -------------------------
-CMD ["sh", "-c", "cron && /app/wait-for-db.sh && alembic upgrade head && su appuser -c \"uvicorn main:app --host 0.0.0.0 --port 8000\""]
+CMD ["sh", "-c", "/app/wait-for-db.sh && alembic upgrade head && su appuser -c \"uvicorn main:app --host 0.0.0.0 --port 8000\""]
+
 
