@@ -1,19 +1,27 @@
+import os
+
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # =========================
     # App
+    # =========================
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
 
-    # DB
+    # =========================
+    # Database
+    # =========================
     DB_HOST: str = "db"
     DB_PORT: int = 3306
     DB_NAME: str
     DB_USER: str
     DB_PASSWORD: str
 
-    # Email (SMTP REAL — sempre)
+    # =========================
+    # Email
+    # =========================
     EMAIL_FROM: str | None = None
 
     SMTP_HOST: str | None = None
@@ -28,4 +36,14 @@ class Settings(BaseSettings):
         extra = "allow"
 
 
-settings = Settings()
+# =========================
+# 🔥 PONTO-CHAVE
+# =========================
+if os.getenv("TESTING") == "1":
+    settings = Settings(
+        DB_NAME="test_db",
+        DB_USER="test_user",
+        DB_PASSWORD="test_password",
+    )
+else:
+    settings = Settings()
