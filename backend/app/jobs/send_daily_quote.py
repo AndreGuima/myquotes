@@ -1,5 +1,5 @@
 """
-Job: Envio diário da Quote of the Day por email
+Job: Envio diário da frase do dia por email
 """
 
 from services.daily_quote_email import send_daily_quote_emails

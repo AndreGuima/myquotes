@@ -1,1 +1,4 @@
-*/5 * * * * cd /app && python -m jobs.send_daily_quote >> /var/log/cron.log 2>&1
+SHELL=/bin/sh
+PATH=/usr/local/bin:/usr/bin:/bin
+
+*/5 * * * * root cd /app && /usr/local/bin/python -m jobs.send_daily_quote >> /var/log/cron.log 2>&1

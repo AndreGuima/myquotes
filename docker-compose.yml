@@ -18,6 +18,8 @@ services:
 
   # 🐍 FastAPI Backend #
   backend:
+    environment:
+      TZ: America/Sao_Paulo
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -28,9 +30,24 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - ${ENV_FILE}
+      - .env
     networks:
       - myquotes-network
+
+  cron:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: myquotes-cron
+    restart: always
+    command: sh -c "printenv > /etc/environment && cron -f"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    networks:
+      - myquotes-network
+
 
   # 🌐 Vite + React Frontend #
   myquotes-web:

@@ -1,49 +1,45 @@
 #!/bin/bash
 set -e
 
-ENV=${1:-dev}
+REBUILD=false
 
-if [ "$ENV" = "dev" ]; then
-  COMPOSE_FILES="-f docker-compose.yml -f docker-compose.dev.yml"
-  ENV_FILE=".env"
-elif [ "$ENV" = "prod" ]; then
-  COMPOSE_FILES="-f docker-compose.yml"
-  ENV_FILE=".env.production"
-else
-  echo "❌ Ambiente inválido. Use: dev ou prod"
-  exit 1
+if [ "$1" == "--rebuild" ]; then
+  REBUILD=true
 fi
 
-export ENV_FILE
-
-if [ "$2" == "--rebuild" ]; then
-  echo "🧱 Rebuildando imagens..."
-  docker compose $COMPOSE_FILES --env-file $ENV_FILE build --no-cache
+if [ "$REBUILD" = true ]; then
+  echo "🧱 Rebuildando imagens (no-cache)..."
+  docker compose build --no-cache
 fi
 
-echo "🚀 Iniciando MyQuotes ($ENV)..."
-docker compose $COMPOSE_FILES --env-file $ENV_FILE up -d
+echo "🚀 Iniciando MyQuotes (prod-like)..."
+docker compose up -d
 
 echo ""
+echo "📦 Containers ativos:"
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 echo ""
 
-echo "⏳ Aguardando backend..."
+echo "⏳ Aguardando backend ficar disponível..."
 for i in {1..30}; do
   if curl -s http://localhost:8000/docs >/dev/null; then
-    echo "✅ API disponível"
+    echo "✅ Backend disponível"
     break
   fi
   sleep 1
-done
 
-echo "⏳ Aguardando frontend..."
-for i in {1..30}; do
-  if curl -s http://localhost:5173 >/dev/null; then
-    echo "🌐 Frontend disponível"
-    break
+  if [ "$i" -eq 30 ]; then
+    echo "❌ Backend não respondeu após 30s"
+    exit 1
   fi
-  sleep 1
 done
 
-echo "📦 Ambiente MyQuotes ($ENV) ativo!"
+if docker ps --format '{{.Names}}' | grep -q '^myquotes-cron$'; then
+  echo "🕒 Cron ativo"
+else
+  echo "⚠️ Cron NÃO está rodando"
+  exit 1
+fi
+
+echo ""
+echo "🎉 Ambiente MyQuotes (prod-like) pronto!"
