@@ -6,6 +6,7 @@ from database import SessionLocal
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from models.user import User
 from services.daily_quote_lock import try_acquire_daily_email_lock
+from services.notification_preferences import is_daily_quote_enabled
 from services.quote_of_the_day import get_quote_of_the_day_for_user
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,26 +21,26 @@ def send_daily_quote_emails():
     db = SessionLocal()
 
     try:
-        users = (
-            db.query(User)
-            .filter(User.is_active.is_(True))
-            .filter(User.receive_daily_quote.is_(True))
-            .all()
-        )
+        users = db.query(User).filter(User.is_active.is_(True)).all()
 
         template = TEMPLATE_ENV.get_template("emails/daily_quote.html")
         now = datetime.now()
 
         print(f"⏰ Cron iniciado em {now.isoformat()} (UTC)")
-        print(f"👥 Usuários elegíveis: {len(users)}")
+        print(f"👥 Usuários ativos: {len(users)}")
 
         for user in users:
             try:
+                # 🔔 preferências de notificação (JSON)
+                if not is_daily_quote_enabled(db, user.id):
+                    print(f"🔕 {user.email} desativou quote diária")
+                    continue
+
                 # ⏰ horário do usuário
                 user_time = user.daily_quote_time or time(8, 0)
                 scheduled = datetime.combine(now.date(), user_time)
 
-                # ✅ regra sem perda
+                # ⏭️ ainda não é hora
                 if now < scheduled:
                     print(f"⏭️ {user.email} — agora={now.time()} agendado={user_time}")
                     continue

@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # Internos
 from routes.admin_users import router as admin_users_router
 from routes.auth import router as auth_router
+from routes.preferences import router as preferences_router
 from routes.quotes import router as quotes_router
 from routes.users import router as users_router
 from sqlalchemy.exc import SQLAlchemyError
@@ -21,9 +22,6 @@ async def lifespan(app: FastAPI):
     print("🚀 Inicializando MyQuotes API...")
 
     try:
-        # ❌ REMOVIDO: criação automática de tabelas
-        # Base.metadata.create_all(bind=engine)
-
         # 👤 Cria admin padrão
         create_default_admin()
 
@@ -75,6 +73,7 @@ app.include_router(users_router)
 app.include_router(quotes_router)
 app.include_router(auth_router)
 app.include_router(admin_users_router)
+app.include_router(preferences_router)
 
 
 # ==========================================
