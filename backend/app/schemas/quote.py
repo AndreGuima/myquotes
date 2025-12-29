@@ -4,20 +4,32 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
+# ============================
+# BASE SOMENTE PARA CAMPOS COMUNS
+# ============================
 class QuoteBase(BaseModel):
-    author: str = Field(..., min_length=1, description="Author name cannot be empty")
     text: str = Field(..., min_length=1, description="Quote text cannot be empty")
 
 
+# ============================
+# CREATE
+# author NÃO é obrigatório
+# ============================
 class QuoteCreate(QuoteBase):
-    pass
+    author: Optional[str] = None
 
 
+# ============================
+# UPDATE (parcial)
+# ============================
 class QuoteUpdate(BaseModel):
-    author: Optional[str] = Field(None, min_length=1)
+    author: Optional[str] = None
     text: Optional[str] = Field(None, min_length=1)
 
 
+# ============================
+# READ
+# ============================
 class QuoteRead(BaseModel):
     id: int
     author: str

@@ -9,13 +9,18 @@ export default function CreateQuote() {
   const [loading, setLoading] = useState(false);
 
   const TEXT_LIMIT = 200;
+  const isTextValid = text.trim().length > 0;
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await createQuote({ author, text });
+      const payload = { text };
+      if (author.trim() !== "") {
+        payload.author = author;
+      }
+      await createQuote(payload);
       navigate("/quotes/");
     } catch (err) {
       alert("Erro ao salvar a frase: " + err.message);
@@ -51,12 +56,12 @@ export default function CreateQuote() {
             className="w-full border p-2 rounded"
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
-            required
+            placeholder="Autor (opcional)"
           />
         </div>
 
         <button
-          disabled={loading}
+          disabled={loading || !isTextValid}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? "Salvando..." : "Salvar"}
