@@ -66,7 +66,7 @@ def send_daily_quote_emails():
                 # 📨 envio
                 send_html_email(
                     to=user.email,
-                    subject="📜 Sua Quote of the Day",
+                    subject="📜 Quote of the Day",
                     html=html,
                 )
 

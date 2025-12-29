@@ -64,8 +64,13 @@ def create_quote(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    data = payload.model_dump()
+    author = data.get("author")
+    if not author or author.strip() == "":
+        data["author"] = "Desconhecido"
+
     q = Quote(
-        **payload.model_dump(),
+        **data,
         user_id=current_user.id,
     )
 
@@ -94,6 +99,12 @@ def update_quote(
         raise HTTPException(403, "Você não pode editar esta quote.")
 
     update_data = payload.model_dump(exclude_unset=True)
+
+    if "author" in update_data:
+        author = update_data.get("author")
+        if not author or author.strip() == "":
+            update_data["author"] = "Desconhecido"
+
     for key, value in update_data.items():
         setattr(q, key, value)
 

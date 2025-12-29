@@ -1,23 +1,22 @@
-#################################################
 ###### backend ##################################
 #################################################
-### entrar dentro do container
-    docker exec -it myquotes-backend bash
 
-### coleta de logs
-    docker logs myquotes-backend --tail 20
+    ### entrar dentro do container
+        docker exec -it myquotes-backend bash
 
-### gerar token para o login
-    docker exec -i myquotes-backend python3 << 'EOF'
-    from app.core.security import create_email_verification_token
-    print(create_email_verification_token(3))
-    EOF
+    ### coleta de logs
+        docker logs myquotes-backend --tail 20
 
-    # Exemplo de uso no navegador:
-    http://localhost:8000/auth/verify-email?token=<TOKEN_GERADO>
+    ### gerar token para o login
+        docker exec -i myquotes-backend python3 << 'EOF'
+        from app.core.security import create_email_verification_token
+        print(create_email_verification_token(3))
+        EOF
+
+        # Exemplo de uso no navegador:
+        http://localhost:8000/auth/verify-email?token=<TOKEN_GERADO>
 
 
-#################################################
 ####### Database ################################
 #################################################
     ### Entrar dentro do container
@@ -36,6 +35,7 @@
 
         DESCRIBE daily_quote_email_logs;
         select * from daily_quote_email_logs order by sent_at DESC;
+        ### Verifica lock
         SELECT * FROM daily_quote_email_logs WHERE date = CURDATE();
         
         ### Remover lock
@@ -61,23 +61,28 @@
         alembic upgrade head
 
 
-
-
-#################################################
 ######## documentacao pessoal de lembretes ######
 #################################################
 ### Antes de comecar a trabalhar
-    Vamos continuar com a feature de envio de email da quotes_of_the_day
-    Segue a estrutura atual do meu projeto Docker-first.
+    Vamos continuar com a feature de <>
+    Segue a estrutura atual do meu projeto Saas desenvolvido focado em Docker-first.
     esse é meu docker-compose
     cat ./docker-compose.yml | xclip -selection clipboard
-    esse é minha estrutura de pastas e arquivos
+    essa é minha estrutura de pastas e arquivos
     tree -L 3  | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
 
-### para commitar, no final do dia
+### Rodar Testes
+    cd ~/repo/myquotes
+    source venv/bin/activate
+    pip install -r backend/requirements.txt
+    pytest -v backend/tests/
+
+### para commitar, no final do dia, testes
+    veja meu arquivo de testes e crie testes para essa nova feature que acabamos de realizar
+    cat ./backend/tests/test_quotes.py
     /home/andre/repo/myquotes/git-final.sh
 
 ### envio de email manual

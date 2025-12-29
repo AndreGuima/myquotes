@@ -12,7 +12,9 @@ class Quote(Base):
     __tablename__ = "quotes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    author: Mapped[str] = mapped_column(String(100), nullable=False)
+    author: Mapped[str] = mapped_column(
+        String(100), nullable=False, server_default="Desconhecido"
+    )
     text: Mapped[str] = mapped_column(String(200), nullable=False)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False

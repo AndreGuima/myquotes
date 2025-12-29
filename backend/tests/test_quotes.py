@@ -44,8 +44,55 @@ def test_delete_quote(client):
 
 
 def test_validation(client):
+    # text vazio ainda deve falhar
     r = client.post("/quotes", json={"author": "", "text": ""})
     assert r.status_code == 422
 
+    # ausência total ainda deve falhar (text obrigatório)
     r = client.post("/quotes", json={})
     assert r.status_code == 422
+
+
+def test_create_quote_without_author(client):
+    payload = {"text": "Quote sem autor"}
+    r = client.post("/quotes", json=payload)
+
+    assert r.status_code == 201
+    data = r.json()
+    assert data["author"] == "Desconhecido"
+    assert data["text"] == payload["text"]
+
+
+def test_create_quote_with_empty_author(client):
+    payload = {"author": "", "text": "Autor vazio"}
+    r = client.post("/quotes", json=payload)
+
+    assert r.status_code == 201
+    assert r.json()["author"] == "Desconhecido"
+
+
+def test_update_quote_clear_author_sets_default(client):
+    # cria
+    payload = {"author": "Alguém", "text": "Texto"}
+    r = client.post("/quotes", json=payload)
+    quote_id = r.json()["id"]
+
+    # limpa autor
+    update_payload = {"author": ""}
+    r2 = client.put(f"/quotes/{quote_id}", json=update_payload)
+
+    assert r2.status_code == 200
+    assert r2.json()["author"] == "Desconhecido"
+
+
+def test_update_quote_without_author_keeps_existing(client):
+    payload = {"author": "Autor Original", "text": "Texto original"}
+    r = client.post("/quotes", json=payload)
+    quote_id = r.json()["id"]
+
+    update_payload = {"text": "Texto alterado"}
+    r2 = client.put(f"/quotes/{quote_id}", json=update_payload)
+
+    assert r2.status_code == 200
+    assert r2.json()["author"] == "Autor Original"
+    assert r2.json()["text"] == "Texto alterado"
