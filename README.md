@@ -1,7 +1,7 @@
-# ✨ MyQuotes — Full-Stack Quotes App
+# ✨ MyQuotes — Full-Stack Docker-First App
 
 > 📝 Aplicação completa para gerenciamento de habitos feita com **FastAPI + React Native + MySQL + Pytest + Docker**.  
-> Focada em boas práticas, arquitetura simples e ambiente moderno de desenvolvimento.
+> Focada em boas práticas e ambiente moderno de desenvolvimento.
 
 <p align="center">
  <img src="https://img.shields.io/badge/python-3.13-blue" />
