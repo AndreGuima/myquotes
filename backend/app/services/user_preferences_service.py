@@ -12,8 +12,12 @@ def get_user_preferences(
     db: Session,
     user_id: int,
     category: str,
-) -> UserPreference | None:
-    return (
+) -> Dict[str, Any]:
+    """
+    Retorna SOMENTE o dict de preferências.
+    Nunca retorna None.
+    """
+    pref = (
         db.query(UserPreference)
         .filter(
             UserPreference.user_id == user_id,
@@ -21,6 +25,8 @@ def get_user_preferences(
         )
         .first()
     )
+
+    return pref.preferences if pref and pref.preferences else {}
 
 
 # ============================================================
@@ -42,13 +48,18 @@ def upsert_user_preferences(
     - Seguro para futuras adições
     """
 
-    pref = get_user_preferences(db, user_id, category)
+    pref = (
+        db.query(UserPreference)
+        .filter(
+            UserPreference.user_id == user_id,
+            UserPreference.category == category,
+        )
+        .first()
+    )
 
     if pref:
-        # Merge defensivo
         current = pref.preferences or {}
-        merged = {**current, **new_preferences}
-        pref.preferences = merged
+        pref.preferences = {**current, **new_preferences}
     else:
         pref = UserPreference(
             user_id=user_id,
@@ -72,7 +83,14 @@ def delete_user_preferences(
     user_id: int,
     category: str,
 ) -> None:
-    pref = get_user_preferences(db, user_id, category)
+    pref = (
+        db.query(UserPreference)
+        .filter(
+            UserPreference.user_id == user_id,
+            UserPreference.category == category,
+        )
+        .first()
+    )
 
     if pref:
         db.delete(pref)

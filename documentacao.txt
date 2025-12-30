@@ -43,7 +43,8 @@
 
         
 
-    ### gere a migration respeitando meu setup atual e a ordem das migrations alembic stamp
+    ### gere a migration respeitando meu setup atual e a ordem das migrations alembic stamp.
+        primeiro eu gero a migration local (venv) no meu projeto através do alembic revision e depois eu subo os conteiners para aplicar no docker.
         cd ./backend/migrations/
         ll
         ### observar qual é a ultima mais recente
@@ -55,14 +56,14 @@
         source venv/bin/activate
         cd ./backend/
         ## nao criar o arquivo na mao, gerar atraves do comando abaixo e depois editar
-        alembic revision -m "migrate receive_daily_quote to user_preferences"
+        alembic revision -m "remove quote preferences from users"
+        ### cat no arquivo
         ### editar o arquivo na mao
         
     ### Aplicar Alembic dentro do container
         cd ~/repo/myquotes
         ./scripts/start.sh --rebuild
-        docker ps
-        docker compose exec backend alembic upgrade head
+        ./scripts/status.sh
         ### validacao com o projeto no ar
             docker compose exec backend alembic current
             docker compose exec backend alembic history --verbose
@@ -71,12 +72,11 @@
 ######## documentacao pessoal de lembretes ######
 #################################################
 ### Antes de comecar a trabalhar
-    Vamos continuar com a feature de <>
-    Segue a estrutura atual do meu projeto Saas desenvolvido focado em Docker-first.
-    esse é meu docker-compose
-    cat ./docker-compose.yml | xclip -selection clipboard
-    essa é minha estrutura de pastas e arquivos
+    Vamos continuar com a feature de ... do meu projeto Saas desenvolvido focado em Docker-first.
+    Segue a estrutura de pastas e arquivos atual do meu projeto:
     tree -L 3  | xclip -selection clipboard
+    esse é meu docker-compose:
+    cat ./docker-compose.yml | xclip -selection clipboard        
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
@@ -112,49 +112,4 @@
         docker exec -it myquotes-backend python -m jobs.send_daily_quote
 
 ### Proximos passos
-    Próximo passo obrigatório (limpeza técnica)
-
-    Agora que tudo está confirmado, o passo correto é:
-
-    C) Remover definitivamente users.receive_daily_quote
-
-    Ela já:
-
-    não é mais lida
-
-    não é mais necessária
-
-    virou dívida técnica
-
-    Isso envolve:
-
-    Migration para dropar a coluna
-
-    Remover referências no código
-
-    Simplificar o model User
-
-    👉 Se você quiser, eu te entrego:
-
-    a migration pronta
-
-    checklist de arquivos a limpar
-
-    ordem segura (sem downtime)
-
-    🧭 Caminho do produto (visão clara)
-
-    Depois da limpeza:
-
-    🎨 Tela de preferências (frontend)
-
-    🔔 Novas notificações
-
-    📆 Hábitos
-
-    💰 Monetização
-
-    👉 Confirma: vamos fazer agora a remoção definitiva da flag antiga (receive_daily_quote)?
-
-
-
+    
