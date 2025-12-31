@@ -29,22 +29,15 @@ def get_preferences(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    pref = get_user_preferences(
+    preferences = get_user_preferences(
         db=db,
         user_id=current_user.id,
         category=category,
     )
 
-    if not pref:
-        # Retorna vazio, não erro (UX melhor)
-        return {
-            "category": category,
-            "preferences": {},
-        }
-
     return {
-        "category": pref.category,
-        "preferences": pref.preferences,
+        "category": category,
+        "preferences": preferences,
     }
 
 
