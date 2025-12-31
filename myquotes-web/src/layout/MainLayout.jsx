@@ -22,6 +22,9 @@ export default function MainLayout() {
           <Link to="/quotes" className="hover:text-blue-400">
             Quotes
           </Link>
+          <Link to="/preferences" className="hover:text-blue-400">
+            Preferências
+          </Link>
 
           {/* Só aparece se for admin */}
           {user?.role === "admin" && (

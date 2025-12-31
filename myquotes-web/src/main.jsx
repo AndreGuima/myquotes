@@ -18,6 +18,7 @@ import VerifyInstructions from "./pages/VerifyInstructions";
 import VerifySuccess from "./pages/VerifySuccess";
 import VerifyError from "./pages/VerifyError";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
+import Preferences from "./pages/Preferences.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -42,6 +43,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/quotes" element={<Quotes />} />
         <Route path="/quotes/new" element={<CreateQuote />} />
         <Route path="/quotes/:id/edit" element={<EditQuote />} />
+        <Route path="/preferences" element={<Preferences />} />
 
         <Route
           path="/users"
