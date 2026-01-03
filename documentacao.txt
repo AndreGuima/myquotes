@@ -43,12 +43,9 @@
 
         
 
-    ### gere a migration respeitando meu setup atual e a ordem das migrations alembic stamp.
-        primeiro eu gero a migration local (venv) no meu projeto através do alembic revision e depois eu subo os conteiners para aplicar no docker.
-        cd ./backend/migrations/
-        ll
-        ### observar qual é a ultima mais recente
-            ll -altr ./versions/
+    ### Script para verificar migrations
+        ./scripts/start.sh --rebuild
+        ./verificaMigrations.sh | xclip -selection clipboard
     
     ### Como aplicar a migration, 
         ### Na pasta backend (com venv ativo):
@@ -60,23 +57,16 @@
         ### cat no arquivo
         ### editar o arquivo na mao
         
-    ### Aplicar Alembic dentro do container
+    ### Aplicar e validar migrations
         cd ~/repo/myquotes
         ./scripts/start.sh --rebuild
-        ./scripts/status.sh
-        ### validacao com o projeto no ar
-            docker compose exec backend alembic current
-            docker compose exec backend alembic history --verbose
+        ./verificaMigrations.sh | xclip -selection clipboard
 
 
 ######## documentacao pessoal de lembretes ######
 #################################################
 ### Antes de comecar a trabalhar
-    Vamos continuar com a feature de ... do meu projeto Saas desenvolvido focado em Docker-first.
-    Segue a estrutura de pastas e arquivos atual do meu projeto:
-    tree -L 3  | xclip -selection clipboard
-    esse é meu docker-compose:
-    cat ./docker-compose.yml | xclip -selection clipboard        
+    ./prework.sh esqueci minha senha | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
@@ -111,5 +101,3 @@
 
         docker exec -it myquotes-backend python -m jobs.send_daily_quote
 
-### Proximos passos
-    

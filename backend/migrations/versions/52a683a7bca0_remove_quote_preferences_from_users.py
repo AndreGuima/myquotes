@@ -7,6 +7,7 @@ Create Date: 2025-12-30 11:10:03.405339
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.sql import text
 
 # revision identifiers, used by Alembic.
 revision = "52a683a7bca0"
@@ -16,7 +17,24 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # 🔐 batch_alter_table garante compatibilidade com SQLite (pytest)
+    conn = op.get_bind()
+
+    # 🛡️ Se a coluna não existe mais, essa migration já foi aplicada
+    result = conn.execute(
+        text(
+            """
+            SELECT COUNT(*)
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'users'
+              AND COLUMN_NAME = 'receive_daily_quote'
+            """
+        )
+    ).scalar()
+
+    if result == 0:
+        return
+
     with op.batch_alter_table("users") as batch_op:
         batch_op.drop_column("receive_daily_quote")
         batch_op.drop_column("daily_quote_time")
