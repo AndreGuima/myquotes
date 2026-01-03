@@ -7,6 +7,7 @@ Create Date: 2025-12-29 18:17:22
 
 from typing import Sequence, Union
 
+import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.sql import text
 
@@ -18,31 +19,28 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """
-    Copia users.receive_daily_quote -> user_preferences.notifications.daily_quote
-    Migration segura: só executa se a tabela existir
-    """
-
     conn = op.get_bind()
 
-    # Verifica se a tabela user_preferences existe (SQLAlchemy 2.x safe)
+    # 🛡️ Se a coluna não existe mais, a migration já foi efetivamente aplicada
     result = conn.execute(
-        text(
+        sa.text(
             """
             SELECT COUNT(*)
-            FROM information_schema.tables
-            WHERE table_schema = DATABASE()
-              AND table_name = 'user_preferences'
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'users'
+              AND COLUMN_NAME = 'receive_daily_quote'
             """
         )
     ).scalar()
 
-    if not result:
-        # Banco novo: não há nada para migrar
+    if result == 0:
+        # Nada a fazer — banco já está no estado final
         return
 
+    # Caso excepcional (banco muito antigo)
     conn.execute(
-        text(
+        sa.text(
             """
             INSERT INTO user_preferences (user_id, category, preferences)
             SELECT
