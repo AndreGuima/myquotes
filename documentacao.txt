@@ -1,6 +1,25 @@
 ###### backend ##################################
 #################################################
 
+### envio de email manual
+    ### com o projeto rodando prod-like
+        ./scripts/stop.sh
+
+        ./scripts/start.sh         
+        ./scripts/start.sh --rebuild
+
+        # Restart simples
+        ./scripts/restart.sh
+
+        # Restart com rebuild total
+        ./scripts/restart.sh --rebuild
+
+        docker exec -it myquotes-cron cat /var/log/cron.log
+        docker exec myquotes-cron tail -n 20 /var/log/cron.log
+        docker exec myquotes-cron tail -f /var/log/cron.log
+
+        docker exec -it myquotes-backend python -m jobs.send_daily_quote
+
     ### entrar dentro do container
         docker exec -it myquotes-backend bash
 
@@ -75,29 +94,11 @@
     cd ~/repo/myquotes
     source venv/bin/activate
     pip install -r backend/requirements.txt
-    pytest -v backend/tests/
+    pytest -v backend/tests/ | xclip -selection clipboard
 
 ### para commitar, no final do dia, testes
     veja meu arquivo de testes e crie testes para essa nova feature que acabamos de realizar
     cat ./backend/tests/test_quotes.py
     /home/andre/repo/myquotes/git-final.sh
 
-### envio de email manual
-    ### com o projeto rodando prod-like
-        ./scripts/stop.sh
-
-        ./scripts/start.sh         
-        ./scripts/start.sh --rebuild
-
-        # Restart simples
-        ./scripts/restart.sh
-
-        # Restart com rebuild total
-        ./scripts/restart.sh --rebuild
-
-        docker exec -it myquotes-cron cat /var/log/cron.log
-        docker exec myquotes-cron tail -n 20 /var/log/cron.log
-        docker exec myquotes-cron tail -f /var/log/cron.log
-
-        docker exec -it myquotes-backend python -m jobs.send_daily_quote
 
