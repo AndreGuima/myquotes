@@ -69,30 +69,6 @@ Frontend disponível em:
 
 ---
 
-# 🗂 Estrutura Geral do Projeto
-
-```txt
-MyQuotes/
-│
-├── backend/
-│   ├── app/
-│   │   ├── core/          # JWT, segurança e dependências
-│   │   ├── routes/        # Endpoints (quotes, users, auth)
-│   │   ├── models/        # SQLAlchemy models
-│   │   ├── schemas/       # Pydantic V2 schemas
-│   │   ├── database.py    # Engine + SessionLocal
-│   │   ├── settings.py    # Configuração via .env
-│   │   └── main.py        # FastAPI app
-│   ├── tests/             # Testes Pytest (SQLite em memória)
-│   └── scripts/           # Scripts utilitários
-│
-├── myquotes-web/          # Frontend (React Native + Expo)
-│
-└── scripts/               # Docker / gerenciamento
-```
-
----
-
 # 🧹 Scripts Úteis
 
 | Ação                  | Comando                      |
