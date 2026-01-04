@@ -1,5 +1,6 @@
 import os
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -9,6 +10,8 @@ class Settings(BaseSettings):
     # =========================
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
+    # 🌐 Frontend
+    FRONTEND_URL: str = "http://localhost:5173"
 
     # =========================
     # Database
@@ -32,8 +35,8 @@ class Settings(BaseSettings):
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
 
-    class Config:
-        extra = "allow"
+    # ✅ Pydantic v2 way
+    model_config = ConfigDict(extra="allow")
 
 
 # =========================

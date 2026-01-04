@@ -1,7 +1,8 @@
 #!/bin/bash
 
 echo "Vamos fazer um checkpoint."
-echo "Veja todos os arquivos que trabalhamos nessa tarefa, revise e corrija caso seja necessário."
+echo "Ignora a documetação.txt e foque apenas nos arquivos de código."
+echo "Veja todos os arquivos que trabalhamos nessa tarefa."
 
 # Usa while para ler status e arquivo
 git status --porcelain | while read status file; do
@@ -18,3 +19,5 @@ git status --porcelain | while read status file; do
         done
     fi
 done
+
+echo "Revise e corrija caso seja necessário ou me diga os próximos passos"

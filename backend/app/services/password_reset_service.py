@@ -1,7 +1,8 @@
 import hashlib
 import secrets
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
+from core.security import hash_password
 from models.password_reset import PasswordResetToken
 from models.user import User
 from sqlalchemy.orm import Session
@@ -33,7 +34,7 @@ class PasswordResetService:
             PasswordResetToken.user_id == user.id,
             PasswordResetToken.used_at.is_(None),
         ).update(
-            {"used_at": datetime.utcnow()},
+            {"used_at": datetime.now(UTC)},
             synchronize_session=False,
         )
 
@@ -47,7 +48,7 @@ class PasswordResetService:
         reset = PasswordResetToken(
             user_id=user.id,
             token_hash=token_hash,
-            expires_at=datetime.utcnow() + timedelta(minutes=TOKEN_TTL_MINUTES),
+            expires_at=datetime.now(UTC) + timedelta(minutes=TOKEN_TTL_MINUTES),
         )
 
         db.add(reset)
@@ -58,52 +59,54 @@ class PasswordResetService:
         return raw_token
 
     # --------------------------------------------------
-    # 🔎 Validar token
-    # --------------------------------------------------
-    @staticmethod
-    def validate_token(
-        db: Session,
-        raw_token: str,
-    ) -> PasswordResetToken | None:
-        """
-        Valida um token de reset.
-
-        Retorna o PasswordResetToken se válido,
-        ou None se inválido / expirado / usado.
-        """
-
-        token_hash = PasswordResetService._hash_token(raw_token)
-
-        reset = (
-            db.query(PasswordResetToken)
-            .filter(
-                PasswordResetToken.token_hash == token_hash,
-            )
-            .first()
-        )
-
-        if not reset:
-            return None
-
-        if not reset.is_valid:
-            return None
-
-        return reset
-
-    # --------------------------------------------------
-    # ✅ Consumir token (após reset)
-    # --------------------------------------------------
-    @staticmethod
-    def mark_token_as_used(
-        db: Session,
-        reset: PasswordResetToken,
-    ) -> None:
-        reset.used_at = datetime.utcnow()
-        db.commit()
-
-    # --------------------------------------------------
     # 🔒 Hash helper
     # --------------------------------------------------
     @staticmethod
     def _hash_token(raw_token: str) -> str:
         return hashlib.sha256(raw_token.encode()).hexdigest()
+
+    @staticmethod
+    def reset_password(
+        db: Session,
+        raw_token: str,
+        new_password: str,
+    ) -> bool:
+        now = datetime.now(UTC)
+        token_hash = PasswordResetService._hash_token(raw_token)
+
+        try:
+            # 🔒 Lock pessimista no token
+            reset = (
+                db.query(PasswordResetToken)
+                .filter(
+                    PasswordResetToken.token_hash == token_hash,
+                    PasswordResetToken.used_at.is_(None),
+                    PasswordResetToken.expires_at > now,
+                )
+                .with_for_update()
+                .first()
+            )
+
+            if not reset:
+                return False
+
+            user = reset.user
+
+            # 🔐 Atualiza senha
+            user.password_hash = hash_password(new_password)
+
+            # 🔒 Invalida TODOS os tokens do usuário (incluindo este)
+            db.query(PasswordResetToken).filter(
+                PasswordResetToken.user_id == user.id,
+                PasswordResetToken.used_at.is_(None),
+            ).update(
+                {"used_at": now},
+                synchronize_session=False,
+            )
+
+            db.commit()
+            return True
+
+        except Exception:
+            db.rollback()
+            return False

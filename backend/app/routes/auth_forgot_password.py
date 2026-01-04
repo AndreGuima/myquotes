@@ -2,6 +2,7 @@ from database import get_db
 from fastapi import APIRouter, Depends
 from models.user import User
 from schemas.auth_forgot_password import ForgotPasswordRequest
+from services.email_service import EmailService
 from services.password_reset_service import PasswordResetService
 from sqlalchemy.orm import Session
 
@@ -26,10 +27,10 @@ def forgot_password(
 
     if user:
         token = PasswordResetService.create_reset_token(db, user)
-
-        # 🚧 TEMPORÁRIO
-        # depois isso vira envio de email
-        print(f"🔐 Password reset token para {user.email}: {token}")
+        EmailService.send_password_reset_email(
+            email=user.email,
+            reset_token=token,
+        )
 
     return {
         "message": "Se o email existir, enviaremos instruções para redefinir a senha."
