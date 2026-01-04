@@ -85,7 +85,7 @@
 ######## documentacao pessoal de lembretes ######
 #################################################
 ### Antes de comecar a trabalhar
-    ./prework.sh esqueci minha senha | xclip -selection clipboard
+    ./prework.sh "esqueci minha senha" | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
@@ -94,6 +94,7 @@
     cd ~/repo/myquotes
     source venv/bin/activate
     pip install -r backend/requirements.txt
+    pytest -v backend/tests/
     pytest -v backend/tests/ | xclip -selection clipboard
 
 ### para commitar, no final do dia, testes

@@ -13,7 +13,7 @@ cd $ROOT
 source venv/bin/activate
 
 # ======================================
-# Backend - isort + black
+# Backend - isort + black + flake8
 # ======================================
 cd backend
 
@@ -34,11 +34,14 @@ pytest -v tests
 echo "✅ Testes OK"
 
 # ======================================
-# Frontend - Prettier
+# Frontend - Prettier (AUTO FIX)
 # ======================================
 cd $ROOT/myquotes-web
 
-echo "🎨 Rodando Prettier..."
+echo "🎨 Rodando Prettier (auto-fix)..."
+npx prettier --write .
+
+echo "🔍 Verificando Prettier..."
 npx prettier --check .
 
 echo "✅ Prettier OK"

@@ -48,140 +48,188 @@ def create_valid_token(db: Session, user: User) -> str:
 def test_reset_password_success(db_sessionmaker):
     db = db_sessionmaker()
 
-    user = create_user(db)
-    token = create_valid_token(db, user)
+    try:
 
-    response = client.post(
-        "/auth/reset-password",
-        json={
-            "token": token,
-            "new_password": "newpassword123",
-        },
-    )
+        user = create_user(db)
+        token = create_valid_token(db, user)
 
-    assert response.status_code == 200
+        response = client.post(
+            "/auth/reset-password",
+            json={
+                "token": token,
+                "new_password": "newpassword123",
+            },
+        )
 
-    # senha foi alterada
-    db.refresh(user)
-    assert verify_password("newpassword123", user.password_hash)
+        assert response.status_code == 200
+
+        # senha foi alterada
+        db.refresh(user)
+        assert verify_password("newpassword123", user.password_hash)
+
+    finally:
+        db.close()
 
 
 def test_reset_password_invalid_token(db_sessionmaker):
     db = db_sessionmaker()
 
-    user = create_user(db)
+    try:
+        user = create_user(db)
 
-    response = client.post(
-        "/auth/reset-password",
-        json={
-            "token": "invalid-token",
-            "new_password": "newpassword123",
-        },
-    )
+        response = client.post(
+            "/auth/reset-password",
+            json={
+                "token": "invalid-token",
+                "new_password": "newpassword123",
+            },
+        )
 
-    assert response.status_code == 200
+        assert response.status_code == 200
 
-    db.refresh(user)
-    assert verify_password("oldpassword", user.password_hash)
+        db.refresh(user)
+        assert verify_password("oldpassword", user.password_hash)
+
+    finally:
+        db.close()
 
 
 def test_reset_password_expired_token(db_sessionmaker):
     db = db_sessionmaker()
 
-    user = create_user(db)
+    try:
+        user = create_user(db)
 
-    raw_token = "expired-token"
-    token_hash = PasswordResetService._hash_token(raw_token)
+        raw_token = "expired-token"
+        token_hash = PasswordResetService._hash_token(raw_token)
 
-    expired = PasswordResetToken(
-        user_id=user.id,
-        token_hash=token_hash,
-        expires_at=datetime.now(UTC) - timedelta(minutes=1),
-    )
+        expired = PasswordResetToken(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=datetime.now(UTC) - timedelta(minutes=1),
+        )
 
-    db.add(expired)
-    db.commit()
+        db.add(expired)
+        db.commit()
 
-    response = client.post(
-        "/auth/reset-password",
-        json={
-            "token": raw_token,
-            "new_password": "newpassword123",
-        },
-    )
+        response = client.post(
+            "/auth/reset-password",
+            json={
+                "token": raw_token,
+                "new_password": "newpassword123",
+            },
+        )
 
-    assert response.status_code == 200
+        assert response.status_code == 200
 
-    db.refresh(user)
-    assert verify_password("oldpassword", user.password_hash)
+        db.refresh(user)
+        assert verify_password("oldpassword", user.password_hash)
+
+    finally:
+        db.close()
 
 
 def test_reset_password_token_reuse_fails(db_sessionmaker):
     db = db_sessionmaker()
 
-    user = create_user(db)
-    token = create_valid_token(db, user)
+    try:
 
-    # primeira tentativa
-    r1 = client.post(
-        "/auth/reset-password",
-        json={
-            "token": token,
-            "new_password": "newpassword123",
-        },
-    )
+        user = create_user(db)
+        token = create_valid_token(db, user)
 
-    assert r1.status_code == 200
-    db.refresh(user)
-    assert verify_password("newpassword123", user.password_hash)
+        # primeira tentativa
+        r1 = client.post(
+            "/auth/reset-password",
+            json={
+                "token": token,
+                "new_password": "newpassword123",
+            },
+        )
 
-    # segunda tentativa com o MESMO token
-    r2 = client.post(
-        "/auth/reset-password",
-        json={
-            "token": token,
-            "new_password": "anotherpassword",
-        },
-    )
+        assert r1.status_code == 200
+        db.refresh(user)
+        assert verify_password("newpassword123", user.password_hash)
 
-    assert r2.status_code == 200
-    db.refresh(user)
+        # segunda tentativa com o MESMO token
+        r2 = client.post(
+            "/auth/reset-password",
+            json={
+                "token": token,
+                "new_password": "anotherpassword",
+            },
+        )
 
-    # senha não muda novamente
-    assert not verify_password("anotherpassword", user.password_hash)
+        assert r2.status_code == 200
+        db.refresh(user)
+
+        # senha não muda novamente
+        assert not verify_password("anotherpassword", user.password_hash)
+
+    finally:
+        db.close()
 
 
 def test_reset_password_invalidates_all_tokens(db_sessionmaker):
     db = db_sessionmaker()
+    try:
+        user = create_user(db)
 
-    user = create_user(db)
+        token1 = create_valid_token(db, user)  # token antigo, deve ser invalidado
 
-    token1 = create_valid_token(db, user)
+        # criar token2 invalida token1
+        token2 = create_valid_token(db, user)
 
-    # criar token2 invalida token1
-    token2 = create_valid_token(db, user)
+        # usar token2 (o ÚNICO válido)
+        client.post(
+            "/auth/reset-password",
+            json={
+                "token": token2,
+                "new_password": "newpassword123",
+            },
+        )
 
-    # usar token2 (o ÚNICO válido)
-    client.post(
-        "/auth/reset-password",
-        json={
-            "token": token2,
-            "new_password": "newpassword123",
-        },
+        db.refresh(user)
+        assert verify_password("newpassword123", user.password_hash)
+
+        # token2 deve estar invalidado
+        r = client.post(
+            "/auth/reset-password",
+            json={
+                "token": token2,
+                "new_password": "anotherpassword",
+            },
+        )
+
+        assert r.status_code == 200
+        db.refresh(user)
+        assert not verify_password("anotherpassword", user.password_hash)
+
+    finally:
+        db.close()
+
+
+def test_validate_reset_token_success(db_sessionmaker):
+    db = db_sessionmaker()
+    try:
+        user = create_user(db)
+        token = create_valid_token(db, user)
+
+        r = client.get(
+            "/auth/reset-password/validate",
+            params={"token": token},
+        )
+
+        assert r.status_code == 200
+        assert r.json() == {"valid": True}
+
+    finally:
+        db.close()
+
+
+def test_validate_reset_token_invalid():
+    r = client.get(
+        "/auth/reset-password/validate",
+        params={"token": "invalid"},
     )
 
-    db.refresh(user)
-    assert verify_password("newpassword123", user.password_hash)
-
-    # token2 deve estar invalidado
-    r = client.post(
-        "/auth/reset-password",
-        json={
-            "token": token2,
-            "new_password": "anotherpassword",
-        },
-    )
-
-    assert r.status_code == 200
-    db.refresh(user)
-    assert not verify_password("anotherpassword", user.password_hash)
+    assert r.status_code == 410  # Gone

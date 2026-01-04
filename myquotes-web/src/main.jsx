@@ -19,6 +19,8 @@ import VerifySuccess from "./pages/VerifySuccess";
 import VerifyError from "./pages/VerifyError";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import Preferences from "./pages/Preferences.jsx";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -30,6 +32,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/verify-success" element={<VerifySuccess />} />
       <Route path="/verify-error" element={<VerifyError />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Rotas protegidas */}
       <Route
