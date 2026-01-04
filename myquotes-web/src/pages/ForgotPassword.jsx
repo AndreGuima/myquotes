@@ -20,7 +20,7 @@ export default function ForgotPassword() {
       setMessage(
         "Se este email estiver cadastrado, você receberá instruções para redefinir sua senha.",
       );
-    } catch (err) {
+    } catch {
       setError("Erro ao enviar solicitação. Tente novamente.");
     } finally {
       setLoading(false);
