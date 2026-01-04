@@ -28,7 +28,8 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY alembic.ini /app/alembic.ini
 COPY migrations/ /app/migrations/
 COPY app/ /app
-COPY templates/ /app/templates/
+COPY app/templates/ /app/templates/
+
 
 COPY wait-for-db.sh /app/wait-for-db.sh
 RUN chmod +x /app/wait-for-db.sh
