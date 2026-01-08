@@ -35,6 +35,13 @@
         # Exemplo de uso no navegador:
         http://localhost:8000/auth/verify-email?token=<TOKEN_GERADO>
 
+####### Frontend ################################
+    ### Veja todos os services, eles devem retornar sempre response.data
+        cat ./myquotes-web/src/services/* | xclip -selection clipboard
+
+    ### Veja todos as pages:
+        cat ./myquotes-web/src/pages/* | xclip -selection clipboard
+    
 
 ####### Database ################################
 #################################################
@@ -71,21 +78,21 @@
         cd ~/repo/myquotes
         source venv/bin/activate
         cd ./backend/
-        ## nao criar o arquivo na mao, gerar atraves do comando abaixo e depois editar
         alembic revision -m "remove quote preferences from users"
-        ### cat no arquivo
-        ### editar o arquivo na mao
-        
-    ### Aplicar e validar migrations
-        cd ~/repo/myquotes
-        ./scripts/start.sh --rebuild
-        ./verificaMigrations.sh | xclip -selection clipboard
+        ### veja o cat em todos os arquivos gerados em meu venv local e gere o conteúdo completo da nova migration:
+        cat ./migrations/versions/* | xclip -selection clipboard
+        ### editar o arquivo na mao        
+        ### Aplicar e validar migrations
+            cd ~/repo/myquotes
+            ./scripts/stop.sh
+            ./scripts/start.sh --rebuild
+            ./verificaMigrations.sh | xclip -selection clipboard
 
 
 ######## documentacao pessoal de lembretes ######
 #################################################
 ### Antes de comecar a trabalhar
-    ./prework.sh "esqueci minha senha" | xclip -selection clipboard
+    ./prework.sh "CRUD de Hábitos" | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
@@ -98,8 +105,8 @@
     pytest -v backend/tests/ | xclip -selection clipboard
 
 ### para commitar, no final do dia, testes
-    veja meu arquivo de testes e crie testes para essa nova feature que acabamos de realizar
-    cat ./backend/tests/test_quotes.py
+    veja meu conftest.py e crie testes para essa nova feature que acabamos de realizar:
+    cat ./backend/tests/conftest.py | xclip -selection clipboard
     /home/andre/repo/myquotes/git-final.sh
 
 

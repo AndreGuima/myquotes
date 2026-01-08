@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getQuoteOfTheDay } from "../services/quotesService";
+import quotesService from "../services/quotesService";
 
 export default function Home() {
   const [quote, setQuote] = useState(null);
@@ -19,7 +19,7 @@ export default function Home() {
     // 2. Tenta buscar a quote nova
     async function load() {
       try {
-        const q = await getQuoteOfTheDay();
+        const q = await quotesService.getQuoteOfTheDay();
         setQuote(q);
         localStorage.setItem(cacheKey, JSON.stringify(q));
       } catch (err) {

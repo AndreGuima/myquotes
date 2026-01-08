@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { getQuoteById, updateQuote } from "../services/quotesService";
+import quotesService from "../services/quotesService";
+
 import { useNavigate, useParams } from "react-router-dom";
 
 const TEXT_LIMIT = 200; // pode ficar fora do componente
@@ -31,7 +32,7 @@ export default function EditQuote() {
   async function handleSubmit(e) {
     e.preventDefault();
     try {
-      await updateQuote(id, { author, text });
+      await quotesService.update(id, { author, text });
       navigate("/quotes");
     } catch {
       alert("Erro ao atualizar");

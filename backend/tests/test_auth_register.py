@@ -67,15 +67,21 @@ def test_login_blocked_until_verified(client):
 def test_login_after_email_verified(client, db_session):
     payload = make_register_payload("verify")
 
-    client.post("/auth/register", json=payload)
+    r = client.post("/auth/register", json=payload)
+    assert r.status_code == 201
 
-    # marca como verificado
+    # 🔑 gera token de verificação
     user = db_session.query(User).filter_by(email=payload["email"]).first()
-    user.is_verified = True
-    db_session.commit()
+    token = create_email_verification_token(user.id)
 
+    # ✅ verifica email VIA API (mesma infra do login)
+    r = client.get(f"/auth/verify-email?token={token}")
+    assert r.status_code == 200
+
+    # 🔓 agora o login deve funcionar
     r = client.post(
-        "/auth/login", json={"email": payload["email"], "password": payload["password"]}
+        "/auth/login",
+        json={"email": payload["email"], "password": payload["password"]},
     )
 
     assert r.status_code == 200

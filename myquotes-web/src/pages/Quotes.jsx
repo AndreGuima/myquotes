@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { getQuotes, deleteQuote } from "../services/quotesService";
+import quotesService from "../services/quotesService";
 import { Link } from "react-router-dom";
 import DataTable from "../components/DataTable";
 
@@ -10,7 +10,7 @@ export default function Quotes() {
 
   const loadData = useCallback(async () => {
     try {
-      const data = await getQuotes();
+      const data = await quotesService.list();
       setQuotes(data);
     } catch {
       setError("Erro ao carregar quotes");
@@ -26,7 +26,8 @@ export default function Quotes() {
   const handleDelete = async (id) => {
     if (!confirm("Tem certeza que deseja deletar esta frase?")) return;
 
-    await deleteQuote(id);
+    await quotesService.remove(id);
+
     loadData();
   };
 

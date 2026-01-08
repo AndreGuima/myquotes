@@ -98,10 +98,19 @@ def client(engine, db_sessionmaker, monkeypatch):
 
 
 @pytest.fixture
-def db_session(db_sessionmaker):
-    """Sessão de banco usada diretamente pelos testes."""
-    session = db_sessionmaker()
+def db_session(engine, db_sessionmaker):
+    """
+    Sessão isolada por teste.
+    Sempre faz rollback para evitar vazamento de dados.
+    """
+    connection = engine.connect()
+    transaction = connection.begin()
+
+    session = db_sessionmaker(bind=connection)
+
     try:
         yield session
     finally:
         session.close()
+        transaction.rollback()
+        connection.close()

@@ -1,13 +1,17 @@
 import api from "./api";
 
-export function getPreferences(category) {
-  return api.get(`/preferences/${category}`).then((res) => res.data);
-}
+const preferencesService = {
+  async get(category) {
+    const res = await api.get(`/preferences/${category}`);
+    return res.data;
+  },
 
-export function updatePreferences(category, preferences) {
-  return api
-    .put(`/preferences/${category}`, {
+  async update(category, preferences) {
+    const res = await api.put(`/preferences/${category}`, {
       preferences,
-    })
-    .then((res) => res.data);
-}
+    });
+    return res.data;
+  },
+};
+
+export default preferencesService;
