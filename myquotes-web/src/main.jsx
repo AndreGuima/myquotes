@@ -21,6 +21,9 @@ import VerifyEmail from "./pages/VerifyEmail.jsx";
 import Preferences from "./pages/Preferences.jsx";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Habits from "./pages/Habits.jsx";
+import CreateHabit from "./pages/CreateHabit.jsx";
+import EditHabit from "./pages/EditHabit.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -47,6 +50,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/quotes" element={<Quotes />} />
         <Route path="/quotes/new" element={<CreateQuote />} />
         <Route path="/quotes/:id/edit" element={<EditQuote />} />
+        <Route path="/habits" element={<Habits />} />
+        <Route path="/habits/new" element={<CreateHabit />} />
+        <Route path="/habits/:id/edit" element={<EditHabit />} />
         <Route path="/preferences" element={<Preferences />} />
 
         <Route

@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import habitsService from "../services/habitsService";
+import { Link } from "react-router-dom";
 
 export default function Habits() {
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(null);
+  const [removing, setRemoving] = useState(null);
 
   async function loadHabits() {
     try {
       const data = await habitsService.list();
 
-      // Para cada hábito, buscamos stats
       const withStats = await Promise.all(
         data.map(async (h) => {
           const stats = await habitsService.stats(h.id);
@@ -37,14 +38,7 @@ export default function Habits() {
       const result = await habitsService.toggle(habitId);
 
       setHabits((prev) =>
-        prev.map((h) =>
-          h.id === habitId
-            ? {
-                ...h,
-                stats: result.stats,
-              }
-            : h,
-        ),
+        prev.map((h) => (h.id === habitId ? { ...h, stats: result.stats } : h)),
       );
     } catch (err) {
       alert("Erro ao marcar hábito");
@@ -54,18 +48,53 @@ export default function Habits() {
     }
   }
 
+  async function handleRemove(habitId) {
+    if (!confirm("Tem certeza que deseja remover este hábito?")) return;
+
+    setRemoving(habitId);
+
+    try {
+      await habitsService.update(habitId, { is_active: false });
+      setHabits((prev) => prev.filter((h) => h.id !== habitId));
+    } catch (err) {
+      alert("Erro ao remover hábito");
+      console.error(err);
+    } finally {
+      setRemoving(null);
+    }
+  }
+
   if (loading) {
     return <p className="p-4 text-gray-600">Carregando hábitos…</p>;
   }
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Meus Hábitos</h1>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Meus Hábitos</h1>
 
+        {habits.length > 0 && (
+          <Link
+            to="/habits/new"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            + Novo Hábito
+          </Link>
+        )}
+      </div>
+
+      {/* Empty state */}
       {habits.length === 0 ? (
-        <p className="text-gray-600">
-          Você ainda não possui hábitos cadastrados.
-        </p>
+        <div className="text-gray-600 mt-10 text-center">
+          <p className="mb-4">Você ainda não possui hábitos cadastrados.</p>
+          <Link
+            to="/habits/new"
+            className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Criar meu primeiro hábito
+          </Link>
+        </div>
       ) : (
         <div className="space-y-4">
           {habits.map((habit) => {
@@ -74,12 +103,9 @@ export default function Habits() {
             return (
               <div
                 key={habit.id}
-                className="
-                  flex items-center justify-between
-                  border rounded-lg p-4
-                  shadow-sm
-                "
+                className="flex items-center justify-between border rounded-lg p-4 shadow-sm"
               >
+                {/* Info */}
                 <div>
                   <h2 className="text-lg font-semibold">{habit.title}</h2>
 
@@ -97,22 +123,41 @@ export default function Habits() {
                   {habit.frequency_type === "weekly" && (
                     <div className="text-sm text-gray-600 mt-1">
                       📅 Semana: {habit.stats.weekly_completed}/
-                      {habit.stats.weekly_target}
+                      {habit.target_per_week}
                     </div>
                   )}
+
+                  {/* Secondary actions */}
+                  <div className="flex gap-4 mt-2 text-sm">
+                    <Link
+                      to={`/habits/${habit.id}/edit`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Editar
+                    </Link>
+
+                    <button
+                      onClick={() => handleRemove(habit.id)}
+                      disabled={removing === habit.id}
+                      className="text-red-600 hover:underline disabled:opacity-50"
+                    >
+                      {removing === habit.id ? "Removendo..." : "Remover"}
+                    </button>
+                  </div>
                 </div>
 
+                {/* Primary action */}
                 <button
                   onClick={() => handleToggle(habit.id)}
                   disabled={toggling === habit.id}
                   className={`
-                    px-4 py-2 rounded-lg font-medium
-                    transition
+                    px-4 py-2 rounded-lg font-medium transition
                     ${
                       completed
                         ? "bg-green-600 text-white hover:bg-green-700"
                         : "bg-gray-200 text-gray-800 hover:bg-gray-300"
                     }
+                    ${toggling === habit.id ? "opacity-60 cursor-not-allowed" : ""}
                   `}
                 >
                   {toggling === habit.id

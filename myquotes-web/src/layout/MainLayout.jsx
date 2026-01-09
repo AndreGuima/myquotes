@@ -1,8 +1,8 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 export default function MainLayout() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   function handleLogout() {
     localStorage.removeItem("token");
@@ -10,27 +10,35 @@ export default function MainLayout() {
     navigate("/login", { replace: true });
   }
 
+  const navClass = ({ isActive }) =>
+    isActive ? "text-blue-400 font-semibold" : "hover:text-blue-400";
+
   return (
     <div className="flex h-screen">
       <aside className="w-64 bg-gray-900 text-white flex flex-col p-4">
-        <h2 className="text-xl font-bold mb-6">MyQuotes</h2>
+        <h2 className="text-xl font-bold mb-6">MyLife</h2>
 
         <nav className="flex flex-col gap-3 flex-1">
-          <Link to="/home" className="hover:text-blue-400">
+          <NavLink to="/home" className={navClass}>
             Dashboard
-          </Link>
-          <Link to="/quotes" className="hover:text-blue-400">
-            Quotes
-          </Link>
-          <Link to="/preferences" className="hover:text-blue-400">
-            Preferências
-          </Link>
+          </NavLink>
 
-          {/* Só aparece se for admin */}
+          <NavLink to="/quotes" className={navClass}>
+            Quotes
+          </NavLink>
+
+          <NavLink to="/habits" className={navClass}>
+            Hábitos
+          </NavLink>
+
+          <NavLink to="/preferences" className={navClass}>
+            Preferências
+          </NavLink>
+
           {user?.role === "admin" && (
-            <Link to="/users" className="hover:text-blue-400">
+            <NavLink to="/users" className={navClass}>
               Users
-            </Link>
+            </NavLink>
           )}
         </nav>
 
