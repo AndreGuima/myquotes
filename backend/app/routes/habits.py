@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from core.dependencies import get_current_user
 from database import get_db
@@ -6,8 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from models.habit import Habit
 from models.user import User
 from schemas.habit import HabitCreate, HabitResponse, HabitUpdate
+from schemas.habit_history import HabitHistoryResponse
 from schemas.habit_stats import HabitStatsResponse
 from schemas.habit_toggle import HabitToggleResponse
+from services.habit_history_service import HabitHistoryService
 from services.habit_log_service import HabitLogService
 from services.habit_service import HabitService
 from services.habit_stats_service import HabitStatsService
@@ -134,3 +136,42 @@ def toggle_habit_today(
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# =========================
+# 📅 Histórico do hábito
+# =========================
+@router.get(
+    "/{habit_id}/history",
+    response_model=HabitHistoryResponse,
+)
+def get_habit_history(
+    habit_id: int,
+    from_date: date | None = None,
+    to_date: date | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if to_date is None:
+        to_date = date.today()
+
+    if from_date is None:
+        from_date = to_date - timedelta(days=29)
+
+    try:
+        days = HabitHistoryService.get_history(
+            db,
+            user_id=user.id,
+            habit_id=habit_id,
+            from_date=from_date,
+            to_date=to_date,
+        )
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Habit not found")
+
+    return {
+        "habit_id": habit_id,
+        "from_date": from_date,
+        "to_date": to_date,
+        "days": days,
+    }

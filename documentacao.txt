@@ -42,7 +42,7 @@
         http://localhost:8000/auth/verify-email?token=<TOKEN_GERADO>
 
 ####### Frontend ################################
-    ### Veja todos os services, eles devem retornar sempre response.data
+    ### Veja todos os services do frontend, eles devem retornar sempre response.data
         cat ./myquotes-web/src/services/* | xclip -selection clipboard
 
     ### Veja todos as pages:
@@ -109,7 +109,7 @@
 ######## documentacao pessoal de lembretes ######
 #################################################
 ### Antes de comecar a trabalhar
-    ./prework.sh "CRUD de Hábitos" | xclip -selection clipboard
+    ./prework.sh "Controle de Hábitos" | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
@@ -126,4 +126,6 @@
     cat ./backend/tests/conftest.py | xclip -selection clipboard
     /home/andre/repo/myquotes/git-final.sh
 
+### proximos passos
+    history e heatmap
 

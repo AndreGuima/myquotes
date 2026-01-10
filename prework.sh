@@ -13,13 +13,13 @@ echo "~/repo/myquotes/"
 echo
 
 # Texto com o parâmetro
-echo "Vamos continuar com a feature de $FEATURE do meu projeto Saas desenvolvido focado em Docker-first."
+echo "Vamos continuar com a feature de $FEATURE do meu projeto Saas desenvolvido em python e react focado em Docker-first."
 echo "Segue a estrutura de pastas e arquivos atual do meu projeto:"
 echo
 
 # Executa o comando tree
-echo "tree -L 3:"
-tree -L 3
+echo "tree -L 4:"
+tree -L 4
 echo
 
 # Mostra o docker-compose
