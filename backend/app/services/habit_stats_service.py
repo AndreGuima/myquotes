@@ -80,12 +80,11 @@ class HabitStatsService:
             previous_day = log_date
 
         # -------------------------------------------------
-        # 6️⃣ Progresso semanal
+        # 6️⃣ Progresso semanal (últimos 7 dias)
         # -------------------------------------------------
-        week_start = today - timedelta(days=today.weekday())
-        week_end = week_start + timedelta(days=6)
+        week_start = today - timedelta(days=6)
 
-        weekly_completed = sum(1 for d in log_dates if week_start <= d <= week_end)
+        weekly_completed = sum(1 for d in log_dates if week_start <= d <= today)
 
         weekly_target = (
             habit.target_per_week
