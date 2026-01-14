@@ -1,31 +1,35 @@
 import api from "./api";
 
-export async function getQuotes() {
-  const response = await api.get("/quotes");
-  return response.data;
-}
+const quotesService = {
+  async list() {
+    const res = await api.get("/quotes");
+    return res.data;
+  },
 
-export async function getQuoteById(id) {
-  const response = await api.get(`/quotes/${id}`);
-  return response.data;
-}
+  async getById(id) {
+    const res = await api.get(`/quotes/${id}`);
+    return res.data;
+  },
 
-export async function createQuote(data) {
-  const response = await api.post("/quotes", data);
-  return response.data;
-}
+  async create(data) {
+    const res = await api.post("/quotes", data);
+    return res.data;
+  },
 
-export async function updateQuote(id, data) {
-  const response = await api.put(`/quotes/${id}`, data);
-  return response.data;
-}
+  async update(id, data) {
+    const res = await api.put(`/quotes/${id}`, data);
+    return res.data;
+  },
 
-export async function deleteQuote(id) {
-  const response = await api.delete(`/quotes/${id}`);
-  return response.data;
-}
+  async remove(id) {
+    const res = await api.delete(`/quotes/${id}`);
+    return res.data;
+  },
 
-export async function getQuoteOfTheDay() {
-  const response = await api.get("/quotes/of-the-day");
-  return response.data;
-}
+  async getQuoteOfTheDay() {
+    const res = await api.get("/quotes/of-the-day");
+    return res.data;
+  },
+};
+
+export default quotesService;

@@ -1,40 +1,97 @@
 import { useEffect, useState } from "react";
-import { getQuoteOfTheDay } from "../services/quotesService";
+import { Link } from "react-router-dom";
+import quotesService from "../services/quotesService";
+import habitsService from "../services/habitsService";
+import HabitHistorySummary from "../components/HabitHistorySummary";
+import HabitHeatmap from "../components/HabitHeatmap";
+
+// ============================
+// 🧠 Ordenação por prioridade
+// ============================
+function sortHabitsByPriority(habits) {
+  return [...habits].sort((a, b) => {
+    const aDone = a.stats?.today_completed ?? false;
+    const bDone = b.stats?.today_completed ?? false;
+
+    // 1️⃣ Não feitos hoje primeiro
+    if (aDone !== bDone) {
+      return aDone ? 1 : -1;
+    }
+
+    // 2️⃣ Maior streak primeiro
+    const aStreak = a.stats?.current_streak ?? 0;
+    const bStreak = b.stats?.current_streak ?? 0;
+
+    return bStreak - aStreak;
+  });
+}
 
 export default function Home() {
   const [quote, setQuote] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingQuote, setLoadingQuote] = useState(true);
 
-  // Recuperar usuário logado
+  const [habits, setHabits] = useState([]);
+  const [loadingHabits, setLoadingHabits] = useState(true);
+
   const user = JSON.parse(localStorage.getItem("user"));
   const cacheKey = `quote_of_day_${user?.id}`;
 
+  // ============================
+  // ✨ Quote do Dia
+  // ============================
   useEffect(() => {
-    // 1. Tenta carregar do cache
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       setQuote(JSON.parse(cached));
     }
 
-    // 2. Tenta buscar a quote nova
-    async function load() {
+    async function loadQuote() {
       try {
-        const q = await getQuoteOfTheDay();
+        const q = await quotesService.getQuoteOfTheDay();
         setQuote(q);
         localStorage.setItem(cacheKey, JSON.stringify(q));
       } catch (err) {
-        console.log("Erro ao carregar quote do dia:", err);
+        console.error("Erro ao carregar quote do dia:", err);
       } finally {
-        setLoading(false);
+        setLoadingQuote(false);
       }
     }
 
-    load();
+    loadQuote();
   }, [cacheKey]);
 
-  if (loading) {
+  // ============================
+  // 📅 Hábitos + stats
+  // ============================
+  useEffect(() => {
+    async function loadHabits() {
+      try {
+        const data = await habitsService.list();
+
+        const withStats = await Promise.all(
+          data.map(async (h) => {
+            const stats = await habitsService.stats(h.id);
+            return { ...h, stats };
+          }),
+        );
+
+        setHabits(withStats);
+      } catch (err) {
+        console.error("Erro ao carregar hábitos", err);
+      } finally {
+        setLoadingHabits(false);
+      }
+    }
+
+    loadHabits();
+  }, []);
+
+  // ============================
+  // ⏳ Loading inicial
+  // ============================
+  if (loadingQuote) {
     return (
-      <div className="animate-pulse">
+      <div className="animate-pulse p-6 max-w-5xl mx-auto">
         <div className="h-6 bg-gray-300 rounded w-48 mb-6"></div>
         <div className="h-24 bg-gray-300 rounded"></div>
       </div>
@@ -42,29 +99,103 @@ export default function Home() {
   }
 
   return (
-    <div>
+    <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
 
+      {/* ============================
+          ✨ Quote do Dia
+      ============================ */}
       {quote ? (
-        <div
-          className="
-            p-6 bg-gradient-to-r from-blue-500 to-blue-700 text-white
-            shadow-xl rounded-xl
-            animate-fadeSlide
-          "
-        >
+        <div className="p-6 bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-xl rounded-xl mb-10">
           <h2 className="text-lg font-semibold mb-3">✨ Quote do Dia</h2>
           <p className="text-2xl italic mb-3">"{quote.text}"</p>
           <span className="font-light">— {quote.author}</span>
         </div>
       ) : (
-        <p className="text-gray-700">
+        <p className="text-gray-700 mb-10">
           Você ainda não possui quotes cadastradas.
-          <a href="/quotes/new" className="text-blue-600 underline ml-1">
+          <Link to="/quotes/new" className="text-blue-600 underline ml-1">
             Criar agora →
-          </a>
+          </Link>
         </p>
       )}
+
+      {/* ============================
+          📅 Seus hábitos
+      ============================ */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">📅 Seus hábitos</h2>
+
+        {loadingHabits ? (
+          <p className="text-gray-500">Carregando hábitos…</p>
+        ) : habits.length === 0 ? (
+          <p className="text-gray-600">
+            Você ainda não possui hábitos cadastrados.
+          </p>
+        ) : (
+          <div
+            className="
+              grid
+              grid-cols-1
+              sm:grid-cols-2
+              lg:grid-cols-3
+              gap-4
+            "
+          >
+            {sortHabitsByPriority(habits).map((habit) => (
+              <div
+                key={habit.id}
+                className="
+                  border
+                  rounded-lg
+                  p-4
+                  bg-white
+                  hover:shadow-md
+                  transition
+                "
+              >
+                {/* Título */}
+                <Link
+                  to={`/habits/${habit.id}/edit`}
+                  className="text-lg font-semibold text-blue-700 hover:underline"
+                >
+                  {habit.title}
+                </Link>
+
+                {/* Badge pendente */}
+                {!habit.stats?.today_completed && (
+                  <div className="text-xs text-red-500 font-medium mt-1">
+                    • pendente hoje
+                  </div>
+                )}
+
+                {/* Resumo */}
+                <div className="mt-2">
+                  <HabitHistorySummary habit={habit} />
+                </div>
+
+                {/* Heatmap binário */}
+                <div className="mt-3">
+                  <div className="text-xs text-gray-400 mb-1">
+                    Últimos 90 dias
+                  </div>
+                  <HabitHeatmap habitId={habit.id} />
+                </div>
+
+                {/* CTA */}
+                <div className="mt-3 text-sm">
+                  <Link
+                    to={`/habits/${habit.id}/edit`}
+                    className="text-gray-500 hover:text-blue-600 hover:underline"
+                  >
+                    Ver histórico →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

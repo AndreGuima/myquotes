@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { createQuote } from "../services/quotesService";
+import quotesService from "../services/quotesService";
+
 import { useNavigate } from "react-router-dom";
 
 export default function CreateQuote() {
@@ -20,7 +21,7 @@ export default function CreateQuote() {
       if (author.trim() !== "") {
         payload.author = author;
       }
-      await createQuote(payload);
+      await quotesService.create(payload);
       navigate("/quotes/");
     } catch (err) {
       alert("Erro ao salvar a frase: " + err.message);

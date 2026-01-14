@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getPreferences,
-  updatePreferences,
-} from "../services/preferencesService";
+import preferencesService from "../services/preferencesService";
 
 export default function Preferences() {
   const [loading, setLoading] = useState(true);
@@ -14,10 +11,9 @@ export default function Preferences() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await getPreferences("quotes");
+        const data = await preferencesService.get("quotes");
 
         setReceiveDailyQuote(data.preferences.receive_daily_quote ?? true);
-
         setDailyQuoteTime(data.preferences.daily_quote_time ?? "08:00");
       } catch (err) {
         console.error("Erro ao carregar preferências", err);
@@ -34,7 +30,7 @@ export default function Preferences() {
     setSaving(true);
 
     try {
-      await updatePreferences("quotes", {
+      await preferencesService.update("quotes", {
         receive_daily_quote: receiveDailyQuote,
         daily_quote_time: dailyQuoteTime,
       });
