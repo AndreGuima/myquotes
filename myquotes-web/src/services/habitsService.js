@@ -30,6 +30,13 @@ const habitsService = {
     const res = await api.get(`/habits/${habitId}/history`, { params });
     return res.data;
   },
+
+  async heatmap(habitId, days = 90) {
+    const res = await api.get(`/habits/${habitId}/heatmap`, {
+      params: { days },
+    });
+    return res.data;
+  },
 };
 
 export default habitsService;

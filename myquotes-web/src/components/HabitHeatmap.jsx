@@ -1,24 +1,24 @@
 import { useEffect, useState } from "react";
 import habitsService from "../services/habitsService";
 
-function getColor(completed) {
-  if (!completed) return "bg-gray-200";
-  return "bg-green-500";
+/**
+ * Heatmap binário:
+ * 0 = não feito
+ * 1 = feito
+ */
+function getColor(count) {
+  return count === 1 ? "bg-green-500" : "bg-gray-200";
 }
 
-export default function HabitHeatmap({
-  habitId,
-  days = 90, // últimos 3 meses
-}) {
-  const [history, setHistory] = useState([]);
+export default function HabitHeatmap({ habitId, days = 90 }) {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const data = await habitsService.history(habitId);
-        const sliced = (data.days || []).slice(-days);
-        setHistory(sliced);
+        const res = await habitsService.heatmap(habitId, days);
+        setData(res);
       } catch (err) {
         console.error("Erro ao carregar heatmap", err);
       } finally {
@@ -29,9 +29,10 @@ export default function HabitHeatmap({
     load();
   }, [habitId, days]);
 
+  // ⏳ Skeleton
   if (loading) {
     return (
-      <div className="grid grid-cols-14 gap-1">
+      <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: days }).map((_, i) => (
           <div key={i} className="w-3 h-3 rounded bg-gray-200 animate-pulse" />
         ))}
@@ -39,12 +40,14 @@ export default function HabitHeatmap({
     );
   }
 
+  if (!data) return null;
+
   return (
-    <div className="grid grid-cols-14 gap-1">
-      {history.map((day) => (
+    <div className="grid grid-cols-7 gap-1">
+      {data.days.map((day) => (
         <div key={day.date} className="relative group">
-          {/* Célula */}
-          <div className={`w-3 h-3 rounded ${getColor(day.completed)}`} />
+          {/* Quadrado */}
+          <div className={`w-3 h-3 rounded ${getColor(day.count)}`} />
 
           {/* Tooltip */}
           <div
@@ -67,8 +70,9 @@ export default function HabitHeatmap({
                 year: "numeric",
               })}
             </div>
+
             <div className="mt-1">
-              {day.completed ? "✔ Feito" : "✖ Não feito"}
+              Status: <strong>{day.count === 1 ? "Feito" : "Não feito"}</strong>
             </div>
           </div>
         </div>

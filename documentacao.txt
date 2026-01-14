@@ -1,24 +1,24 @@
 ###### backend ##################################
 #################################################
 
-### envio de email manual
-    ### com o projeto rodando prod-like
-        ./scripts/stop.sh
+    ### envio de email manual
+        ### com o projeto rodando prod-like
+            ./scripts/stop.sh
 
-        ./scripts/start.sh         
-        ./scripts/start.sh --rebuild
+            ./scripts/start.sh         
+            ./scripts/start.sh --rebuild
 
-        # Restart simples
-        ./scripts/restart.sh
+            # Restart simples
+            ./scripts/restart.sh
 
-        # Restart com rebuild total
-        ./scripts/restart.sh --rebuild
+            # Restart com rebuild total
+            ./scripts/restart.sh --rebuild
 
-        docker exec -it myquotes-cron cat /var/log/cron.log
-        docker exec myquotes-cron tail -n 20 /var/log/cron.log
-        docker exec myquotes-cron tail -f /var/log/cron.log
+            docker exec -it myquotes-cron cat /var/log/cron.log
+            docker exec myquotes-cron tail -n 20 /var/log/cron.log
+            docker exec myquotes-cron tail -f /var/log/cron.log
 
-        docker exec -it myquotes-backend python -m jobs.send_daily_quote
+            docker exec -it myquotes-backend python -m jobs.send_daily_quote
 
     ### entrar dentro do container
         docker exec -it myquotes-backend bash
@@ -29,7 +29,7 @@
     ### veja todos os models do backend:
         cat ./backend/app/models/* | xclip -selection clipboard
 
-    ### veja todos os routes do backend:
+    ### veja todos os arquivos de routes do backend atualmente:
         cat ./backend/app/routes/* | xclip -selection clipboard
 
     ### gerar token para o login
@@ -42,20 +42,8 @@
         http://localhost:8000/auth/verify-email?token=<TOKEN_GERADO>
 
 ####### Frontend ################################
-    ### Veja todos os services do frontend, eles devem retornar sempre response.data
-        cat ./myquotes-web/src/services/* | xclip -selection clipboard
-
-    ### Veja todos as pages:
-        cat ./myquotes-web/src/pages/* | xclip -selection clipboard
-
-    ### Veja todos os components atualmente:
-        cat ./myquotes-web/src/components/* | xclip -selection clipboard
-    
-    ### Veja todos arquivos dentro de layout atualmente:
-        cat ./myquotes-web/src/layout/* | xclip -selection clipboard
-
-    ### Esse é o main.jsx
-        cat ./myquotes-web/src/main.jsx | xclip -selection clipboard
+    ### Ver todos os arquivos do frontend
+        ./ver_frontend.sh
 
     docker logs myquotes-web --tail 20
     
@@ -109,7 +97,7 @@
 ######## documentacao pessoal de lembretes ######
 #################################################
 ### Antes de comecar a trabalhar
-    ./prework.sh "Controle de Hábitos" | xclip -selection clipboard
+    ./prework.sh "Controle de Hábitos - Heatmap" | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
@@ -122,8 +110,8 @@
     pytest -v backend/tests/ | xclip -selection clipboard
 
 ### para commitar, no final do dia, testes
-    veja meu conftest.py e crie testes para essa nova feature que acabamos de realizar:
-    cat ./backend/tests/conftest.py | xclip -selection clipboard
+    ### Crie testes para essa nova feature que acabamos de realizar:
+    ./ver_testes.sh 
     /home/andre/repo/myquotes/git-final.sh
 
 ### proximos passos

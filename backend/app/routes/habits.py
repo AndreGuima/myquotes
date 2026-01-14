@@ -175,3 +175,30 @@ def get_habit_history(
         "to_date": to_date,
         "days": days,
     }
+
+
+# =========================
+# 🔥 Heatmap do hábito
+# =========================
+@router.get("/{habit_id}/heatmap")
+def get_habit_heatmap(
+    habit_id: int,
+    days: int = 90,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if days < 7 or days > 365:
+        raise HTTPException(
+            status_code=400,
+            detail="days must be between 7 and 365",
+        )
+
+    try:
+        return HabitHistoryService.get_heatmap(
+            db,
+            user_id=user.id,
+            habit_id=habit_id,
+            days=days,
+        )
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Habit not found")
