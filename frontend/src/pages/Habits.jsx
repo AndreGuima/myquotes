@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import habitsService from "../services/habitsService";
 import { Link } from "react-router-dom";
+import { logger } from "../core/logger";
 
 export default function Habits() {
   const [habits, setHabits] = useState([]);
@@ -21,7 +22,7 @@ export default function Habits() {
 
       setHabits(withStats);
     } catch (err) {
-      console.error("Erro ao carregar hábitos", err);
+      logger.error("Erro ao carregar hábitos", err);
     } finally {
       setLoading(false);
     }

@@ -1,10 +1,11 @@
+import logging
 import os
 from contextlib import asynccontextmanager
 
+# Internos
+from core.logging_config import setup_logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# Internos
 from routes.admin_users import router as admin_users_router
 from routes.auth import router as auth_router
 from routes.auth_forgot_password import router as forgot_password_router
@@ -16,24 +17,31 @@ from routes.users import router as users_router
 from sqlalchemy.exc import SQLAlchemyError
 from startup import create_default_admin
 
+# ==========================================
+# ⚙️ Inicialização do logging (ANTES de tudo)
+# ==========================================
+setup_logging()
+logger = logging.getLogger("app.startup")
+
 
 # ==========================================
 # ⚙️ Lifespan moderno
 # ==========================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("🚀 Inicializando MyQuotes API...")
+    logger.info("Inicializando MyQuotes API")
 
     try:
         # 👤 Cria admin padrão
         create_default_admin()
+        logger.info("Verificação/criação de admin padrão concluída")
 
-    except SQLAlchemyError as e:
-        print(f"❌ Erro ao inicializar o banco: {e}")
+    except SQLAlchemyError:
+        logger.exception("Erro ao inicializar o banco de dados")
 
     yield  # App rodando
 
-    print("🛑 Encerrando MyQuotes API...")
+    logger.info("Encerrando MyQuotes API")
 
 
 # ==========================================
@@ -71,7 +79,6 @@ app.add_middleware(
 # ==========================================
 # 🔗 Registro de rotas
 # ==========================================
-
 app.include_router(users_router)
 app.include_router(quotes_router)
 app.include_router(auth_router)
