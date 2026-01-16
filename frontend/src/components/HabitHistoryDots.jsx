@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import habitsService from "../services/habitsService";
+import { notify } from "../core/toast";
 
 function formatFullDate(dateStr) {
   return new Date(dateStr).toLocaleDateString("pt-BR", {
@@ -24,7 +25,7 @@ export default function HabitHistoryDots({
         const sliced = (data.days || []).slice(-days); // últimos N dias
         setHistory(sliced);
       } catch (err) {
-        console.error("Erro ao carregar histórico", err);
+        notify.error("Erro ao carregar histórico");
       } finally {
         setLoading(false);
       }

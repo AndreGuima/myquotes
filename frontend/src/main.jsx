@@ -1,5 +1,6 @@
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
 import "./index.css";
 
@@ -26,44 +27,58 @@ import CreateHabit from "./pages/CreateHabit.jsx";
 import EditHabit from "./pages/EditHabit.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/verify-instructions" element={<VerifyInstructions />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/verify-success" element={<VerifySuccess />} />
-      <Route path="/verify-error" element={<VerifyError />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+  <>
+    {/* 🔔 Toast global */}
+    <Toaster
+      position="top-right"
+      gutter={12}
+      toastOptions={{
+        duration: 4000,
+        style: {
+          fontSize: "14px",
+        },
+      }}
+    />
 
-      {/* Rotas protegidas */}
-      <Route
-        element={
-          <PrivateRoute>
-            <MainLayout />
-          </PrivateRoute>
-        }
-      >
-        <Route path="/home" element={<Home />} />
-        <Route path="/quotes" element={<Quotes />} />
-        <Route path="/quotes/new" element={<CreateQuote />} />
-        <Route path="/quotes/:id/edit" element={<EditQuote />} />
-        <Route path="/habits" element={<Habits />} />
-        <Route path="/habits/new" element={<CreateHabit />} />
-        <Route path="/habits/:id/edit" element={<EditHabit />} />
-        <Route path="/preferences" element={<Preferences />} />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/verify-instructions" element={<VerifyInstructions />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verify-success" element={<VerifySuccess />} />
+        <Route path="/verify-error" element={<VerifyError />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
+        {/* Rotas protegidas */}
         <Route
-          path="/users"
           element={
-            <AdminRoute>
-              <Users />
-            </AdminRoute>
+            <PrivateRoute>
+              <MainLayout />
+            </PrivateRoute>
           }
-        />
-      </Route>
-    </Routes>
-  </BrowserRouter>,
+        >
+          <Route path="/home" element={<Home />} />
+          <Route path="/quotes" element={<Quotes />} />
+          <Route path="/quotes/new" element={<CreateQuote />} />
+          <Route path="/quotes/:id/edit" element={<EditQuote />} />
+          <Route path="/habits" element={<Habits />} />
+          <Route path="/habits/new" element={<CreateHabit />} />
+          <Route path="/habits/:id/edit" element={<EditHabit />} />
+          <Route path="/preferences" element={<Preferences />} />
+
+          <Route
+            path="/users"
+            element={
+              <AdminRoute>
+                <Users />
+              </AdminRoute>
+            }
+          />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  </>,
 );

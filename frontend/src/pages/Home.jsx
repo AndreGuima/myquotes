@@ -4,6 +4,7 @@ import quotesService from "../services/quotesService";
 import habitsService from "../services/habitsService";
 import HabitHistorySummary from "../components/HabitHistorySummary";
 import HabitHeatmap from "../components/HabitHeatmap";
+import { notify } from "../core/toast";
 
 // ============================
 // 🧠 Ordenação por prioridade
@@ -51,7 +52,7 @@ export default function Home() {
         setQuote(q);
         localStorage.setItem(cacheKey, JSON.stringify(q));
       } catch (err) {
-        console.error("Erro ao carregar quote do dia:", err);
+        notify.error("Erro ao carregar quote do dia:");
       } finally {
         setLoadingQuote(false);
       }
@@ -77,7 +78,7 @@ export default function Home() {
 
         setHabits(withStats);
       } catch (err) {
-        console.error("Erro ao carregar hábitos", err);
+        notify.error("Erro ao carregar hábitos");
       } finally {
         setLoadingHabits(false);
       }

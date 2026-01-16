@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import habitsService from "../services/habitsService";
 import { Link } from "react-router-dom";
-import { logger } from "../core/logger";
+import { notify } from "../core/toast";
 
 export default function Habits() {
   const [habits, setHabits] = useState([]);
@@ -22,7 +22,7 @@ export default function Habits() {
 
       setHabits(withStats);
     } catch (err) {
-      logger.error("Erro ao carregar hábitos", err);
+      notify.error("Erro ao carregar hábitos");
     } finally {
       setLoading(false);
     }
@@ -42,15 +42,14 @@ export default function Habits() {
         prev.map((h) => (h.id === habitId ? { ...h, stats: result.stats } : h)),
       );
     } catch (err) {
-      alert("Erro ao marcar hábito");
-      console.error(err);
+      notify.error("Erro ao atualizar hábito. Tente novamente.");
     } finally {
       setToggling(null);
     }
   }
 
   async function handleRemove(habitId) {
-    if (!confirm("Tem certeza que deseja remover este hábito?")) return;
+    if (!window.confirm("Tem certeza que deseja remover este hábito?")) return;
 
     setRemoving(habitId);
 
@@ -58,8 +57,7 @@ export default function Habits() {
       await habitsService.update(habitId, { is_active: false });
       setHabits((prev) => prev.filter((h) => h.id !== habitId));
     } catch (err) {
-      alert("Erro ao remover hábito");
-      console.error(err);
+      notify.error("Erro ao remover hábito. Tente novamente.");
     } finally {
       setRemoving(null);
     }

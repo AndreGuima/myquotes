@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import habitsService from "../services/habitsService";
+import { notify } from "../core/toast";
 
 /**
  * Heatmap binário:
@@ -20,7 +21,7 @@ export default function HabitHeatmap({ habitId, days = 90 }) {
         const res = await habitsService.heatmap(habitId, days);
         setData(res);
       } catch (err) {
-        console.error("Erro ao carregar heatmap", err);
+        notify.error("Erro ao carregar heatmap");
       } finally {
         setLoading(false);
       }

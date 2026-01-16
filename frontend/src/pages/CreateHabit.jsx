@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import habitsService from "../services/habitsService";
+import { notify } from "../core/toast";
 
 export default function CreateHabit() {
   const navigate = useNavigate();
@@ -27,8 +28,7 @@ export default function CreateHabit() {
       await habitsService.create(payload);
       navigate("/habits");
     } catch (err) {
-      alert("Erro ao criar hábito");
-      console.error(err);
+      notify.error("Erro ao criar hábito. Tente novamente.");
     } finally {
       setLoading(false);
     }
