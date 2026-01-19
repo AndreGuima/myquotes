@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import usersService from "../services/usersService";
 import DataTable from "../components/DataTable";
+import { notify, confirm } from "../core/toast";
+import { getApiErrorMessage } from "../core/apiError";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -13,13 +15,14 @@ export default function Users() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [processing, setProcessing] = useState(null); // desativar/restaurar
 
   const loadUsers = async () => {
     try {
-      const response = await usersService.getAll();
-      setUsers(response.data);
+      const users = await usersService.getAll();
+      setUsers(users);
     } catch (err) {
-      console.error("Erro ao carregar usuários:", err);
+      notify.error(getApiErrorMessage(err, "Erro ao carregar usuários"));
     } finally {
       setLoading(false);
     }
@@ -41,6 +44,7 @@ export default function Users() {
 
   const save = async () => {
     setSaving(true);
+
     try {
       const payload = {
         username: form.username,
@@ -48,34 +52,77 @@ export default function Users() {
         role: form.role,
       };
 
-      if (form.password.trim() !== "") payload.password = form.password;
+      if (form.password.trim() !== "") {
+        payload.password = form.password;
+      }
 
       await usersService.update(editing, payload);
-      await loadUsers();
+
+      notify.success("Usuário atualizado com sucesso");
       setEditing(null);
+      await loadUsers();
     } catch (err) {
-      alert("Erro ao salvar");
-      console.error(err);
+      notify.error(getApiErrorMessage(err, "Erro ao salvar usuário"));
     } finally {
       setSaving(false);
     }
   };
 
-  const removeUser = async (id) => {
-    if (!confirm("Tem certeza?")) return;
-    await usersService.remove(id);
-    loadUsers();
+  const removeUser = (id) => {
+    confirm({
+      message: "Tem certeza que deseja desativar este usuário?",
+      confirmText: "Desativar",
+      cancelText: "Cancelar",
+      variant: "danger",
+
+      onConfirm: async () => {
+        setProcessing(id);
+
+        try {
+          await usersService.remove(id);
+          notify.success("Usuário desativado");
+          loadUsers();
+        } catch (err) {
+          notify.error(getApiErrorMessage(err, "Erro ao desativar usuário"));
+        } finally {
+          setProcessing(null);
+        }
+      },
+    });
   };
 
-  if (loading) return <p>Carregando usuários...</p>;
+  const restoreUser = (id) => {
+    confirm({
+      message: "Deseja restaurar este usuário?",
+      confirmText: "Restaurar",
+      cancelText: "Cancelar",
+      variant: "primary",
+
+      onConfirm: async () => {
+        setProcessing(id);
+
+        try {
+          await usersService.restore(id);
+          notify.success("Usuário restaurado");
+          loadUsers();
+        } catch (err) {
+          notify.error(getApiErrorMessage(err, "Erro ao restaurar usuário"));
+        } finally {
+          setProcessing(null);
+        }
+      },
+    });
+  };
+
+  if (loading) {
+    return <p className="p-4 text-gray-600">Carregando usuários...</p>;
+  }
 
   return (
     <>
       <DataTable
         title="Gerenciar Usuários"
-        createLabel={null}
-        createLink={null}
-        enableSearch={true}
+        enableSearch
         searchPlaceholder="Buscar por username, email ou role..."
         searchKeys={["username", "email", "role"]}
         columns={[
@@ -84,7 +131,7 @@ export default function Users() {
           { key: "email", label: "Email" },
           { key: "role", label: "Role" },
           { key: "is_active", label: "Status", width: "120px" },
-          { key: "actions", label: "Ações", width: "120px" },
+          { key: "actions", label: "Ações", width: "140px" },
         ]}
         data={users}
         renderRow={(u) => (
@@ -117,19 +164,18 @@ export default function Users() {
               {u.is_active ? (
                 <button
                   onClick={() => removeUser(u.id)}
-                  className="px-2 py-1 bg-red-500 text-white rounded"
+                  disabled={processing === u.id}
+                  className="px-2 py-1 bg-red-500 text-white rounded disabled:opacity-50"
                 >
-                  Desativar
+                  {processing === u.id ? "Aguarde..." : "Desativar"}
                 </button>
               ) : (
                 <button
-                  onClick={async () => {
-                    await usersService.restore(u.id);
-                    loadUsers();
-                  }}
-                  className="px-2 py-1 bg-green-500 text-white rounded"
+                  onClick={() => restoreUser(u.id)}
+                  disabled={processing === u.id}
+                  className="px-2 py-1 bg-green-500 text-white rounded disabled:opacity-50"
                 >
-                  Restaurar
+                  {processing === u.id ? "Aguarde..." : "Restaurar"}
                 </button>
               )}
             </td>
@@ -137,7 +183,7 @@ export default function Users() {
         )}
       />
 
-      {/* Modal permanece igual */}
+      {/* Modal de edição */}
       {editing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded shadow-xl w-96">

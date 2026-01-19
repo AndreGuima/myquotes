@@ -5,27 +5,31 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # ============================================================================
-# 🔑 Carregar .env (prod-like) ANTES de importar o app
+# Caminhos absolutos
 # ============================================================================
-ROOT = Path(__file__).resolve().parents[2]
-load_dotenv(ROOT / ".env")
+TESTS_DIR = Path(__file__).resolve().parent  # backend/tests
+APP_DIR = TESTS_DIR.parent / "app"  # backend/app
+PROJECT_ROOT = TESTS_DIR.parent.parent  # repo root
 
-# Flag opcional (se ainda for usada em algum lugar)
+# ============================================================================
+# Ambiente
+# ============================================================================
+load_dotenv(PROJECT_ROOT / ".env")
 os.environ["TESTING"] = "1"
 
 # ============================================================================
-# 👇 backend/app vira o ROOT do Python
+# Projeto FLAT → backend/app é o root do Python
 # ============================================================================
-APP_PATH = Path(__file__).resolve().parents[1] / "app"
-sys.path.insert(0, str(APP_PATH))
+sys.path.insert(0, str(APP_DIR))
 
-# ⚠️ Somente agora podemos importar o app
+# ============================================================================
+# Imports da aplicação (flat)
+# ============================================================================
 import database as app_db
 import pytest
 from database import Base, get_db
 from fastapi.testclient import TestClient
 from main import app
-from models.quote import Quote
 from models.user import User
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import habitsService from "../services/habitsService";
 import HabitHeatmap from "../components/HabitHeatmap";
+import { notify } from "../core/toast";
+import { getApiErrorMessage } from "../core/apiError";
 
 function formatDateLabel(dateStr) {
   const date = new Date(dateStr);
@@ -86,7 +88,7 @@ export default function EditHabit() {
         );
         setHistory(sortedDays);
       } catch (err) {
-        console.error("Erro ao carregar histórico", err);
+        notify.error(getApiErrorMessage(err, "Erro ao carregar histórico"));
       } finally {
         setLoadingHistory(false);
       }

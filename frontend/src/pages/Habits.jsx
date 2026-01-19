@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import habitsService from "../services/habitsService";
 import { Link } from "react-router-dom";
+import { notify, confirm } from "../core/toast";
+import { getApiErrorMessage } from "../core/apiError";
 
 export default function Habits() {
   const [habits, setHabits] = useState([]);
@@ -21,7 +23,7 @@ export default function Habits() {
 
       setHabits(withStats);
     } catch (err) {
-      console.error("Erro ao carregar hábitos", err);
+      notify.error(getApiErrorMessage(err, "Erro ao carregar hábitos"));
     } finally {
       setLoading(false);
     }
@@ -41,27 +43,35 @@ export default function Habits() {
         prev.map((h) => (h.id === habitId ? { ...h, stats: result.stats } : h)),
       );
     } catch (err) {
-      alert("Erro ao marcar hábito");
-      console.error(err);
+      notify.error(getApiErrorMessage(err, "Erro ao atualizar hábito"));
     } finally {
       setToggling(null);
     }
   }
 
-  async function handleRemove(habitId) {
-    if (!confirm("Tem certeza que deseja remover este hábito?")) return;
+  function handleRemove(habitId) {
+    confirm({
+      message: "Tem certeza que deseja remover este hábito?",
+      confirmText: "Remover",
+      cancelText: "Cancelar",
+      variant: "danger",
 
-    setRemoving(habitId);
+      onConfirm: async () => {
+        setRemoving(habitId);
 
-    try {
-      await habitsService.update(habitId, { is_active: false });
-      setHabits((prev) => prev.filter((h) => h.id !== habitId));
-    } catch (err) {
-      alert("Erro ao remover hábito");
-      console.error(err);
-    } finally {
-      setRemoving(null);
-    }
+        try {
+          await habitsService.update(habitId, { is_active: false });
+
+          setHabits((prev) => prev.filter((h) => h.id !== habitId));
+
+          notify.success("Hábito removido com sucesso");
+        } catch (err) {
+          notify.error(getApiErrorMessage(err, "Erro ao remover hábito"));
+        } finally {
+          setRemoving(null);
+        }
+      },
+    });
   }
 
   if (loading) {

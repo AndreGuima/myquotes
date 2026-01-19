@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import quotesService from "../services/quotesService";
+import { notify } from "../core/toast";
+import { getApiErrorMessage } from "../core/apiError";
 
 const TEXT_LIMIT = 200;
 
@@ -21,8 +23,7 @@ export default function EditQuote() {
       setAuthor(q.author ?? "");
       setText(q.text ?? "");
     } catch (err) {
-      console.error(err);
-      alert("Erro ao carregar quote");
+      notify.error(getApiErrorMessage(err, "Erro ao carregar quote"));
       navigate("/quotes");
     } finally {
       setLoading(false);
@@ -43,8 +44,7 @@ export default function EditQuote() {
       await quotesService.update(id, { author, text });
       navigate("/quotes");
     } catch (err) {
-      console.error(err);
-      alert("Erro ao atualizar");
+      notify.error(getApiErrorMessage(err, "Erro ao salvar alterações"));
     }
   }
 

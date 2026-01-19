@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import preferencesService from "../services/preferencesService";
+import { notify } from "../core/toast";
+import { getApiErrorMessage } from "../core/apiError";
 
 export default function Preferences() {
   const [loading, setLoading] = useState(true);
@@ -16,7 +18,7 @@ export default function Preferences() {
         setReceiveDailyQuote(data.preferences.receive_daily_quote ?? true);
         setDailyQuoteTime(data.preferences.daily_quote_time ?? "08:00");
       } catch (err) {
-        console.error("Erro ao carregar preferências", err);
+        notify.error(getApiErrorMessage(err, "Erro ao carregar preferências"));
       } finally {
         setLoading(false);
       }
@@ -35,9 +37,9 @@ export default function Preferences() {
         daily_quote_time: dailyQuoteTime,
       });
 
-      alert("Preferências salvas com sucesso!");
-    } catch {
-      alert("Erro ao salvar preferências");
+      notify.success("Preferências salvas com sucesso");
+    } catch (err) {
+      notify.error(getApiErrorMessage(err, "Erro ao salvar preferências"));
     } finally {
       setSaving(false);
     }

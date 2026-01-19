@@ -91,24 +91,24 @@ jobs:
 
       - name: Instalar dependências do frontend
         run: |
-          cd myquotes-web
+          cd frontend
           npm install
 
       - name: Verificar formatação com Prettier
         run: |
-          cd myquotes-web
+          cd frontend
           npm run format:check --if-present
 
       - name: Linter (ESLint)
         run: |
-          cd myquotes-web
+          cd frontend
           npm run lint --if-present
 
       - name: Build de validação (Vite)
         run: |
-          cd myquotes-web
+          cd frontend
           npm run build
 
       - name: Validar Dockerfile do frontend
         run: |
-          docker build -t frontend-ci-test ./myquotes-web
+          docker build -t frontend-ci-test ./frontend

@@ -36,7 +36,7 @@ echo "✅ Testes OK"
 # ======================================
 # Frontend - Prettier (AUTO FIX)
 # ======================================
-cd $ROOT/myquotes-web
+cd $ROOT/frontend
 
 echo "🎨 Rodando Prettier (auto-fix)..."
 npx prettier --write .
