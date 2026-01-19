@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import habitsService from "../services/habitsService";
 import { notify } from "../core/toast";
+import { getApiErrorMessage } from "../core/apiError";
 
 function formatFullDate(dateStr) {
   return new Date(dateStr).toLocaleDateString("pt-BR", {
@@ -25,7 +26,7 @@ export default function HabitHistoryDots({
         const sliced = (data.days || []).slice(-days); // últimos N dias
         setHistory(sliced);
       } catch (err) {
-        notify.error("Erro ao carregar histórico");
+        notify.error(getApiErrorMessage(err, "Erro ao carregar histórico"));
       } finally {
         setLoading(false);
       }

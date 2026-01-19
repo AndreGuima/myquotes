@@ -53,3 +53,46 @@ export const notify = {
     toast.dismiss(id);
   },
 };
+
+export function confirm({
+  message,
+  confirmText = "Confirmar",
+  cancelText = "Cancelar",
+  onConfirm,
+  variant = "danger", // danger | primary
+}) {
+  toast.custom(
+    (t) => (
+      <div className="bg-gray-900 text-white rounded-xl shadow-lg p-4 w-80">
+        <p className="text-sm mb-4">{message}</p>
+
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+          >
+            {cancelText}
+          </button>
+
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              onConfirm();
+            }}
+            className={`px-3 py-1 rounded text-sm text-white ${
+              variant === "danger"
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    ),
+    {
+      duration: Infinity,
+      position: "top-center",
+    },
+  );
+}

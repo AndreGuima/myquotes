@@ -1,13 +1,25 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { confirm, notify } from "../core/toast";
 
 export default function MainLayout() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login", { replace: true });
+    confirm({
+      message: "Tem certeza que deseja sair da sua conta?",
+      confirmText: "Sair",
+      cancelText: "Cancelar",
+      variant: "danger",
+
+      onConfirm: () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        notify.success("Logout realizado com sucesso");
+        navigate("/login", { replace: true });
+      },
+    });
   }
 
   const navClass = ({ isActive }) =>
@@ -15,6 +27,7 @@ export default function MainLayout() {
 
   return (
     <div className="flex h-screen">
+      {/* Sidebar */}
       <aside className="w-64 bg-gray-900 text-white flex flex-col p-4">
         <h2 className="text-xl font-bold mb-6">MyLife</h2>
 
@@ -42,18 +55,21 @@ export default function MainLayout() {
           )}
         </nav>
 
+        {/* User info */}
         <div className="bg-gray-800 p-3 rounded mb-4 text-sm">
           Logado como: <span className="font-semibold">{user?.username}</span>
         </div>
 
+        {/* Logout */}
         <button
           onClick={handleLogout}
-          className="bg-red-600 hover:bg-red-700 mt-6 py-2 rounded"
+          className="bg-red-600 hover:bg-red-700 mt-2 py-2 rounded transition"
         >
           Sair
         </button>
       </aside>
 
+      {/* Conteúdo */}
       <div className="flex-1 bg-gray-100 p-6 overflow-auto">
         <Outlet />
       </div>

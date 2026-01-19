@@ -17,6 +17,10 @@
   cat ./frontend/src/layout/*
 
   echo
+  echo "### Veja todos os arquivos dentro de core atualmente:"
+  cat ./frontend/src/core/*
+
+  echo
   echo "### Esse é o main.jsx"
   cat ./frontend/src/main.jsx
 } | xclip -selection clipboard

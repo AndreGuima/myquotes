@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import usersService from "../services/usersService";
 import DataTable from "../components/DataTable";
-import { notify } from "../core/toast";
+import { notify, confirm } from "../core/toast";
+import { getApiErrorMessage } from "../core/apiError";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -14,13 +15,14 @@ export default function Users() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [processing, setProcessing] = useState(null); // desativar/restaurar
 
   const loadUsers = async () => {
     try {
-      const users = await usersService.getAll(); // ✅ contrato correto
+      const users = await usersService.getAll();
       setUsers(users);
     } catch (err) {
-      notify.error("Erro ao carregar usuários");
+      notify.error(getApiErrorMessage(err, "Erro ao carregar usuários"));
     } finally {
       setLoading(false);
     }
@@ -60,33 +62,56 @@ export default function Users() {
       setEditing(null);
       await loadUsers();
     } catch (err) {
-      notify.error("Erro ao salvar usuário");
+      notify.error(getApiErrorMessage(err, "Erro ao salvar usuário"));
     } finally {
       setSaving(false);
     }
   };
 
-  const removeUser = async (id) => {
-    if (!window.confirm("Tem certeza que deseja desativar este usuário?"))
-      return;
+  const removeUser = (id) => {
+    confirm({
+      message: "Tem certeza que deseja desativar este usuário?",
+      confirmText: "Desativar",
+      cancelText: "Cancelar",
+      variant: "danger",
 
-    try {
-      await usersService.remove(id);
-      notify.success("Usuário desativado");
-      loadUsers();
-    } catch (err) {
-      notify.error("Erro ao desativar usuário");
-    }
+      onConfirm: async () => {
+        setProcessing(id);
+
+        try {
+          await usersService.remove(id);
+          notify.success("Usuário desativado");
+          loadUsers();
+        } catch (err) {
+          notify.error(getApiErrorMessage(err, "Erro ao desativar usuário"));
+        } finally {
+          setProcessing(null);
+        }
+      },
+    });
   };
 
-  const restoreUser = async (id) => {
-    try {
-      await usersService.restore(id);
-      notify.success("Usuário restaurado");
-      loadUsers();
-    } catch (err) {
-      notify.error("Erro ao restaurar usuário");
-    }
+  const restoreUser = (id) => {
+    confirm({
+      message: "Deseja restaurar este usuário?",
+      confirmText: "Restaurar",
+      cancelText: "Cancelar",
+      variant: "primary",
+
+      onConfirm: async () => {
+        setProcessing(id);
+
+        try {
+          await usersService.restore(id);
+          notify.success("Usuário restaurado");
+          loadUsers();
+        } catch (err) {
+          notify.error(getApiErrorMessage(err, "Erro ao restaurar usuário"));
+        } finally {
+          setProcessing(null);
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -106,7 +131,7 @@ export default function Users() {
           { key: "email", label: "Email" },
           { key: "role", label: "Role" },
           { key: "is_active", label: "Status", width: "120px" },
-          { key: "actions", label: "Ações", width: "120px" },
+          { key: "actions", label: "Ações", width: "140px" },
         ]}
         data={users}
         renderRow={(u) => (
@@ -139,16 +164,18 @@ export default function Users() {
               {u.is_active ? (
                 <button
                   onClick={() => removeUser(u.id)}
-                  className="px-2 py-1 bg-red-500 text-white rounded"
+                  disabled={processing === u.id}
+                  className="px-2 py-1 bg-red-500 text-white rounded disabled:opacity-50"
                 >
-                  Desativar
+                  {processing === u.id ? "Aguarde..." : "Desativar"}
                 </button>
               ) : (
                 <button
                   onClick={() => restoreUser(u.id)}
-                  className="px-2 py-1 bg-green-500 text-white rounded"
+                  disabled={processing === u.id}
+                  className="px-2 py-1 bg-green-500 text-white rounded disabled:opacity-50"
                 >
-                  Restaurar
+                  {processing === u.id ? "Aguarde..." : "Restaurar"}
                 </button>
               )}
             </td>
@@ -156,7 +183,7 @@ export default function Users() {
         )}
       />
 
-      {/* Modal de edição permanece praticamente igual */}
+      {/* Modal de edição */}
       {editing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded shadow-xl w-96">

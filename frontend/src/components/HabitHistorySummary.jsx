@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import habitsService from "../services/habitsService";
 import { notify } from "../core/toast";
+import { getApiErrorMessage } from "../core/apiError";
 
 export default function HabitHistorySummary({ habit }) {
   const [summary, setSummary] = useState(null);
@@ -28,7 +29,7 @@ export default function HabitHistorySummary({ habit }) {
           streak,
         });
       } catch (err) {
-        notify.error("Erro ao carregar histórico");
+        notify.error(getApiErrorMessage(err, "Erro ao carregar histórico"));
       } finally {
         setLoading(false);
       }

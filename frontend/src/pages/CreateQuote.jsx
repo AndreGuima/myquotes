@@ -1,6 +1,7 @@
 import { useState } from "react";
 import quotesService from "../services/quotesService";
 import { notify } from "../core/toast";
+import { getApiErrorMessage } from "../core/apiError";
 import { useNavigate } from "react-router-dom";
 
 export default function CreateQuote() {
@@ -23,8 +24,8 @@ export default function CreateQuote() {
       }
       await quotesService.create(payload);
       navigate("/quotes/");
-    } catch {
-      notify.error("Erro ao criar quote. Tente novamente.");
+    } catch (err) {
+      notify.error(getApiErrorMessage(err, "Erro ao criar quote"));
     } finally {
       setLoading(false);
     }
