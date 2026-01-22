@@ -1,5 +1,5 @@
 import { useState } from "react";
-import api from "../services/api";
+import authService from "../services/authService";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -14,9 +14,8 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      await api.post("/auth/forgot-password", { email });
+      await authService.forgotPassword(email);
 
-      // resposta SEMPRE genérica (boa prática de segurança)
       setMessage(
         "Se este email estiver cadastrado, você receberá instruções para redefinir sua senha.",
       );

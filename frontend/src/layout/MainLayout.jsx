@@ -1,9 +1,10 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { confirm, notify } from "../core/toast";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function MainLayout() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const { user, logout } = useAuth();
 
   function handleLogout() {
     confirm({
@@ -13,9 +14,7 @@ export default function MainLayout() {
       variant: "danger",
 
       onConfirm: () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-
+        logout();
         notify.success("Logout realizado com sucesso");
         navigate("/login", { replace: true });
       },

@@ -49,7 +49,6 @@
     
 
 ####### Database ################################
-#################################################
     ### Entrar dentro do container
         docker exec -it myquotes-backend bash
 
@@ -95,9 +94,8 @@
 
 
 ######## documentacao pessoal de lembretes ######
-#################################################
 ### Antes de comecar a trabalhar
-    ./prework.sh "Controle de Hábitos - Heatmap" | xclip -selection clipboard
+    ./prework.sh "Interceptor de response 401" | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard

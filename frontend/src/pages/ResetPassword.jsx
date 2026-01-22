@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import api from "../services/api";
+import authService from "../services/authService";
 
 export default function ResetPassword() {
   const [params] = useSearchParams();
@@ -19,9 +19,8 @@ export default function ResetPassword() {
   useEffect(() => {
     async function validateToken() {
       try {
-        await api.get("/auth/reset-password/validate", {
-          params: { token },
-        });
+        await authService.validateResetToken(token);
+
         setChecking(false);
       } catch {
         setError("Token inválido ou expirado.");
@@ -54,7 +53,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      await api.post("/auth/reset-password", {
+      await authService.resetPassword({
         token,
         new_password: password,
       });
