@@ -1,23 +1,16 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import authService from "../services/authService";
 import { clearSession } from "../services/session";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // 🔄 Carrega sessão do localStorage ao iniciar
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
 
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-
-    setLoading(false);
-  }, []);
+  const [loading, setLoading] = useState(false);
 
   // 🔐 Login centralizado
   async function login({ email, password }) {
@@ -27,7 +20,6 @@ export function AuthProvider({ children }) {
     localStorage.setItem("user", JSON.stringify(data.user));
 
     setUser(data.user);
-
     return data;
   }
 
