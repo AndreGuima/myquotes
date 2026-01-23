@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import api from "../services/api";
+import authService from "../services/authService";
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ export default function VerifyEmail() {
       }
 
       try {
-        await api.get(`/auth/verify-email?token=${token}`);
+        await authService.verifyEmail(token);
         navigate("/verify-success");
       } catch {
         navigate("/verify-error");

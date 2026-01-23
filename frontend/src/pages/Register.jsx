@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import authService from "../services/authService";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -26,13 +26,12 @@ export default function Register() {
     }
 
     try {
-      await api.post("/auth/register", {
+      await authService.register({
         username,
         email,
         password,
         confirm_password: confirmPassword,
       });
-
       navigate("/verify-instructions");
     } catch {
       setError("Não foi possível criar a conta.");
