@@ -1,6 +1,6 @@
 #!/bin/bash
-set -u
 set -e
+set -u
 
 echo "🚀 Iniciando script de validação..."
 
@@ -9,7 +9,7 @@ ROOT=~/repo/myquotes
 # ======================================
 # Ambiente
 # ======================================
-cd $ROOT
+cd "$ROOT"
 source venv/bin/activate
 
 # ======================================
@@ -34,9 +34,12 @@ pytest -v tests
 echo "✅ Testes OK"
 
 # ======================================
-# Frontend - Prettier (AUTO FIX)
+# Frontend
 # ======================================
-cd $ROOT/frontend
+cd "$ROOT/frontend"
+
+echo "📦 Instalando dependências frontend..."
+npm install
 
 echo "🎨 Rodando Prettier (auto-fix)..."
 npx prettier --write .
@@ -44,12 +47,18 @@ npx prettier --write .
 echo "🔍 Verificando Prettier..."
 npx prettier --check .
 
-echo "✅ Prettier OK"
+echo "🔍 Rodando ESLint..."
+npm run lint
+
+echo "🏗️ Rodando build (Vite)..."
+npm run build
+
+echo "✅ Frontend OK"
 
 # ======================================
 # Git
 # ======================================
-cd $ROOT
+cd "$ROOT"
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 git status

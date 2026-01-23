@@ -1,8 +1,7 @@
-import { createContext, useContext, useState } from "react";
+import { useState } from "react";
 import authService from "../services/authService";
 import { clearSession } from "../services/session";
-
-const AuthContext = createContext(null);
+import { AuthContext } from "./AuthContext";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -12,18 +11,22 @@ export function AuthProvider({ children }) {
 
   const [loading, setLoading] = useState(false);
 
-  // 🔐 Login centralizado
   async function login({ email, password }) {
-    const data = await authService.login({ email, password });
+    try {
+      setLoading(true);
 
-    localStorage.setItem("token", data.access_token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+      const data = await authService.login({ email, password });
 
-    setUser(data.user);
-    return data;
+      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      setUser(data.user);
+      return data;
+    } finally {
+      setLoading(false);
+    }
   }
 
-  // 🚪 Logout centralizado
   function logout() {
     clearSession();
     setUser(null);
@@ -42,15 +45,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-// 🎣 Hook
-export function useAuth() {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth deve ser usado dentro de AuthProvider");
-  }
-
-  return context;
 }
