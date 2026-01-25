@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
+import PasswordInput from "../components/PasswordInput";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -29,6 +30,7 @@ export default function Login() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
         <h1 className="text-3xl font-bold text-center mb-4">MyQuotes</h1>
+
         <p className="text-center text-gray-600 mb-6">
           Entre para acessar suas frases favoritas!
         </p>
@@ -40,10 +42,11 @@ export default function Login() {
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
+          {/* Email */}
           <div>
             <label className="block font-medium mb-1">Email</label>
             <input
-              type="text"
+              type="email"
               className="w-full border p-2 rounded"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -51,16 +54,12 @@ export default function Login() {
             />
           </div>
 
-          <div>
-            <label className="block font-medium mb-1">Senha</label>
-            <input
-              type="password"
-              className="w-full border p-2 rounded"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
+          {/* Senha */}
+          <PasswordInput
+            label="Senha"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
 
           <button
             type="submit"

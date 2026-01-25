@@ -95,14 +95,16 @@
 
 ######## documentacao pessoal de lembretes ######
 ### Antes de comecar a trabalhar
-    ./prework.sh "Interceptor de response 401" | xclip -selection clipboard
+    ./prework.sh "Olho no campo senha" | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
 
-### Rodar Testes
+### Rodar Testes ou installar dependencias. Python 3.13
     cd ~/repo/myquotes
     source venv/bin/activate
+    ### install aqui
+    pip freeze > backend/requirements.txt
     pip install -r backend/requirements.txt
     pytest -v backend/tests/
     pytest -v backend/tests/ | xclip -selection clipboard
