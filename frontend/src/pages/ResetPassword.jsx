@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import authService from "../services/authService";
+import PasswordInput from "../components/PasswordInput";
 
 export default function ResetPassword() {
   const [params] = useSearchParams();
@@ -9,18 +10,18 @@ export default function ResetPassword() {
   const token = params.get("token");
 
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
-  // 🔎 1) Valida token ao carregar a página
+  // 🔎 1) Validar token ao carregar
   useEffect(() => {
     async function validateToken() {
       try {
         await authService.validateResetToken(token);
-
         setChecking(false);
       } catch {
         setError("Token inválido ou expirado.");
@@ -36,6 +37,7 @@ export default function ResetPassword() {
     }
   }, [token]);
 
+  // 💾 2) Enviar nova senha
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -45,7 +47,7 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password !== confirm) {
+    if (password !== confirmPassword) {
       setError("As senhas não conferem.");
       return;
     }
@@ -67,7 +69,7 @@ export default function ResetPassword() {
     }
   }
 
-  // ⏳ Enquanto valida o token
+  // ⏳ Validando token
   if (checking) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
@@ -103,6 +105,13 @@ export default function ResetPassword() {
     );
   }
 
+  const isDisabled =
+    loading ||
+    !password ||
+    !confirmPassword ||
+    password.length < 8 ||
+    password !== confirmPassword;
+
   // 📝 Formulário
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
@@ -115,28 +124,25 @@ export default function ResetPassword() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="password"
-            placeholder="Nova senha"
-            className="w-full border p-2 rounded"
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <PasswordInput
+            label="Nova senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
+            placeholder="Mínimo 8 caracteres"
           />
 
-          <input
-            type="password"
-            placeholder="Confirmar senha"
-            className="w-full border p-2 rounded"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            required
+          <PasswordInput
+            label="Confirmar senha"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Repita a senha"
+            name="confirm_password"
           />
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isDisabled}
             className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? "Salvando..." : "Redefinir senha"}
