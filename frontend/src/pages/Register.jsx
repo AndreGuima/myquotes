@@ -1,7 +1,23 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
 import PasswordInput from "../components/PasswordInput";
+import {
+  validatePassword,
+  isPasswordValid as isPasswordValidFn,
+} from "../utils/passwordPolicy";
+
+/**
+ * Componente estático para exibir regras de senha
+ * (deve ficar fora do Register para não ser recriado a cada render)
+ */
+function Rule({ ok, children }) {
+  return (
+    <li className={`text-sm ${ok ? "text-green-600" : "text-red-500"}`}>
+      {ok ? "✓" : "✗"} {children}
+    </li>
+  );
+}
 
 export default function Register() {
   const navigate = useNavigate();
@@ -12,16 +28,24 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
+  // 🟢 Controle de foco da senha
+  const [passwordFocused, setPasswordFocused] = useState(false);
+
+  const passwordChecks = useMemo(() => validatePassword(password), [password]);
+
+  const isPasswordValid = isPasswordValidFn(passwordChecks);
+  const passwordsMatch = password && password === confirmPassword;
+
   async function handleRegister(e) {
     e.preventDefault();
     setError("");
 
-    if (password.length < 8) {
-      setError("A senha deve ter pelo menos 8 caracteres.");
+    if (!isPasswordValid) {
+      setError("A senha não atende aos requisitos de segurança.");
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (!passwordsMatch) {
       setError("As senhas não coincidem.");
       return;
     }
@@ -35,8 +59,10 @@ export default function Register() {
       });
 
       navigate("/verify-instructions");
-    } catch {
-      setError("Não foi possível criar a conta.");
+    } catch (err) {
+      const backendError =
+        err?.response?.data?.detail || "Não foi possível criar a conta.";
+      setError(backendError);
     }
   }
 
@@ -45,8 +71,8 @@ export default function Register() {
     !email ||
     !password ||
     !confirmPassword ||
-    password.length < 8 ||
-    password !== confirmPassword;
+    !isPasswordValid ||
+    !passwordsMatch;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
@@ -93,8 +119,21 @@ export default function Register() {
             label="Senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mínimo 8 caracteres"
+            onFocus={() => setPasswordFocused(true)}
+            onBlur={() => setPasswordFocused(false)}
+            placeholder="Crie uma senha segura"
           />
+
+          {/* Regras de senha (FOCO ou TEXTO) */}
+          {(passwordFocused || password) && (
+            <ul className="bg-gray-50 border rounded p-3 space-y-1">
+              <Rule ok={passwordChecks.minLength}>Mínimo de 8 caracteres</Rule>
+              <Rule ok={passwordChecks.upper}>Uma letra maiúscula</Rule>
+              <Rule ok={passwordChecks.lower}>Uma letra minúscula</Rule>
+              <Rule ok={passwordChecks.digit}>Um número</Rule>
+              <Rule ok={passwordChecks.special}>Um caractere especial</Rule>
+            </ul>
+          )}
 
           {/* Confirmar Senha */}
           <PasswordInput
@@ -104,6 +143,10 @@ export default function Register() {
             placeholder="Repita a senha"
             name="confirm_password"
           />
+
+          {confirmPassword && !passwordsMatch && (
+            <p className="text-sm text-red-500">As senhas não coincidem.</p>
+          )}
 
           <button
             type="submit"

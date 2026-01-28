@@ -1,68 +1,125 @@
-from datetime import UTC, datetime, timedelta
+import re
+from datetime import datetime, timedelta
 
-from jose import jwt
+from fastapi import HTTPException, status
+from jose import JWTError, jwt
 from passlib.context import CryptContext
+from settings import settings
 
 # ============================================================
-# 🔧 Configurações de segurança
+# 🔐 JWT Configuration (ENV-driven)
 # ============================================================
 
-SECRET_KEY = "MYQUOTES_SUPER_SECRET_KEY_123"
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
+
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
+EMAIL_VERIFICATION_EXPIRE_HOURS = 24
 
 # ============================================================
-# 🔐 HASH / VERIFICAÇÃO DE SENHA
+# 🔑 Password hashing
 # ============================================================
+
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+)
 
 
 def hash_password(password: str) -> str:
-    """Gera hash seguro para armazenar no banco."""
     return pwd_context.hash(password)
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Compara senha enviada com hash salvo."""
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(password: str, password_hash: str) -> bool:
+    return pwd_context.verify(password, password_hash)
 
 
 # ============================================================
-# 🔐 JWT - CRIAÇÃO E VALIDAÇÃO DE TOKENS
+# 🔐 JWT helpers (API pública do módulo)
 # ============================================================
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    """Cria um token JWT assinado (para login)."""
-    to_encode = data.copy()
-
-    expire = datetime.now(UTC) + (
-        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-
-    to_encode.update({"exp": expire})
-
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+def create_access_token(data: dict) -> str:
+    """
+    Create JWT access token.
+    """
+    payload = data.copy()
+    payload["exp"] = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def decode_access_token(token: str):
-    """Valida e decodifica um token JWT."""
+def decode_access_token(token: str) -> dict:
+    """
+    Decode and validate JWT access token.
+    Raises HTTP 401 if invalid or expired.
+    """
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except Exception:
-        return None
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
+        )
 
 
-def create_email_verification_token(user_id: int):
-    """Cria um token JWT para verificação de email (válido por 24h)."""
-    expire = datetime.now(UTC) + timedelta(hours=24)
-
+# ============================================================
+# 📧 Email verification token
+# ============================================================
+def create_email_verification_token(user_id: int) -> str:
+    """
+    Create a JWT token for email verification.
+    Compatible with /auth/verify-email endpoint.
+    """
     payload = {
         "sub": str(user_id),
-        "type": "verify",
-        "exp": expire,
+        "type": "verify",  # 👈 OBRIGATÓRIO
+        "exp": datetime.utcnow() + timedelta(hours=EMAIL_VERIFICATION_EXPIRE_HOURS),
     }
-
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+# ============================================================
+# 🔒 Password strength validation
+# ============================================================
+
+
+def validate_password_strength(password: str) -> None:
+    errors: list[str] = []
+
+    if len(password) < settings.PASSWORD_MIN_LENGTH:
+        errors.append(f"mínimo de {settings.PASSWORD_MIN_LENGTH} caracteres")
+
+    if settings.PASSWORD_REQUIRE_LOWER and not re.search(r"[a-z]", password):
+        errors.append("uma letra minúscula")
+
+    if settings.PASSWORD_REQUIRE_UPPER and not re.search(r"[A-Z]", password):
+        errors.append("uma letra maiúscula")
+
+    if settings.PASSWORD_REQUIRE_DIGIT and not re.search(r"\d", password):
+        errors.append("um número")
+
+    if settings.PASSWORD_REQUIRE_SPECIAL and not re.search(r"[^\w\s]", password):
+        errors.append("um caractere especial")
+
+    if errors:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"A senha deve conter: {', '.join(errors)}.",
+        )
+
+
+# ============================================================
+# 🔐 High-level password helper (FASE 2)
+# ============================================================
+
+
+def validate_and_hash_password(password: str) -> str:
+    """
+    Valida a senha de acordo com a política configurada
+    e retorna o hash seguro.
+
+    ESTE é o método padrão para criação/alteração de senha.
+    """
+    validate_password_strength(password)
+    return hash_password(password)

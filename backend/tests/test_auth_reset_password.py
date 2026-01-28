@@ -57,7 +57,7 @@ def test_reset_password_success(db_sessionmaker):
             "/auth/reset-password",
             json={
                 "token": token,
-                "new_password": "newpassword123",
+                "new_password": "Newpassword123!",
             },
         )
 
@@ -65,7 +65,7 @@ def test_reset_password_success(db_sessionmaker):
 
         # senha foi alterada
         db.refresh(user)
-        assert verify_password("newpassword123", user.password_hash)
+        assert verify_password("Newpassword123!", user.password_hash)
 
     finally:
         db.close()
@@ -142,20 +142,20 @@ def test_reset_password_token_reuse_fails(db_sessionmaker):
             "/auth/reset-password",
             json={
                 "token": token,
-                "new_password": "newpassword123",
+                "new_password": "Newpassword123!",
             },
         )
 
         assert r1.status_code == 200
         db.refresh(user)
-        assert verify_password("newpassword123", user.password_hash)
+        assert verify_password("Newpassword123!", user.password_hash)
 
         # segunda tentativa com o MESMO token
         r2 = client.post(
             "/auth/reset-password",
             json={
                 "token": token,
-                "new_password": "anotherpassword",
+                "new_password": "Anotherpassword123!",
             },
         )
 
@@ -163,7 +163,7 @@ def test_reset_password_token_reuse_fails(db_sessionmaker):
         db.refresh(user)
 
         # senha não muda novamente
-        assert not verify_password("anotherpassword", user.password_hash)
+        assert not verify_password("Anotherpassword123!", user.password_hash)
 
     finally:
         db.close()
@@ -184,12 +184,12 @@ def test_reset_password_invalidates_all_tokens(db_sessionmaker):
             "/auth/reset-password",
             json={
                 "token": token2,
-                "new_password": "newpassword123",
+                "new_password": "Newpassword123!",
             },
         )
 
         db.refresh(user)
-        assert verify_password("newpassword123", user.password_hash)
+        assert verify_password("Newpassword123!", user.password_hash)
 
         # token2 deve estar invalidado
         r = client.post(

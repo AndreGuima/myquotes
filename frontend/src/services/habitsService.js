@@ -2,40 +2,33 @@ import api from "./api";
 
 const habitsService = {
   async list() {
-    const res = await api.get("/habits/");
-    return res.data;
+    return api.get("/habits/");
   },
 
   async create(payload) {
-    const res = await api.post("/habits/", payload);
-    return res.data;
+    return api.post("/habits/", payload);
   },
 
   async update(id, payload) {
-    const res = await api.patch(`/habits/${id}/`, payload);
-    return res.data;
+    return api.patch(`/habits/${id}/`, payload);
   },
 
   async toggle(habitId) {
-    const res = await api.post(`/habits/${habitId}/toggle/`);
-    return res.data;
+    return api.post(`/habits/${habitId}/toggle/`);
   },
 
   async stats(habitId) {
-    const res = await api.get(`/habits/${habitId}/stats/`);
-    return res.data;
+    return api.get(`/habits/${habitId}/stats/`);
   },
 
   async history(habitId, params = {}) {
-    const res = await api.get(`/habits/${habitId}/history`, { params });
-    return res.data;
+    return api.get(`/habits/${habitId}/history`, { params });
   },
 
   async heatmap(habitId, days = 90) {
-    const res = await api.get(`/habits/${habitId}/heatmap`, {
+    return api.get(`/habits/${habitId}/heatmap`, {
       params: { days },
     });
-    return res.data;
   },
 };
 
