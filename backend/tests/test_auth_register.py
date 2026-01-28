@@ -10,8 +10,8 @@ def make_register_payload(prefix):
     return {
         "username": f"user_{prefix}",
         "email": f"user_{prefix}@example.com",
-        "password": "12345678",
-        "confirm_password": "12345678",
+        "password": "Abcdef12!",  # ✅ senha válida
+        "confirm_password": "Abcdef12!",
     }
 
 

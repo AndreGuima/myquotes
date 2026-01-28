@@ -1,5 +1,5 @@
 from core.dependencies import admin_required
-from core.security import pwd_context
+from core.security import validate_and_hash_password
 from database import get_db
 from fastapi import APIRouter, Depends, HTTPException
 from models.user import User
@@ -31,7 +31,7 @@ def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db)):
         user.email = data.email
 
     if data.password is not None:
-        user.password_hash = pwd_context.hash(data.password)
+        user.password_hash = validate_and_hash_password(data.password)
 
     if data.role is not None:
         user.role = data.role

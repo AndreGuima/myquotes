@@ -1,7 +1,7 @@
 from core.security import (
     create_access_token,
     decode_access_token,
-    hash_password,
+    validate_and_hash_password,
     verify_password,
 )
 from database import get_db
@@ -52,7 +52,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     new_user = User(
         username=payload.username,
         email=payload.email,
-        password_hash=hash_password(payload.password),
+        password_hash=validate_and_hash_password(payload.password),
         role="user",
         is_verified=False,
     )

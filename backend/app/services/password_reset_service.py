@@ -2,7 +2,8 @@ import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
 
-from core.security import hash_password
+from core.security import validate_and_hash_password
+from fastapi import HTTPException
 from models.password_reset import PasswordResetToken
 from models.user import User
 from sqlalchemy.orm import Session
@@ -93,7 +94,7 @@ class PasswordResetService:
             user = reset.user
 
             # 🔐 Atualiza senha
-            user.password_hash = hash_password(new_password)
+            user.password_hash = validate_and_hash_password(new_password)
 
             # 🔒 Invalida TODOS os tokens do usuário (incluindo este)
             db.query(PasswordResetToken).filter(
@@ -107,6 +108,9 @@ class PasswordResetService:
             db.commit()
             return True
 
+        except HTTPException:
+            db.rollback()
+            raise  # 👈 deixa a validação subir
         except Exception:
             db.rollback()
             return False

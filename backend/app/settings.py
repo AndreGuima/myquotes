@@ -10,8 +10,14 @@ class Settings(BaseSettings):
     # =========================
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
+
     # 🌐 Frontend
     FRONTEND_URL: str = "http://localhost:5173"
+
+    # =========================
+    # 🔐 Security / JWT
+    # =========================
+    SECRET_KEY: str
 
     # =========================
     # Database
@@ -35,18 +41,35 @@ class Settings(BaseSettings):
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
 
-    # ✅ Pydantic v2 way
-    model_config = ConfigDict(extra="allow")
+    # =========================
+    # 🔒 Password policy
+    # =========================
+    PASSWORD_MIN_LENGTH: int = 8
+    PASSWORD_REQUIRE_UPPER: bool = True
+    PASSWORD_REQUIRE_LOWER: bool = True
+    PASSWORD_REQUIRE_DIGIT: bool = True
+    PASSWORD_REQUIRE_SPECIAL: bool = True
+
+    # =========================
+    # Pydantic v2
+    # =========================
+    model_config = ConfigDict(
+        extra="allow",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
 
 
 # =========================
 # 🔥 PONTO-CHAVE
 # =========================
 if os.getenv("TESTING") == "1":
+    # Ambiente de testes (SQLite / JWT fake)
     settings = Settings(
         DB_NAME="test_db",
         DB_USER="test_user",
         DB_PASSWORD="test_password",
+        SECRET_KEY="test-secret-key",
     )
 else:
     settings = Settings()

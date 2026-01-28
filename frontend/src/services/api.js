@@ -22,7 +22,7 @@ api.interceptors.request.use((config) => {
 // Interceptor de RESPONSE
 // ==========================
 api.interceptors.response.use(
-  (response) => response,
+  (response) => response.data,
   (error) => {
     const status = error.response?.status;
     const requestUrl = error.config?.url || "";
