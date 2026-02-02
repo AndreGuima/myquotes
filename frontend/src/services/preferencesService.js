@@ -2,15 +2,13 @@ import api from "./api";
 
 const preferencesService = {
   async get(category) {
-    const res = await api.get(`/preferences/${category}`);
-    return res.data;
+    return api.get(`/preferences/${category}`);
   },
 
   async update(category, preferences) {
-    const res = await api.put(`/preferences/${category}`, {
+    return api.put(`/preferences/${category}`, {
       preferences,
     });
-    return res.data;
   },
 };
 

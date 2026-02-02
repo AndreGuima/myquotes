@@ -1,21 +1,41 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import authService from "../services/authService";
 import PasswordInput from "../components/PasswordInput";
+import {
+  validatePassword,
+  isPasswordValid as isPasswordValidFn,
+} from "../utils/passwordPolicy";
+
+// 🔁 Mesmo componente usado no Register
+function Rule({ ok, children }) {
+  return (
+    <li className={`text-sm ${ok ? "text-green-600" : "text-red-500"}`}>
+      {ok ? "✓" : "✗"} {children}
+    </li>
+  );
+}
 
 export default function ResetPassword() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-
   const token = params.get("token");
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  const [passwordFocused, setPasswordFocused] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+
+  // 🔐 Password policy
+  const passwordChecks = useMemo(() => validatePassword(password), [password]);
+
+  const isPasswordValid = isPasswordValidFn(passwordChecks);
+  const passwordsMatch = password && password === confirmPassword;
 
   // 🔎 1) Validar token ao carregar
   useEffect(() => {
@@ -42,13 +62,13 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
 
-    if (password.length < 8) {
-      setError("A senha deve ter no mínimo 8 caracteres.");
+    if (!isPasswordValid) {
+      setError("A senha não atende aos requisitos de segurança.");
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError("As senhas não conferem.");
+    if (!passwordsMatch) {
+      setError("As senhas não coincidem.");
       return;
     }
 
@@ -81,7 +101,7 @@ export default function ResetPassword() {
   }
 
   // ❌ Token inválido
-  if (error && !done) {
+  if (error && !done && !password) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
         <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm text-center">
@@ -109,8 +129,8 @@ export default function ResetPassword() {
     loading ||
     !password ||
     !confirmPassword ||
-    password.length < 8 ||
-    password !== confirmPassword;
+    !isPasswordValid ||
+    !passwordsMatch;
 
   // 📝 Formulário
   return (
@@ -129,8 +149,20 @@ export default function ResetPassword() {
             label="Nova senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mínimo 8 caracteres"
+            onFocus={() => setPasswordFocused(true)}
+            onBlur={() => setPasswordFocused(false)}
+            placeholder="Crie uma senha segura"
           />
+
+          {(passwordFocused || password) && (
+            <ul className="bg-gray-50 border rounded p-3 space-y-1">
+              <Rule ok={passwordChecks.minLength}>Mínimo de 8 caracteres</Rule>
+              <Rule ok={passwordChecks.upper}>Uma letra maiúscula</Rule>
+              <Rule ok={passwordChecks.lower}>Uma letra minúscula</Rule>
+              <Rule ok={passwordChecks.digit}>Um número</Rule>
+              <Rule ok={passwordChecks.special}>Um caractere especial</Rule>
+            </ul>
+          )}
 
           <PasswordInput
             label="Confirmar senha"
@@ -139,6 +171,10 @@ export default function ResetPassword() {
             placeholder="Repita a senha"
             name="confirm_password"
           />
+
+          {confirmPassword && !passwordsMatch && (
+            <p className="text-sm text-red-500">As senhas não coincidem.</p>
+          )}
 
           <button
             type="submit"

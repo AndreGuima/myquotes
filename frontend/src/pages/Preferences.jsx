@@ -15,8 +15,10 @@ export default function Preferences() {
       try {
         const data = await preferencesService.get("quotes");
 
-        setReceiveDailyQuote(data.preferences.receive_daily_quote ?? true);
-        setDailyQuoteTime(data.preferences.daily_quote_time ?? "08:00");
+        const prefs = data?.preferences ?? {};
+
+        setReceiveDailyQuote(prefs.receive_daily_quote ?? true);
+        setDailyQuoteTime(prefs.daily_quote_time ?? "08:00");
       } catch (err) {
         notify.error(getApiErrorMessage(err, "Erro ao carregar preferências"));
       } finally {

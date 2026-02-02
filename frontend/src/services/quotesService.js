@@ -2,33 +2,27 @@ import api from "./api";
 
 const quotesService = {
   async list() {
-    const res = await api.get("/quotes");
-    return res.data;
+    return api.get("/quotes");
   },
 
   async getById(id) {
-    const res = await api.get(`/quotes/${id}`);
-    return res.data;
+    return api.get(`/quotes/${id}`);
   },
 
   async create(data) {
-    const res = await api.post("/quotes", data);
-    return res.data;
+    return api.post("/quotes", data);
   },
 
   async update(id, data) {
-    const res = await api.put(`/quotes/${id}`, data);
-    return res.data;
+    return api.put(`/quotes/${id}`, data);
   },
 
   async remove(id) {
-    const res = await api.delete(`/quotes/${id}`);
-    return res.data;
+    return api.delete(`/quotes/${id}`);
   },
 
   async getQuoteOfTheDay() {
-    const res = await api.get("/quotes/of-the-day");
-    return res.data;
+    return api.get("/quotes/of-the-day");
   },
 };
 
