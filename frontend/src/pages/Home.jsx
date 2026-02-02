@@ -35,16 +35,27 @@ export default function Home() {
   const [habits, setHabits] = useState([]);
   const [loadingHabits, setLoadingHabits] = useState(true);
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  const cacheKey = `quote_of_day_${user?.id}`;
+  const rawUser = localStorage.getItem("user");
+  const user = rawUser ? JSON.parse(rawUser) : null;
+  const cacheKey = user ? `quote_of_day_${user.id}` : null;
 
   // ============================
   // ✨ Quote do Dia
   // ============================
   useEffect(() => {
+    if (!cacheKey) {
+      setLoadingQuote(false);
+      return;
+    }
+
     const cached = localStorage.getItem(cacheKey);
+
     if (cached) {
-      setQuote(JSON.parse(cached));
+      try {
+        setQuote(JSON.parse(cached));
+      } catch {
+        localStorage.removeItem(cacheKey);
+      }
     }
 
     async function loadQuote() {

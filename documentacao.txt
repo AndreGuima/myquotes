@@ -44,7 +44,7 @@
     ### Ver todos os arquivos do frontend
         ./ver_frontend.sh
 
-    docker logs frontend --tail 20
+    docker logs myquotes-frontend --tail 20
     
 
 ####### Database ################################

@@ -2,23 +2,19 @@ import api from "./api";
 
 const usersService = {
   async getAll() {
-    const res = await api.get("/admin/users");
-    return res.data;
+    return api.get("/admin/users");
   },
 
   async update(id, data) {
-    const res = await api.put(`/admin/users/${id}`, data);
-    return res.data;
+    return api.put(`/admin/users/${id}`, data);
   },
 
   async remove(id) {
-    const res = await api.delete(`/admin/users/${id}`);
-    return res.data;
+    return api.delete(`/admin/users/${id}`);
   },
 
   async restore(id) {
-    const res = await api.post(`/admin/users/${id}/restore`);
-    return res.data;
+    return api.post(`/admin/users/${id}/restore`);
   },
 };
 

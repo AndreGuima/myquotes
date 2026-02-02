@@ -4,6 +4,11 @@
 FROM node:20 AS build
 WORKDIR /app
 
+# 👉 declarar build arg
+ARG VITE_API_URL
+
+# 👉 tornar disponível para o Vite
+ENV VITE_API_URL=$VITE_API_URL
 
 COPY package*.json ./
 RUN npm ci
