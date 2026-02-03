@@ -1,5 +1,6 @@
 import os
 import sys
+import warnings
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -16,6 +17,32 @@ PROJECT_ROOT = TESTS_DIR.parent.parent  # repo root
 # ============================================================================
 load_dotenv(PROJECT_ROOT / ".env")
 os.environ["TESTING"] = "1"
+
+# ============================================================================
+# Warnings (dependências externas)
+# ============================================================================
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    module=r"jose\\.jwt",
+)
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    module=r"jose\\.jwt",
+    message=".*utcnow.*",
+)
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    module=r"jose",
+    message=".*utcnow.*",
+)
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    message=".*utcnow.*",
+)
 
 # ============================================================================
 # Projeto FLAT → backend/app é o root do Python

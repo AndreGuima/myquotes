@@ -6,6 +6,7 @@ import HabitHistorySummary from "../components/HabitHistorySummary";
 import HabitHeatmap from "../components/HabitHeatmap";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
+import { useAuth } from "../contexts/useAuth";
 
 // ============================
 // 🧠 Ordenação por prioridade
@@ -35,34 +36,21 @@ export default function Home() {
   const [habits, setHabits] = useState([]);
   const [loadingHabits, setLoadingHabits] = useState(true);
 
-  const rawUser = localStorage.getItem("user");
-  const user = rawUser ? JSON.parse(rawUser) : null;
-  const cacheKey = user ? `quote_of_day_${user.id}` : null;
+  const { user } = useAuth();
 
   // ============================
   // ✨ Quote do Dia
   // ============================
   useEffect(() => {
-    if (!cacheKey) {
+    if (!user) {
       setLoadingQuote(false);
       return;
-    }
-
-    const cached = localStorage.getItem(cacheKey);
-
-    if (cached) {
-      try {
-        setQuote(JSON.parse(cached));
-      } catch {
-        localStorage.removeItem(cacheKey);
-      }
     }
 
     async function loadQuote() {
       try {
         const q = await quotesService.getQuoteOfTheDay();
         setQuote(q);
-        localStorage.setItem(cacheKey, JSON.stringify(q));
       } catch (err) {
         notify.error(getApiErrorMessage(err, "Erro ao carregar quote do dia"));
       } finally {
@@ -71,7 +59,7 @@ export default function Home() {
     }
 
     loadQuote();
-  }, [cacheKey]);
+  }, [user]);
 
   // ============================
   // 📅 Hábitos + stats
