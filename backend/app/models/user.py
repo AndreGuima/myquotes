@@ -33,5 +33,10 @@ class User(Base):
         "Quote", back_populates="user", cascade="all, delete-orphan"
     )
 
+    reading_list_books: Mapped[List["ReadingListBook"]] = relationship(
+        "ReadingListBook", back_populates="user", cascade="all, delete-orphan"
+    )
+
 
 from models.quote import Quote  # noqa: E402,F401
+from models.reading_list_book import ReadingListBook  # noqa: E402,F401

@@ -51,7 +51,10 @@ config.set_main_option("sqlalchemy.url", database_url)
 # 4. Metadata
 # -----------------------------------------------------
 from database import Base
+from models.auth_login_attempt import AuthLoginAttempt
 from models.quote import Quote
+from models.reading_list_book import ReadingListBook
+from models.reading_list_log import ReadingListLog
 from models.user import User
 
 target_metadata = Base.metadata

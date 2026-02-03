@@ -26,6 +26,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Habits from "./pages/Habits.jsx";
 import CreateHabit from "./pages/CreateHabit.jsx";
 import EditHabit from "./pages/EditHabit.jsx";
+import ReadingList from "./pages/ReadingList.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <>
@@ -70,6 +71,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <Route path="/habits" element={<Habits />} />
             <Route path="/habits/new" element={<CreateHabit />} />
             <Route path="/habits/:id/edit" element={<EditHabit />} />
+            <Route path="/reading-list" element={<ReadingList />} />
             <Route path="/preferences" element={<Preferences />} />
 
             <Route
