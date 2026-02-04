@@ -11,6 +11,7 @@ def create_habit(client):
         json={
             "title": "Beber água",
             "frequency_type": "daily",
+            "start_time": "07:00",
         },
     )
     assert res.status_code == 200

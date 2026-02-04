@@ -41,6 +41,8 @@ export default function EditHabit() {
 
   const [title, setTitle] = useState("");
   const [frequencyType, setFrequencyType] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -66,6 +68,8 @@ export default function EditHabit() {
 
         setTitle(habit.title);
         setFrequencyType(habit.frequency_type);
+        setStartTime(habit.start_time ? habit.start_time.slice(0, 5) : "");
+        setEndTime(habit.end_time ? habit.end_time.slice(0, 5) : "");
       } catch {
         setError("Erro ao carregar hábito");
       } finally {
@@ -106,7 +110,13 @@ export default function EditHabit() {
     setError(null);
 
     try {
-      await habitsService.update(id, { title });
+      const payload = {
+        title,
+        start_time: startTime || null,
+        end_time: endTime || null,
+      };
+
+      await habitsService.update(id, payload);
       navigate("/habits");
     } catch {
       setError("Erro ao atualizar hábito");
@@ -168,6 +178,27 @@ export default function EditHabit() {
               disabled
               className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-600"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Horário</label>
+            <div className="flex gap-3">
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+              />
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Intervalo diário do hábito.
+            </p>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

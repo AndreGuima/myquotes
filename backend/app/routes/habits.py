@@ -37,7 +37,14 @@ def create_habit(
 def list_habits(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    include_stats: bool = False,
 ):
+    if include_stats:
+        return HabitService.list_active_with_stats(
+            db,
+            user.id,
+            stats_service=HabitStatsService,
+        )
     return HabitService.list_active(db, user.id)
 
 
@@ -59,15 +66,7 @@ def update_habit(
     if not habit:
         raise HTTPException(status_code=404, detail="Habit not found")
 
-    if habit_update.title is not None:
-        habit.title = habit_update.title
-
-    if habit_update.is_active is not None:
-        habit.is_active = habit_update.is_active
-
-    db.commit()
-    db.refresh(habit)
-    return habit
+    return HabitService.update(db, habit, habit_update)
 
 
 # =========================
@@ -135,7 +134,13 @@ def toggle_habit_today(
         return {"log": log, "stats": stats}
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        detail = str(e)
+        status_code = (
+            status.HTTP_403_FORBIDDEN
+            if detail == "Habit is before scheduled time"
+            else status.HTTP_400_BAD_REQUEST
+        )
+        raise HTTPException(status_code=status_code, detail=detail)
 
 
 # =========================

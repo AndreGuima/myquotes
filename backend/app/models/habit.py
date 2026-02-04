@@ -1,7 +1,16 @@
 import enum
 
 from database import Base
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Time,
+)
 from sqlalchemy.sql import func
 
 
@@ -28,6 +37,9 @@ class Habit(Base):
     )
 
     target_per_week = Column(Integer, nullable=True)
+
+    start_time = Column(Time, nullable=True)
+    end_time = Column(Time, nullable=True)
 
     is_active = Column(Boolean, default=True)
 

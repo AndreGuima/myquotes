@@ -1,8 +1,8 @@
 import api from "./api";
 
 const habitsService = {
-  async list() {
-    return api.get("/habits/");
+  async list(params = {}) {
+    return api.get("/habits/", { params });
   },
 
   async create(payload) {

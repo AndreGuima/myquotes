@@ -29,6 +29,13 @@ function sortHabitsByPriority(habits) {
   });
 }
 
+function formatTimeRange(startTime, endTime) {
+  if (!startTime) return "Sem horário";
+  const start = startTime.slice(0, 5);
+  const end = endTime ? endTime.slice(0, 5) : null;
+  return end ? `${start}–${end}` : start;
+}
+
 export default function Home() {
   const [quote, setQuote] = useState(null);
   const [loadingQuote, setLoadingQuote] = useState(true);
@@ -67,16 +74,8 @@ export default function Home() {
   useEffect(() => {
     async function loadHabits() {
       try {
-        const data = await habitsService.list();
-
-        const withStats = await Promise.all(
-          data.map(async (h) => {
-            const stats = await habitsService.stats(h.id);
-            return { ...h, stats };
-          }),
-        );
-
-        setHabits(withStats);
+        const data = await habitsService.list({ include_stats: true });
+        setHabits(data);
       } catch (err) {
         notify.error(getApiErrorMessage(err, "Erro ao carregar hábitos"));
       } finally {
@@ -162,6 +161,10 @@ export default function Home() {
                 >
                   {habit.title}
                 </Link>
+
+                <div className="text-xs text-gray-500 mt-1">
+                  ⏰ {formatTimeRange(habit.start_time, habit.end_time)}
+                </div>
 
                 {/* Badge pendente */}
                 {!habit.stats?.today_completed && (

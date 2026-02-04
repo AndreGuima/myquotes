@@ -2,7 +2,10 @@ from datetime import date
 
 
 def test_toggle_habit_creates_log(client):
-    r = client.post("/habits/", json={"title": "Beber água"})
+    r = client.post(
+        "/habits/",
+        json={"title": "Beber água", "start_time": "07:00"},
+    )
     habit_id = r.json()["id"]
 
     response = client.post(f"/habits/{habit_id}/toggle")
@@ -22,7 +25,10 @@ def test_toggle_habit_creates_log(client):
 
 
 def test_toggle_habit_flips_completed(client):
-    r = client.post("/habits/", json={"title": "Alongar"})
+    r = client.post(
+        "/habits/",
+        json={"title": "Alongar", "start_time": "08:00"},
+    )
     habit_id = r.json()["id"]
 
     r1 = client.post(f"/habits/{habit_id}/toggle")
@@ -45,7 +51,10 @@ def test_toggle_nonexistent_habit(client):
 
 
 def test_toggle_returns_log_and_stats(client):
-    r = client.post("/habits/", json={"title": "Beber água"})
+    r = client.post(
+        "/habits/",
+        json={"title": "Beber água", "start_time": "07:00"},
+    )
     habit_id = r.json()["id"]
 
     response = client.post(f"/habits/{habit_id}/toggle")
@@ -64,7 +73,10 @@ def test_toggle_returns_log_and_stats(client):
 
 
 def test_toggle_updates_stats(client):
-    r = client.post("/habits/", json={"title": "Alongar"})
+    r = client.post(
+        "/habits/",
+        json={"title": "Alongar", "start_time": "08:00"},
+    )
     habit_id = r.json()["id"]
 
     r1 = client.post(f"/habits/{habit_id}/toggle")

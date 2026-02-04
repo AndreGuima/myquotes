@@ -10,10 +10,16 @@ export default function CreateHabit() {
   const [title, setTitle] = useState("");
   const [frequencyType, setFrequencyType] = useState("daily");
   const [weeklyTarget, setWeeklyTarget] = useState(3);
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (endTime && !startTime) {
+      notify.error("Defina o horário de início antes do fim");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -21,6 +27,14 @@ export default function CreateHabit() {
         title,
         frequency_type: frequencyType,
       };
+
+      if (startTime) {
+        payload.start_time = startTime;
+      }
+
+      if (endTime) {
+        payload.end_time = endTime;
+      }
 
       if (frequencyType === "weekly") {
         payload.target_per_week = weeklyTarget;
@@ -63,6 +77,29 @@ export default function CreateHabit() {
             <option value="daily">Diário</option>
             <option value="weekly">Semanal</option>
           </select>
+        </div>
+
+        {/* Horário */}
+        <div>
+          <label className="block mb-1 font-medium">Horário</label>
+          <div className="flex gap-3">
+            <input
+              type="time"
+              className="w-full border p-2 rounded"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+            />
+            <input
+              type="time"
+              className="w-full border p-2 rounded"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              placeholder="Fim (opcional)"
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Defina um intervalo se quiser. O horário vale para todos os dias.
+          </p>
         </div>
 
         {/* Meta semanal */}
