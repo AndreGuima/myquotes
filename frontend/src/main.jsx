@@ -27,6 +27,7 @@ import Habits from "./pages/Habits.jsx";
 import CreateHabit from "./pages/CreateHabit.jsx";
 import EditHabit from "./pages/EditHabit.jsx";
 import ReadingList from "./pages/ReadingList.jsx";
+import DailyRoutine from "./pages/DailyRoutine.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <>
@@ -72,6 +73,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <Route path="/habits/new" element={<CreateHabit />} />
             <Route path="/habits/:id/edit" element={<EditHabit />} />
             <Route path="/reading-list" element={<ReadingList />} />
+            <Route path="/daily-routine" element={<DailyRoutine />} />
             <Route path="/preferences" element={<Preferences />} />
 
             <Route
