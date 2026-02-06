@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 
 from models.habit import Habit
 from models.habit_log import HabitLog
@@ -8,8 +8,15 @@ from sqlalchemy.orm import Session
 
 class HabitLogService:
     @staticmethod
-    def toggle_today(db: Session, *, user_id: int, habit_id: int) -> HabitLog:
-        today = date.today()
+    def toggle_today(
+        db: Session,
+        *,
+        user_id: int,
+        habit_id: int,
+        now_dt: datetime | None = None,
+    ) -> HabitLog:
+        now = now_dt or datetime.now()
+        today = now.date()
 
         # -------------------------------------------------
         # 1️⃣ Valida hábito (sem lock)
@@ -24,6 +31,11 @@ class HabitLogService:
 
         if not habit.is_active:
             raise ValueError("Habit is inactive")
+
+        if habit.start_time:
+            now_time = now.time()
+            if now_time < habit.start_time:
+                raise ValueError("Habit is before scheduled time")
 
         # -------------------------------------------------
         # 2️⃣ Busca log do dia COM LOCK

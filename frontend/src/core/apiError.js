@@ -16,6 +16,10 @@ export function getApiErrorMessage(error, fallback = "Erro inesperado") {
     return data.message;
   }
 
+  if (typeof data?.detail === "string" && data.detail.trim() !== "") {
+    return data.detail;
+  }
+
   // Fallback por status HTTP
   switch (status) {
     case 400:

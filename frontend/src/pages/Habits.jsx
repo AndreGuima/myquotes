@@ -10,18 +10,17 @@ export default function Habits() {
   const [toggling, setToggling] = useState(null);
   const [removing, setRemoving] = useState(null);
 
+  function formatTimeRange(startTime, endTime) {
+    if (!startTime) return "Sem horário";
+    const start = startTime.slice(0, 5);
+    const end = endTime ? endTime.slice(0, 5) : null;
+    return end ? `${start}–${end}` : start;
+  }
+
   async function loadHabits() {
     try {
-      const data = await habitsService.list();
-
-      const withStats = await Promise.all(
-        data.map(async (h) => {
-          const stats = await habitsService.stats(h.id);
-          return { ...h, stats };
-        }),
-      );
-
-      setHabits(withStats);
+      const data = await habitsService.list({ include_stats: true });
+      setHabits(data);
     } catch (err) {
       notify.error(getApiErrorMessage(err, "Erro ao carregar hábitos"));
     } finally {
@@ -43,7 +42,18 @@ export default function Habits() {
         prev.map((h) => (h.id === habitId ? { ...h, stats: result.stats } : h)),
       );
     } catch (err) {
-      notify.error(getApiErrorMessage(err, "Erro ao atualizar hábito"));
+      const detail = err?.response?.data?.detail;
+      if (detail === "Habit is before scheduled time") {
+        const habit = habits.find((h) => h.id === habitId);
+        const startLabel = habit?.start_time
+          ? habit.start_time.slice(0, 5)
+          : "o horário definido";
+        notify.error(
+          `Esse hábito só pode ser marcado a partir de ${startLabel}.`,
+        );
+      } else {
+        notify.error(getApiErrorMessage(err, "Erro ao atualizar hábito"));
+      }
     } finally {
       setToggling(null);
     }
@@ -118,6 +128,10 @@ export default function Habits() {
                 {/* Info */}
                 <div>
                   <h2 className="text-lg font-semibold">{habit.title}</h2>
+
+                  <div className="text-sm text-gray-600 mt-1">
+                    ⏰ {formatTimeRange(habit.start_time, habit.end_time)}
+                  </div>
 
                   <div className="text-sm text-gray-600 mt-1">
                     🔥 Streak atual:{" "}

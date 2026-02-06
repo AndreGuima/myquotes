@@ -1,5 +1,8 @@
 def test_heatmap_route_ok(client):
-    r = client.post("/habits", json={"title": "Heatmap Habit"})
+    r = client.post(
+        "/habits",
+        json={"title": "Heatmap Habit", "start_time": "07:00"},
+    )
     habit_id = r.json()["id"]
 
     r = client.get(f"/habits/{habit_id}/heatmap?days=14")

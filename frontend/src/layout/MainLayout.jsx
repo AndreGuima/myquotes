@@ -43,6 +43,14 @@ export default function MainLayout() {
             Hábitos
           </NavLink>
 
+          <NavLink to="/reading-list" className={navClass}>
+            Leituras
+          </NavLink>
+
+          <NavLink to="/daily-routine" className={navClass}>
+            Rotina do Dia
+          </NavLink>
+
           <NavLink to="/preferences" className={navClass}>
             Preferências
           </NavLink>

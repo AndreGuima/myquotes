@@ -51,6 +51,13 @@ class Settings(BaseSettings):
     PASSWORD_REQUIRE_SPECIAL: bool = True
 
     # =========================
+    # 🛡️ Brute-force protection
+    # =========================
+    BRUTE_FORCE_MAX_ATTEMPTS: int = 5
+    BRUTE_FORCE_WINDOW_SECONDS: int = 900  # 15 min
+    BRUTE_FORCE_LOCKOUT_SECONDS: int = 900  # 15 min
+
+    # =========================
     # Pydantic v2
     # =========================
     model_config = ConfigDict(

@@ -94,7 +94,7 @@
 
 ######## documentacao pessoal de lembretes ######
 ### Antes de comecar a trabalhar
-    ./prework.sh "Seguranca de tipos de caracteres na senha" | xclip -selection clipboard
+    ./prework.sh "Criar proteção contra brute-force (limitar tentativas)." | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard

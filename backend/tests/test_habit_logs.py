@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, time
 
 import pytest
 from models.habit import Habit
@@ -6,10 +6,19 @@ from models.habit_log import HabitLog
 from services.habit_log_service import HabitLogService
 
 
-def create_habit(db_session, *, user_id: int, title="Hábito Teste"):
+def create_habit(
+    db_session,
+    *,
+    user_id: int,
+    title="Hábito Teste",
+    start_time: time | None = None,
+    end_time: time | None = None,
+):
     habit = Habit(
         user_id=user_id,
         title=title,
+        start_time=start_time,
+        end_time=end_time,
     )
     db_session.add(habit)
     db_session.commit()
@@ -127,3 +136,62 @@ def test_only_one_log_per_day(db_session):
     logs = db_session.query(HabitLog).all()
     assert len(logs) == 1
     assert logs[0].date == date.today()
+
+
+def test_toggle_rejects_before_start_time(db_session):
+    user_id = 1
+    habit = create_habit(
+        db_session,
+        user_id=user_id,
+        start_time=time(19, 0),
+        end_time=time(20, 0),
+    )
+
+    with pytest.raises(ValueError):
+        HabitLogService.toggle_today(
+            db_session,
+            user_id=user_id,
+            habit_id=habit.id,
+            now_dt=datetime(2026, 2, 4, 3, 0),
+        )
+
+    logs = db_session.query(HabitLog).all()
+    assert logs == []
+
+
+def test_toggle_allows_inside_time_window(db_session):
+    user_id = 1
+    habit = create_habit(
+        db_session,
+        user_id=user_id,
+        start_time=time(2, 0),
+        end_time=time(4, 0),
+    )
+
+    log = HabitLogService.toggle_today(
+        db_session,
+        user_id=user_id,
+        habit_id=habit.id,
+        now_dt=datetime(2026, 2, 4, 3, 0),
+    )
+
+    assert log.completed is True
+
+
+def test_toggle_allows_after_end_time_same_day(db_session):
+    user_id = 1
+    habit = create_habit(
+        db_session,
+        user_id=user_id,
+        start_time=time(19, 0),
+        end_time=time(20, 0),
+    )
+
+    log = HabitLogService.toggle_today(
+        db_session,
+        user_id=user_id,
+        habit_id=habit.id,
+        now_dt=datetime(2026, 2, 4, 21, 30),
+    )
+
+    assert log.completed is True

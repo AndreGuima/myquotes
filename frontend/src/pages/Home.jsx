@@ -6,6 +6,7 @@ import HabitHistorySummary from "../components/HabitHistorySummary";
 import HabitHeatmap from "../components/HabitHeatmap";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
+import { useAuth } from "../contexts/useAuth";
 
 // ============================
 // 🧠 Ordenação por prioridade
@@ -28,6 +29,13 @@ function sortHabitsByPriority(habits) {
   });
 }
 
+function formatTimeRange(startTime, endTime) {
+  if (!startTime) return "Sem horário";
+  const start = startTime.slice(0, 5);
+  const end = endTime ? endTime.slice(0, 5) : null;
+  return end ? `${start}–${end}` : start;
+}
+
 export default function Home() {
   const [quote, setQuote] = useState(null);
   const [loadingQuote, setLoadingQuote] = useState(true);
@@ -35,34 +43,21 @@ export default function Home() {
   const [habits, setHabits] = useState([]);
   const [loadingHabits, setLoadingHabits] = useState(true);
 
-  const rawUser = localStorage.getItem("user");
-  const user = rawUser ? JSON.parse(rawUser) : null;
-  const cacheKey = user ? `quote_of_day_${user.id}` : null;
+  const { user } = useAuth();
 
   // ============================
   // ✨ Quote do Dia
   // ============================
   useEffect(() => {
-    if (!cacheKey) {
+    if (!user) {
       setLoadingQuote(false);
       return;
-    }
-
-    const cached = localStorage.getItem(cacheKey);
-
-    if (cached) {
-      try {
-        setQuote(JSON.parse(cached));
-      } catch {
-        localStorage.removeItem(cacheKey);
-      }
     }
 
     async function loadQuote() {
       try {
         const q = await quotesService.getQuoteOfTheDay();
         setQuote(q);
-        localStorage.setItem(cacheKey, JSON.stringify(q));
       } catch (err) {
         notify.error(getApiErrorMessage(err, "Erro ao carregar quote do dia"));
       } finally {
@@ -71,7 +66,7 @@ export default function Home() {
     }
 
     loadQuote();
-  }, [cacheKey]);
+  }, [user]);
 
   // ============================
   // 📅 Hábitos + stats
@@ -79,16 +74,8 @@ export default function Home() {
   useEffect(() => {
     async function loadHabits() {
       try {
-        const data = await habitsService.list();
-
-        const withStats = await Promise.all(
-          data.map(async (h) => {
-            const stats = await habitsService.stats(h.id);
-            return { ...h, stats };
-          }),
-        );
-
-        setHabits(withStats);
+        const data = await habitsService.list({ include_stats: true });
+        setHabits(data);
       } catch (err) {
         notify.error(getApiErrorMessage(err, "Erro ao carregar hábitos"));
       } finally {
@@ -174,6 +161,10 @@ export default function Home() {
                 >
                   {habit.title}
                 </Link>
+
+                <div className="text-xs text-gray-500 mt-1">
+                  ⏰ {formatTimeRange(habit.start_time, habit.end_time)}
+                </div>
 
                 {/* Badge pendente */}
                 {!habit.stats?.today_completed && (

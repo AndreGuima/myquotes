@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
@@ -44,7 +44,9 @@ def create_access_token(data: dict) -> str:
     Create JWT access token.
     """
     payload = data.copy()
-    payload["exp"] = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    payload["exp"] = datetime.now(timezone.utc) + timedelta(
+        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+    )
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -74,7 +76,8 @@ def create_email_verification_token(user_id: int) -> str:
     payload = {
         "sub": str(user_id),
         "type": "verify",  # 👈 OBRIGATÓRIO
-        "exp": datetime.utcnow() + timedelta(hours=EMAIL_VERIFICATION_EXPIRE_HOURS),
+        "exp": datetime.now(timezone.utc)
+        + timedelta(hours=EMAIL_VERIFICATION_EXPIRE_HOURS),
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -104,7 +107,7 @@ def validate_password_strength(password: str) -> None:
 
     if errors:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"A senha deve conter: {', '.join(errors)}.",
         )
 
