@@ -77,14 +77,46 @@ def test_update_habit_title(client):
     assert update_response.json()["title"] == "Estudar Python"
 
 
-def test_weekly_habit_requires_target(client):
+def test_weekly_habit_requires_weekdays(client):
     response = client.post(
         "/habits/",
         json={
             "title": "Academia",
             "frequency_type": "weekly",
-            "start_time": "07:00",
         },
     )
 
     assert response.status_code == 422
+
+
+def test_create_habit_allows_overnight_time_range(client):
+    response = client.post(
+        "/habits/",
+        json={
+            "title": "Dormir 8h",
+            "start_time": "22:30",
+            "end_time": "06:30",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["start_time"].startswith("22:30")
+    assert data["end_time"].startswith("06:30")
+
+
+def test_create_weekly_habit_with_weekdays(client):
+    response = client.post(
+        "/habits/",
+        json={
+            "title": "Academia",
+            "frequency_type": "weekly",
+            "weekdays": [1, 3, 5],
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["frequency_type"] == "weekly"
+    assert data["weekdays"] == [1, 3, 5]
+    assert data["target_per_week"] == 3

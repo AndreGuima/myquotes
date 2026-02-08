@@ -195,3 +195,40 @@ def test_toggle_allows_after_end_time_same_day(db_session):
     )
 
     assert log.completed is True
+
+
+def test_toggle_allows_overnight_window_after_midnight(db_session):
+    user_id = 1
+    habit = create_habit(
+        db_session,
+        user_id=user_id,
+        start_time=time(22, 30),
+        end_time=time(6, 30),
+    )
+
+    log = HabitLogService.toggle_today(
+        db_session,
+        user_id=user_id,
+        habit_id=habit.id,
+        now_dt=datetime(2026, 2, 5, 3, 0),
+    )
+
+    assert log.completed is True
+
+
+def test_toggle_rejects_overnight_window_during_day_gap(db_session):
+    user_id = 1
+    habit = create_habit(
+        db_session,
+        user_id=user_id,
+        start_time=time(22, 30),
+        end_time=time(6, 30),
+    )
+
+    with pytest.raises(ValueError):
+        HabitLogService.toggle_today(
+            db_session,
+            user_id=user_id,
+            habit_id=habit.id,
+            now_dt=datetime(2026, 2, 5, 12, 0),
+        )

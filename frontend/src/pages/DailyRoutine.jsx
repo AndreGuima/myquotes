@@ -26,6 +26,7 @@ const iconPool = ["✨", "⚡", "🎯", "🧠", "📌", "🗓️", "🧩", "🌿
 const defaultStartOfDay = 6 * 60;
 const defaultEndOfDay = 22 * 60;
 const pxPerMinute = 1.1;
+const minutesInDay = 24 * 60;
 
 function timeToMinutes(value) {
   const [hours, minutes] = value.split(":").map(Number);
@@ -33,8 +34,9 @@ function timeToMinutes(value) {
 }
 
 function formatHourLabel(hour) {
-  const suffix = hour >= 12 ? "pm" : "am";
-  const normalized = hour % 12 === 0 ? 12 : hour % 12;
+  const normalizedHour = ((hour % 24) + 24) % 24;
+  const suffix = normalizedHour >= 12 ? "pm" : "am";
+  const normalized = normalizedHour % 12 === 0 ? 12 : normalizedHour % 12;
   return `${normalized}:00 ${suffix}`;
 }
 
@@ -47,10 +49,38 @@ function hashString(value) {
   return Math.abs(hash);
 }
 
+function getDurationMinutes(startTime, endTime) {
+  if (!startTime || !endTime) return 30;
+  const start = timeToMinutes(startTime);
+  const end = timeToMinutes(endTime);
+  if (end === start) return minutesInDay;
+  return end > start ? end - start : minutesInDay - start + end;
+}
+
+function getVisualRanges(startTime, endTime) {
+  const start = timeToMinutes(startTime);
+  if (!endTime) {
+    return [
+      {
+        visualStart: start,
+        visualEnd: Math.min(start + 30, minutesInDay),
+        period: "day",
+      },
+    ];
+  }
+  const end = timeToMinutes(endTime);
+  if (end < start) {
+    // Overnight: exibe continuação da madrugada + início no fim do dia.
+    return [
+      { visualStart: 0, visualEnd: end, period: "morning" },
+      { visualStart: start, visualEnd: minutesInDay, period: "evening" },
+    ];
+  }
+  return [{ visualStart: start, visualEnd: end, period: "day" }];
+}
+
 function formatDuration(startTime, endTime) {
-  if (!startTime || !endTime) return "30 min";
-  const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
-  if (diff <= 0) return "30 min";
+  const diff = getDurationMinutes(startTime, endTime);
   const hours = Math.floor(diff / 60);
   const minutes = diff % 60;
   if (hours === 0) return `${minutes} min`;
@@ -61,6 +91,11 @@ function formatDuration(startTime, endTime) {
 export default function DailyRoutine() {
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const todayWeekday = useMemo(() => new Date().getDay(), []);
+  const yesterdayWeekday = useMemo(
+    () => (todayWeekday + 6) % 7,
+    [todayWeekday],
+  );
 
   useEffect(() => {
     async function loadHabits() {
@@ -82,38 +117,88 @@ export default function DailyRoutine() {
     const unscheduled = [];
 
     habits.forEach((habit) => {
-      if (habit?.start_time) {
+      const isWeekly = habit?.frequency_type === "weekly";
+      const weekdays = Array.isArray(habit?.weekdays) ? habit.weekdays : [];
+      const appliesToday = !isWeekly || weekdays.includes(todayWeekday);
+      const appliesYesterday = isWeekly && weekdays.includes(yesterdayWeekday);
+      const isOvernight =
+        Boolean(habit?.start_time && habit?.end_time) &&
+        timeToMinutes(habit.start_time) > timeToMinutes(habit.end_time);
+
+      if (
+        habit?.start_time &&
+        (appliesToday || (isOvernight && appliesYesterday))
+      ) {
         scheduled.push(habit);
-      } else {
+      } else if (!habit?.start_time && appliesToday) {
         unscheduled.push(habit);
       }
     });
 
     return { scheduledHabits: scheduled, unscheduledHabits: unscheduled };
-  }, [habits]);
+  }, [habits, todayWeekday, yesterdayWeekday]);
+
+  const schedule = useMemo(
+    () =>
+      scheduledHabits
+        .flatMap((habit) => {
+          const key = `${habit.id ?? habit.title ?? ""}`;
+          const hash = hashString(key);
+          const color = gradientPalette[hash % gradientPalette.length];
+          const icon = iconPool[hash % iconPool.length];
+          const start = habit.start_time?.slice(0, 5);
+          const end = habit.end_time?.slice(0, 5);
+          const ranges = getVisualRanges(start, end);
+          const isWeekly = habit.frequency_type === "weekly";
+          const weekdays = Array.isArray(habit.weekdays) ? habit.weekdays : [];
+          const appliesToday = !isWeekly || weekdays.includes(todayWeekday);
+          const appliesYesterday =
+            isWeekly && weekdays.includes(yesterdayWeekday);
+
+          return ranges
+            .filter((range) => {
+              if (!isWeekly) return true;
+              if (range.period === "morning") return appliesYesterday;
+              return appliesToday;
+            })
+            .map((range, index) => ({
+              id: habit.id,
+              segmentId: `${habit.id ?? key}-seg-${index}`,
+              title: habit.title ?? "Hábito",
+              start,
+              end: end ?? "",
+              duration: formatDuration(start, end),
+              color,
+              icon,
+              visualStart: range.visualStart,
+              visualEnd: range.visualEnd,
+            }));
+        })
+        .sort((a, b) => a.visualStart - b.visualStart),
+    [scheduledHabits, todayWeekday, yesterdayWeekday],
+  );
 
   const timeBounds = useMemo(() => {
-    if (scheduledHabits.length === 0) {
+    if (schedule.length === 0) {
       return {
         startOfDay: defaultStartOfDay,
         endOfDay: defaultEndOfDay,
       };
     }
 
-    const minutes = scheduledHabits.flatMap((habit) => {
-      const start = habit.start_time ? timeToMinutes(habit.start_time) : null;
-      const end = habit.end_time ? timeToMinutes(habit.end_time) : null;
-      return [start, end].filter((value) => value !== null);
-    });
+    const minutes = schedule.flatMap((item) => [
+      item.visualStart,
+      item.visualEnd,
+    ]);
 
     const min = Math.min(...minutes);
     const max = Math.max(...minutes);
 
     return {
-      startOfDay: Math.max(defaultStartOfDay, min - 60),
-      endOfDay: Math.min(defaultEndOfDay, max + 60),
+      startOfDay: Math.max(0, Math.min(defaultStartOfDay, min - 60)),
+      endOfDay: Math.min(minutesInDay, Math.max(defaultEndOfDay, max + 60)),
     };
-  }, [scheduledHabits]);
+  }, [schedule]);
 
   const hours = useMemo(() => {
     const list = [];
@@ -134,31 +219,6 @@ export default function DailyRoutine() {
     });
   }, []);
 
-  const schedule = useMemo(
-    () =>
-      scheduledHabits
-        .map((habit) => {
-          const key = `${habit.id ?? habit.title ?? ""}`;
-          const hash = hashString(key);
-          const color = gradientPalette[hash % gradientPalette.length];
-          const icon = iconPool[hash % iconPool.length];
-          const start = habit.start_time?.slice(0, 5);
-          const end = habit.end_time?.slice(0, 5);
-
-          return {
-            id: habit.id,
-            title: habit.title ?? "Hábito",
-            start,
-            end: end ?? "",
-            duration: formatDuration(start, end),
-            color,
-            icon,
-          };
-        })
-        .sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start)),
-    [scheduledHabits],
-  );
-
   const { layout, timelineHeight } = useMemo(() => {
     const totalMinutes = timeBounds.endOfDay - timeBounds.startOfDay;
     const baseHeight = Math.max(Math.round(totalMinutes * pxPerMinute), 420);
@@ -169,10 +229,8 @@ export default function DailyRoutine() {
     let lastBottom = 0;
 
     const positioned = schedule.map((item) => {
-      const startMinutes = timeToMinutes(item.start) - timeBounds.startOfDay;
-      const endMinutes = item.end
-        ? timeToMinutes(item.end) - timeBounds.startOfDay
-        : startMinutes + 30;
+      const startMinutes = item.visualStart - timeBounds.startOfDay;
+      const endMinutes = item.visualEnd - timeBounds.startOfDay;
       const rawTop = startMinutes * pxPerMinute;
       const rawHeight = (endMinutes - startMinutes) * pxPerMinute;
       const height = Math.max(rawHeight, minHeight);
@@ -245,7 +303,7 @@ export default function DailyRoutine() {
           <p className="text-sm text-gray-600">
             {loading
               ? "Carregando hábitos do dia..."
-              : `Resumo: ${habits.length} atividades, ${scheduledHabits.length} com horário.`}
+              : `Resumo: ${scheduledHabits.length + unscheduledHabits.length} atividades, ${scheduledHabits.length} com horário.`}
           </p>
         </div>
         <Link
@@ -295,7 +353,7 @@ export default function DailyRoutine() {
             {layout.map((item) => {
               return (
                 <article
-                  key={`${item.id ?? item.title}-${item.start}`}
+                  key={item.segmentId}
                   className={`group absolute left-4 right-4 overflow-hidden rounded-[28px] bg-gradient-to-r ${item.color} text-slate-900 shadow-[0_12px_30px_rgba(0,0,0,0.15)] transition hover:scale-[1.01]`}
                   style={{ top: `${item.top}px`, height: `${item.height}px` }}
                 >

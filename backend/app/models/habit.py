@@ -2,6 +2,7 @@ import enum
 
 from database import Base
 from sqlalchemy import (
+    JSON,
     Boolean,
     Column,
     DateTime,
@@ -37,6 +38,7 @@ class Habit(Base):
     )
 
     target_per_week = Column(Integer, nullable=True)
+    weekdays = Column(JSON, nullable=True)
 
     start_time = Column(Time, nullable=True)
     end_time = Column(Time, nullable=True)

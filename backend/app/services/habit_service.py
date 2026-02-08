@@ -7,11 +7,18 @@ from sqlalchemy.orm import Session
 class HabitService:
     @staticmethod
     def create(db: Session, user_id: int, data: HabitCreate):
+        weekdays = (
+            sorted(set(data.weekdays))
+            if data.frequency_type.value == "weekly" and data.weekdays
+            else None
+        )
+        weekly_target = len(weekdays) if weekdays else None
         habit = Habit(
             user_id=user_id,
             title=data.title,
             frequency_type=data.frequency_type,
-            target_per_week=data.target_per_week,
+            target_per_week=weekly_target,
+            weekdays=weekdays,
             start_time=data.start_time,
             end_time=data.end_time,
         )
@@ -45,6 +52,9 @@ class HabitService:
 
         # defesa extra (future-proof)
         updates.pop("user_id", None)
+        if "weekdays" in updates and updates["weekdays"] is not None:
+            updates["weekdays"] = sorted(set(updates["weekdays"]))
+            updates["target_per_week"] = len(updates["weekdays"])
 
         for field, value in updates.items():
             setattr(habit, field, value)

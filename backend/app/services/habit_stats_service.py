@@ -87,9 +87,13 @@ class HabitStatsService:
         weekly_completed = sum(1 for d in log_dates if week_start <= d <= today)
 
         weekly_target = (
-            habit.target_per_week
-            if habit.frequency_type == FrequencyType.weekly
-            else None
+            len(habit.weekdays)
+            if habit.frequency_type == FrequencyType.weekly and habit.weekdays
+            else (
+                habit.target_per_week
+                if habit.frequency_type == FrequencyType.weekly
+                else None
+            )
         )
 
         # -------------------------------------------------

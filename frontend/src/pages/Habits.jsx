@@ -147,7 +147,7 @@ export default function Habits() {
                   {habit.frequency_type === "weekly" && (
                     <div className="text-sm text-gray-600 mt-1">
                       📅 Semana: {habit.stats.weekly_completed}/
-                      {habit.target_per_week}
+                      {habit.stats.weekly_target ?? 0}
                     </div>
                   )}
 
