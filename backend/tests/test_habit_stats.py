@@ -11,12 +11,20 @@ from services.habit_stats_service import HabitStatsService
 # -------------------------------------------------
 # Helpers
 # -------------------------------------------------
-def create_habit(db, *, user_id: int, frequency="daily", target=None):
+def create_habit(
+    db,
+    *,
+    user_id: int,
+    frequency="daily",
+    target=None,
+    weekdays=None,
+):
     habit = Habit(
         user_id=user_id,
         title="Hábito Teste",
         frequency_type=frequency,
         target_per_week=target,
+        weekdays=weekdays,
     )
     db.add(habit)
     db.commit()
@@ -186,7 +194,7 @@ def test_weekly_progress_weekly_habit(db_session):
         db_session,
         user_id=1,
         frequency="weekly",
-        target=3,
+        weekdays=[1, 3, 5],
     )
     today = date.today()
 

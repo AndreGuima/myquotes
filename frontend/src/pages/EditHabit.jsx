@@ -5,6 +5,16 @@ import HabitHeatmap from "../components/HabitHeatmap";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
 
+const weekdayOptions = [
+  { value: 0, short: "D", label: "Domingo" },
+  { value: 1, short: "S", label: "Segunda" },
+  { value: 2, short: "T", label: "Terça" },
+  { value: 3, short: "Q", label: "Quarta" },
+  { value: 4, short: "Q", label: "Quinta" },
+  { value: 5, short: "S", label: "Sexta" },
+  { value: 6, short: "S", label: "Sábado" },
+];
+
 function formatDateLabel(dateStr) {
   const date = new Date(dateStr);
   const today = new Date();
@@ -41,6 +51,7 @@ export default function EditHabit() {
 
   const [title, setTitle] = useState("");
   const [frequencyType, setFrequencyType] = useState("");
+  const [weekdays, setWeekdays] = useState([]);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
 
@@ -51,6 +62,15 @@ export default function EditHabit() {
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
+
+  function toggleWeekday(day) {
+    setWeekdays((prev) => {
+      if (prev.includes(day)) {
+        return prev.filter((item) => item !== day);
+      }
+      return [...prev, day].sort((a, b) => a - b);
+    });
+  }
 
   // ============================
   // 📥 Carregar hábito
@@ -68,6 +88,7 @@ export default function EditHabit() {
 
         setTitle(habit.title);
         setFrequencyType(habit.frequency_type);
+        setWeekdays(Array.isArray(habit.weekdays) ? habit.weekdays : []);
         setStartTime(habit.start_time ? habit.start_time.slice(0, 5) : "");
         setEndTime(habit.end_time ? habit.end_time.slice(0, 5) : "");
       } catch {
@@ -106,6 +127,10 @@ export default function EditHabit() {
   // ============================
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (frequencyType === "weekly" && weekdays.length === 0) {
+      setError("Selecione pelo menos um dia da semana.");
+      return;
+    }
     setSaving(true);
     setError(null);
 
@@ -115,6 +140,9 @@ export default function EditHabit() {
         start_time: startTime || null,
         end_time: endTime || null,
       };
+      if (frequencyType === "weekly") {
+        payload.weekdays = weekdays;
+      }
 
       await habitsService.update(id, payload);
       navigate("/habits");
@@ -197,9 +225,38 @@ export default function EditHabit() {
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Intervalo diário do hábito.
+              Intervalo diário do hábito (pode atravessar a meia-noite).
             </p>
           </div>
+
+          {frequencyType === "weekly" && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Dias da semana
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {weekdayOptions.map((day) => {
+                  const active = weekdays.includes(day.value);
+                  return (
+                    <button
+                      key={day.value}
+                      type="button"
+                      onClick={() => toggleWeekday(day.value)}
+                      title={day.label}
+                      aria-pressed={active}
+                      className={`h-10 w-10 rounded-full border text-sm font-semibold transition ${
+                        active
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                      }`}
+                    >
+                      {day.short}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4">
             <button
@@ -213,7 +270,9 @@ export default function EditHabit() {
 
             <button
               type="submit"
-              disabled={saving}
+              disabled={
+                saving || (frequencyType === "weekly" && weekdays.length === 0)
+              }
               className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
             >
               {saving ? "Salvando..." : "Salvar"}

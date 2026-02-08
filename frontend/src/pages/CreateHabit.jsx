@@ -4,20 +4,43 @@ import habitsService from "../services/habitsService";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
 
+const weekdayOptions = [
+  { value: 0, short: "D", label: "Domingo" },
+  { value: 1, short: "S", label: "Segunda" },
+  { value: 2, short: "T", label: "Terça" },
+  { value: 3, short: "Q", label: "Quarta" },
+  { value: 4, short: "Q", label: "Quinta" },
+  { value: 5, short: "S", label: "Sexta" },
+  { value: 6, short: "S", label: "Sábado" },
+];
+
 export default function CreateHabit() {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
   const [frequencyType, setFrequencyType] = useState("daily");
-  const [weeklyTarget, setWeeklyTarget] = useState(3);
+  const [weekdays, setWeekdays] = useState([]);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function toggleWeekday(day) {
+    setWeekdays((prev) => {
+      if (prev.includes(day)) {
+        return prev.filter((item) => item !== day);
+      }
+      return [...prev, day].sort((a, b) => a - b);
+    });
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (endTime && !startTime) {
       notify.error("Defina o horário de início antes do fim");
+      return;
+    }
+    if (frequencyType === "weekly" && weekdays.length === 0) {
+      notify.error("Selecione pelo menos um dia da semana");
       return;
     }
     setLoading(true);
@@ -37,7 +60,7 @@ export default function CreateHabit() {
       }
 
       if (frequencyType === "weekly") {
-        payload.target_per_week = weeklyTarget;
+        payload.weekdays = weekdays;
       }
 
       await habitsService.create(payload);
@@ -98,30 +121,47 @@ export default function CreateHabit() {
             />
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Defina um intervalo se quiser. O horário vale para todos os dias.
+            Defina um intervalo se quiser, inclusive atravessando a meia-noite.
           </p>
         </div>
 
-        {/* Meta semanal */}
+        {/* Configuração semanal */}
         {frequencyType === "weekly" && (
           <div>
-            <label className="block mb-1 font-medium">
-              Meta semanal (vezes)
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={7}
-              className="w-full border p-2 rounded"
-              value={weeklyTarget}
-              onChange={(e) => setWeeklyTarget(Number(e.target.value))}
-              required
-            />
+            <label className="block mb-2 font-medium">Dias da semana</label>
+            <div className="flex flex-wrap gap-2">
+              {weekdayOptions.map((day) => {
+                const active = weekdays.includes(day.value);
+                return (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleWeekday(day.value)}
+                    title={day.label}
+                    aria-pressed={active}
+                    className={`h-10 w-10 rounded-full border text-sm font-semibold transition ${
+                      active
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                    }`}
+                  >
+                    {day.short}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Selecione em quais dias esse hábito deve aparecer.
+            </p>
           </div>
         )}
 
         <button
-          disabled={loading || !title.trim()}
+          disabled={
+            loading ||
+            !title.trim() ||
+            (frequencyType === "weekly" && weekdays.length === 0)
+          }
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? "Salvando..." : "Criar hábito"}
