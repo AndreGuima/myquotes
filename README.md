@@ -1,4 +1,4 @@
-# ✨ MyQuotes — Full-Stack Docker-First App
+# ✨ MyLife — Full-Stack Quotes App
 
 > 📝 Aplicação completa para gerenciamento de habitos feita com **FastAPI + React Native + MySQL + Pytest + Docker**.  
 > Focada em boas práticas e ambiente moderno de desenvolvimento.
@@ -79,19 +79,6 @@ Frontend disponível em:
 | Criar ambiente dev   | `./backend/run-dev.sh`       |
 | Rodar testes         | `pytest -v backend/tests/`   |
 
----
-
-# 🔐 Destaques Técnicos
-
-- JWT + Bearer Token  
-- Rotas protegidas por `get_current_user`  
-- Permissões por usuário (admin, editor, user)  
-- Banco de testes isolado (SQLite in-memory)  
-- Testes rápidos com override de dependências  
-- Estrutura moderna com Pydantic v2 + SQLAlchemy 2.x  
-- Docker para ambiente de produção e desenvolvimento  
-
----
 
 <p align="center">
  Feito com ❤️ café ☕ e muita dedicação.

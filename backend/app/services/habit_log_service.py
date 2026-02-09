@@ -34,13 +34,10 @@ class HabitLogService:
 
         if habit.start_time:
             now_time = now.time()
-            if (
-                habit.end_time
-                and habit.end_time < habit.start_time
-                and habit.end_time < now_time < habit.start_time
-            ):
-                raise ValueError("Habit is before scheduled time")
-            if not habit.end_time or habit.end_time >= habit.start_time:
+            is_overnight = bool(habit.end_time and habit.end_time < habit.start_time)
+            # Overnight habits (e.g. 22:00-06:00) can be checked in the morning/day
+            # after finishing the routine.
+            if not is_overnight:
                 if now_time < habit.start_time:
                     raise ValueError("Habit is before scheduled time")
 
