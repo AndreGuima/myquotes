@@ -1,7 +1,7 @@
 # ✨ MyLife — Full-Stack Quotes App
 
 > 📝 Aplicação completa para gerenciamento de habitos feita com **FastAPI + React Native + MySQL + Pytest + Docker**.  
-> Focada em boas práticas, arquitetura simples e ambiente moderno de desenvolvimento.
+> Focada em boas práticas e ambiente moderno de desenvolvimento.
 
 <p align="center">
  <img src="https://img.shields.io/badge/python-3.13-blue" />
@@ -66,30 +66,6 @@ npm run dev
 
 Frontend disponível em:  
 ➡️ **http://localhost:5173**
-
----
-
-# 🗂 Estrutura Geral do Projeto
-
-```txt
-MyQuotes/
-│
-├── backend/
-│   ├── app/
-│   │   ├── core/          # JWT, segurança e dependências
-│   │   ├── routes/        # Endpoints (quotes, users, auth)
-│   │   ├── models/        # SQLAlchemy models
-│   │   ├── schemas/       # Pydantic V2 schemas
-│   │   ├── database.py    # Engine + SessionLocal
-│   │   ├── settings.py    # Configuração via .env
-│   │   └── main.py        # FastAPI app
-│   ├── tests/             # Testes Pytest (SQLite em memória)
-│   └── scripts/           # Scripts utilitários
-│
-├── myquotes-web/          # Frontend (React Native + Expo)
-│
-└── scripts/               # Docker / gerenciamento
-```
 
 ---
 
