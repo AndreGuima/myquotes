@@ -7,11 +7,9 @@ from sqlalchemy.orm import Session
 class HabitService:
     @staticmethod
     def create(db: Session, user_id: int, data: HabitCreate):
-        weekdays = (
-            sorted(set(data.weekdays))
-            if data.frequency_type.value == "weekly" and data.weekdays
-            else None
-        )
+        is_weekly = data.frequency_type.value == "weekly"
+        is_monthly = data.frequency_type.value == "monthly"
+        weekdays = sorted(set(data.weekdays)) if is_weekly and data.weekdays else None
         weekly_target = len(weekdays) if weekdays else None
         habit = Habit(
             user_id=user_id,
@@ -19,6 +17,7 @@ class HabitService:
             frequency_type=data.frequency_type,
             target_per_week=weekly_target,
             weekdays=weekdays,
+            month_day=data.month_day if is_monthly else None,
             start_time=data.start_time,
             end_time=data.end_time,
         )
@@ -48,13 +47,23 @@ class HabitService:
 
     @staticmethod
     def update(db: Session, habit: Habit, data: HabitUpdate):
-        updates = data.dict(exclude_unset=True)
+        updates = data.model_dump(exclude_unset=True)
 
         # defesa extra (future-proof)
         updates.pop("user_id", None)
-        if "weekdays" in updates and updates["weekdays"] is not None:
-            updates["weekdays"] = sorted(set(updates["weekdays"]))
-            updates["target_per_week"] = len(updates["weekdays"])
+        frequency = getattr(habit.frequency_type, "value", habit.frequency_type)
+        if frequency == "weekly":
+            if "weekdays" in updates and updates["weekdays"] is not None:
+                updates["weekdays"] = sorted(set(updates["weekdays"]))
+                updates["target_per_week"] = len(updates["weekdays"])
+            updates.pop("month_day", None)
+        elif frequency == "monthly":
+            updates.pop("weekdays", None)
+            updates["target_per_week"] = None
+        else:
+            updates.pop("weekdays", None)
+            updates.pop("month_day", None)
+            updates["target_per_week"] = None
 
         for field, value in updates.items():
             setattr(habit, field, value)

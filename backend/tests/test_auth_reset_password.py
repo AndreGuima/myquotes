@@ -1,14 +1,10 @@
 from datetime import UTC, datetime, timedelta
 
 from core.security import hash_password, verify_password
-from fastapi.testclient import TestClient
-from main import app
 from models.password_reset import PasswordResetToken
 from models.user import User
 from services.password_reset_service import PasswordResetService
 from sqlalchemy.orm import Session
-
-client = TestClient(app)
 
 
 # ============================================================
@@ -45,7 +41,7 @@ def create_valid_token(db: Session, user: User) -> str:
 # ============================================================
 
 
-def test_reset_password_success(db_sessionmaker):
+def test_reset_password_success(client, db_sessionmaker):
     db = db_sessionmaker()
 
     try:
@@ -71,7 +67,7 @@ def test_reset_password_success(db_sessionmaker):
         db.close()
 
 
-def test_reset_password_invalid_token(db_sessionmaker):
+def test_reset_password_invalid_token(client, db_sessionmaker):
     db = db_sessionmaker()
 
     try:
@@ -94,7 +90,7 @@ def test_reset_password_invalid_token(db_sessionmaker):
         db.close()
 
 
-def test_reset_password_expired_token(db_sessionmaker):
+def test_reset_password_expired_token(client, db_sessionmaker):
     db = db_sessionmaker()
 
     try:
@@ -129,7 +125,7 @@ def test_reset_password_expired_token(db_sessionmaker):
         db.close()
 
 
-def test_reset_password_token_reuse_fails(db_sessionmaker):
+def test_reset_password_token_reuse_fails(client, db_sessionmaker):
     db = db_sessionmaker()
 
     try:
@@ -169,7 +165,7 @@ def test_reset_password_token_reuse_fails(db_sessionmaker):
         db.close()
 
 
-def test_reset_password_invalidates_all_tokens(db_sessionmaker):
+def test_reset_password_invalidates_all_tokens(client, db_sessionmaker):
     db = db_sessionmaker()
     try:
         user = create_user(db)
@@ -208,7 +204,7 @@ def test_reset_password_invalidates_all_tokens(db_sessionmaker):
         db.close()
 
 
-def test_validate_reset_token_success(db_sessionmaker):
+def test_validate_reset_token_success(client, db_sessionmaker):
     db = db_sessionmaker()
     try:
         user = create_user(db)
@@ -226,7 +222,7 @@ def test_validate_reset_token_success(db_sessionmaker):
         db.close()
 
 
-def test_validate_reset_token_invalid():
+def test_validate_reset_token_invalid(client):
     r = client.get(
         "/auth/reset-password/validate",
         params={"token": "invalid"},

@@ -151,6 +151,13 @@ export default function Habits() {
                     </div>
                   )}
 
+                  {habit.frequency_type === "monthly" &&
+                    Number.isInteger(habit.month_day) && (
+                      <div className="text-sm text-gray-600 mt-1">
+                        🗓 Dia do mês: {habit.month_day}
+                      </div>
+                    )}
+
                   {/* Secondary actions */}
                   <div className="flex gap-4 mt-2 text-sm">
                     <Link
