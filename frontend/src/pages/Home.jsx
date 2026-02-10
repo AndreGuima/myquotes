@@ -102,6 +102,22 @@ export default function Home() {
     <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
 
+      <div className="mb-8 border rounded-xl bg-white p-4 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Módulo de Sonhos SMART</h2>
+          <p className="text-gray-600 text-sm mt-1">
+            Planeje sonhos com metas SMART, marcos em timeline e vínculo com
+            hábitos.
+          </p>
+        </div>
+        <Link
+          to="/dreams"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 whitespace-nowrap"
+        >
+          Abrir Sonhos
+        </Link>
+      </div>
+
       {/* ============================
           ✨ Quote do Dia
       ============================ */}

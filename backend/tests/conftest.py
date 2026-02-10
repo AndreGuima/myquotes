@@ -2,6 +2,8 @@ import os
 import sys
 import warnings
 from pathlib import Path
+from types import SimpleNamespace
+from uuid import uuid4
 
 from dotenv import load_dotenv
 
@@ -67,19 +69,28 @@ from sqlalchemy.orm import sessionmaker
 # ============================================================================
 @pytest.fixture(scope="session")
 def engine():
+    db_path = Path("/tmp") / f"myquotes_test_{uuid4().hex}.sqlite3"
     engine = create_engine(
-        "sqlite:///file::memory:?cache=shared",
-        connect_args={"check_same_thread": False, "uri": True},
+        f"sqlite:///{db_path}",
+        connect_args={"check_same_thread": False},
     )
 
     Base.metadata.create_all(bind=engine)
     yield engine
     Base.metadata.drop_all(bind=engine)
+    engine.dispose()
+    if db_path.exists():
+        db_path.unlink()
 
 
 @pytest.fixture(scope="session")
 def db_sessionmaker(engine):
-    return sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    return sessionmaker(
+        bind=engine,
+        autocommit=False,
+        autoflush=False,
+        expire_on_commit=False,
+    )
 
 
 # ============================================================================
@@ -116,16 +127,28 @@ def client(engine, db_sessionmaker, monkeypatch):
     )
     test_db.add(fake_user)
     test_db.commit()
+    test_db.close()
 
     from core.dependencies import get_current_user
 
+    # Evita DetachedInstanceError: retorna um objeto simples em vez de ORM detached
+    fake_current_user = SimpleNamespace(
+        id=1,
+        username="testuser",
+        email="test@example.com",
+        role="user",
+        is_active=True,
+        is_verified=True,
+    )
+
     def override_current_user():
-        return fake_user
+        return fake_current_user
 
     app.dependency_overrides[get_current_user] = override_current_user
 
     with TestClient(app) as c:
         yield c
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture

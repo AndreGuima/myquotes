@@ -36,7 +36,11 @@ class User(Base):
     reading_list_books: Mapped[List["ReadingListBook"]] = relationship(
         "ReadingListBook", back_populates="user", cascade="all, delete-orphan"
     )
+    dreams: Mapped[List["Dream"]] = relationship(
+        "Dream", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
+from models.dream import Dream  # noqa: E402,F401
 from models.quote import Quote  # noqa: E402,F401
 from models.reading_list_book import ReadingListBook  # noqa: E402,F401

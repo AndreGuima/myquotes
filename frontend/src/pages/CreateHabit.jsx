@@ -20,9 +20,15 @@ export default function CreateHabit() {
   const [title, setTitle] = useState("");
   const [frequencyType, setFrequencyType] = useState("daily");
   const [weekdays, setWeekdays] = useState([]);
+  const [monthDay, setMonthDay] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [loading, setLoading] = useState(false);
+  const parsedMonthDay = Number(monthDay);
+  const validMonthDay =
+    Number.isInteger(parsedMonthDay) &&
+    parsedMonthDay >= 1 &&
+    parsedMonthDay <= 31;
 
   function toggleWeekday(day) {
     setWeekdays((prev) => {
@@ -43,6 +49,10 @@ export default function CreateHabit() {
       notify.error("Selecione pelo menos um dia da semana");
       return;
     }
+    if (frequencyType === "monthly" && !validMonthDay) {
+      notify.error("Selecione um dia do mês");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -61,6 +71,9 @@ export default function CreateHabit() {
 
       if (frequencyType === "weekly") {
         payload.weekdays = weekdays;
+      }
+      if (frequencyType === "monthly") {
+        payload.month_day = parsedMonthDay;
       }
 
       await habitsService.create(payload);
@@ -95,10 +108,20 @@ export default function CreateHabit() {
           <select
             className="w-full border p-2 rounded"
             value={frequencyType}
-            onChange={(e) => setFrequencyType(e.target.value)}
+            onChange={(e) => {
+              const nextFrequency = e.target.value;
+              setFrequencyType(nextFrequency);
+              if (nextFrequency !== "weekly") {
+                setWeekdays([]);
+              }
+              if (nextFrequency !== "monthly") {
+                setMonthDay("");
+              }
+            }}
           >
             <option value="daily">Diário</option>
             <option value="weekly">Semanal</option>
+            <option value="monthly">Mensal</option>
           </select>
         </div>
 
@@ -156,11 +179,30 @@ export default function CreateHabit() {
           </div>
         )}
 
+        {frequencyType === "monthly" && (
+          <div>
+            <label className="block mb-1 font-medium">Dia do mês</label>
+            <input
+              type="number"
+              min={1}
+              max={31}
+              className="w-full border p-2 rounded"
+              value={monthDay}
+              onChange={(e) => setMonthDay(e.target.value)}
+              placeholder="Ex.: 10"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Escolha de 1 a 31. Em meses curtos, use o último dia disponível.
+            </p>
+          </div>
+        )}
+
         <button
           disabled={
             loading ||
             !title.trim() ||
-            (frequencyType === "weekly" && weekdays.length === 0)
+            (frequencyType === "weekly" && weekdays.length === 0) ||
+            (frequencyType === "monthly" && !validMonthDay)
           }
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
         >

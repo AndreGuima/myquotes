@@ -120,3 +120,59 @@ def test_create_weekly_habit_with_weekdays(client):
     assert data["frequency_type"] == "weekly"
     assert data["weekdays"] == [1, 3, 5]
     assert data["target_per_week"] == 3
+
+
+def test_create_monthly_habit_with_month_day(client):
+    response = client.post(
+        "/habits/",
+        json={
+            "title": "Revisar finanças",
+            "frequency_type": "monthly",
+            "month_day": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["frequency_type"] == "monthly"
+    assert data["month_day"] == 10
+    assert data["weekdays"] is None
+    assert data["target_per_week"] is None
+
+
+def test_monthly_habit_requires_month_day(client):
+    response = client.post(
+        "/habits/",
+        json={
+            "title": "Fechamento mensal",
+            "frequency_type": "monthly",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_monthly_habit_rejects_invalid_month_day(client):
+    response = client.post(
+        "/habits/",
+        json={
+            "title": "Fechamento mensal",
+            "frequency_type": "monthly",
+            "month_day": 32,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_daily_habit_rejects_month_day(client):
+    response = client.post(
+        "/habits/",
+        json={
+            "title": "Beber água",
+            "frequency_type": "daily",
+            "month_day": 5,
+        },
+    )
+
+    assert response.status_code == 422

@@ -52,8 +52,14 @@ export default function EditHabit() {
   const [title, setTitle] = useState("");
   const [frequencyType, setFrequencyType] = useState("");
   const [weekdays, setWeekdays] = useState([]);
+  const [monthDay, setMonthDay] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const parsedMonthDay = Number(monthDay);
+  const validMonthDay =
+    Number.isInteger(parsedMonthDay) &&
+    parsedMonthDay >= 1 &&
+    parsedMonthDay <= 31;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -89,6 +95,7 @@ export default function EditHabit() {
         setTitle(habit.title);
         setFrequencyType(habit.frequency_type);
         setWeekdays(Array.isArray(habit.weekdays) ? habit.weekdays : []);
+        setMonthDay(habit.month_day ? String(habit.month_day) : "");
         setStartTime(habit.start_time ? habit.start_time.slice(0, 5) : "");
         setEndTime(habit.end_time ? habit.end_time.slice(0, 5) : "");
       } catch {
@@ -131,6 +138,10 @@ export default function EditHabit() {
       setError("Selecione pelo menos um dia da semana.");
       return;
     }
+    if (frequencyType === "monthly" && !validMonthDay) {
+      setError("Selecione um dia do mês.");
+      return;
+    }
     setSaving(true);
     setError(null);
 
@@ -142,6 +153,9 @@ export default function EditHabit() {
       };
       if (frequencyType === "weekly") {
         payload.weekdays = weekdays;
+      }
+      if (frequencyType === "monthly") {
+        payload.month_day = parsedMonthDay;
       }
 
       await habitsService.update(id, payload);
@@ -201,7 +215,9 @@ export default function EditHabit() {
                   ? "Diário"
                   : frequencyType === "weekly"
                     ? "Semanal"
-                    : ""
+                    : frequencyType === "monthly"
+                      ? "Mensal"
+                      : ""
               }
               disabled
               className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-600"
@@ -258,6 +274,22 @@ export default function EditHabit() {
             </div>
           )}
 
+          {frequencyType === "monthly" && (
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Dia do mês
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={31}
+                value={monthDay}
+                onChange={(e) => setMonthDay(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
@@ -271,7 +303,9 @@ export default function EditHabit() {
             <button
               type="submit"
               disabled={
-                saving || (frequencyType === "weekly" && weekdays.length === 0)
+                saving ||
+                (frequencyType === "weekly" && weekdays.length === 0) ||
+                (frequencyType === "monthly" && !validMonthDay)
               }
               className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
             >

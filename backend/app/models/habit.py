@@ -18,6 +18,7 @@ from sqlalchemy.sql import func
 class FrequencyType(enum.Enum):
     daily = "daily"
     weekly = "weekly"
+    monthly = "monthly"
 
 
 class Habit(Base):
@@ -39,6 +40,7 @@ class Habit(Base):
 
     target_per_week = Column(Integer, nullable=True)
     weekdays = Column(JSON, nullable=True)
+    month_day = Column(Integer, nullable=True)
 
     start_time = Column(Time, nullable=True)
     end_time = Column(Time, nullable=True)

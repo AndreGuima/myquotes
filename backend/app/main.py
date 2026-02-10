@@ -10,6 +10,7 @@ from routes.admin_users import router as admin_users_router
 from routes.auth import router as auth_router
 from routes.auth_forgot_password import router as forgot_password_router
 from routes.auth_reset_password import router as reset_password_router
+from routes.dreams import router as dreams_router
 from routes.habits import router as habits_router
 from routes.preferences import router as preferences_router
 from routes.quotes import router as quotes_router
@@ -88,6 +89,7 @@ app.include_router(preferences_router)
 app.include_router(forgot_password_router)
 app.include_router(reset_password_router)
 app.include_router(reading_list_router)
+app.include_router(dreams_router)
 app.include_router(
     habits_router,
     prefix="/habits",
