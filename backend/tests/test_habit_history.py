@@ -11,7 +11,7 @@ def create_habit(client):
         json={
             "title": "Beber água",
             "frequency_type": "daily",
-            "start_time": "07:00",
+            "start_time": "00:00",
         },
     )
     assert res.status_code == 200
@@ -27,7 +27,8 @@ def test_history_returns_days_in_range(client):
     habit = create_habit(client)
 
     # Marca hoje
-    client.post(f"/habits/{habit['id']}/toggle")
+    toggle = client.post(f"/habits/{habit['id']}/toggle")
+    assert toggle.status_code == 200
 
     res = client.get(f"/habits/{habit['id']}/history")
     assert res.status_code == 200
@@ -48,7 +49,8 @@ def test_history_marks_days_without_log_as_false(client):
     yesterday = today - timedelta(days=1)
 
     # Marca apenas hoje
-    client.post(f"/habits/{habit['id']}/toggle")
+    toggle = client.post(f"/habits/{habit['id']}/toggle")
+    assert toggle.status_code == 200
 
     res = client.get(
         f"/habits/{habit['id']}/history?from_date={yesterday}&to_date={today}"

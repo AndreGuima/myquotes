@@ -88,10 +88,45 @@ function formatDuration(startTime, endTime) {
   return `${hours}h ${minutes}min`;
 }
 
+function getHabitApplyFlags(
+  habit,
+  todayWeekday,
+  yesterdayWeekday,
+  todayDate,
+  yesterdayDate,
+) {
+  const frequencyType = habit?.frequency_type;
+
+  if (frequencyType === "weekly") {
+    const weekdays = Array.isArray(habit?.weekdays) ? habit.weekdays : [];
+    return {
+      appliesToday: weekdays.includes(todayWeekday),
+      appliesYesterday: weekdays.includes(yesterdayWeekday),
+    };
+  }
+
+  if (frequencyType === "monthly") {
+    const monthDay = Number(habit?.month_day);
+    return {
+      appliesToday: Number.isInteger(monthDay) && monthDay === todayDate,
+      appliesYesterday:
+        Number.isInteger(monthDay) && monthDay === yesterdayDate,
+    };
+  }
+
+  return { appliesToday: true, appliesYesterday: false };
+}
+
 export default function DailyRoutine() {
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const todayWeekday = useMemo(() => new Date().getDay(), []);
+  const todayDate = useMemo(() => new Date().getDate(), []);
+  const yesterdayDate = useMemo(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    return date.getDate();
+  }, []);
   const yesterdayWeekday = useMemo(
     () => (todayWeekday + 6) % 7,
     [todayWeekday],
@@ -117,10 +152,13 @@ export default function DailyRoutine() {
     const unscheduled = [];
 
     habits.forEach((habit) => {
-      const isWeekly = habit?.frequency_type === "weekly";
-      const weekdays = Array.isArray(habit?.weekdays) ? habit.weekdays : [];
-      const appliesToday = !isWeekly || weekdays.includes(todayWeekday);
-      const appliesYesterday = isWeekly && weekdays.includes(yesterdayWeekday);
+      const { appliesToday, appliesYesterday } = getHabitApplyFlags(
+        habit,
+        todayWeekday,
+        yesterdayWeekday,
+        todayDate,
+        yesterdayDate,
+      );
       const isOvernight =
         Boolean(habit?.start_time && habit?.end_time) &&
         timeToMinutes(habit.start_time) > timeToMinutes(habit.end_time);
@@ -136,7 +174,7 @@ export default function DailyRoutine() {
     });
 
     return { scheduledHabits: scheduled, unscheduledHabits: unscheduled };
-  }, [habits, todayWeekday, yesterdayWeekday]);
+  }, [habits, todayWeekday, yesterdayWeekday, todayDate, yesterdayDate]);
 
   const schedule = useMemo(
     () =>
@@ -149,15 +187,22 @@ export default function DailyRoutine() {
           const start = habit.start_time?.slice(0, 5);
           const end = habit.end_time?.slice(0, 5);
           const ranges = getVisualRanges(start, end);
-          const isWeekly = habit.frequency_type === "weekly";
-          const weekdays = Array.isArray(habit.weekdays) ? habit.weekdays : [];
-          const appliesToday = !isWeekly || weekdays.includes(todayWeekday);
-          const appliesYesterday =
-            isWeekly && weekdays.includes(yesterdayWeekday);
+          const { appliesToday, appliesYesterday } = getHabitApplyFlags(
+            habit,
+            todayWeekday,
+            yesterdayWeekday,
+            todayDate,
+            yesterdayDate,
+          );
 
           return ranges
             .filter((range) => {
-              if (!isWeekly) return true;
+              if (
+                habit.frequency_type !== "weekly" &&
+                habit.frequency_type !== "monthly"
+              ) {
+                return true;
+              }
               if (range.period === "morning") return appliesYesterday;
               return appliesToday;
             })
@@ -175,7 +220,7 @@ export default function DailyRoutine() {
             }));
         })
         .sort((a, b) => a.visualStart - b.visualStart),
-    [scheduledHabits, todayWeekday, yesterdayWeekday],
+    [scheduledHabits, todayWeekday, yesterdayWeekday, todayDate, yesterdayDate],
   );
 
   const timeBounds = useMemo(() => {
@@ -351,11 +396,18 @@ export default function DailyRoutine() {
             )}
 
             {layout.map((item) => {
+              const canEdit = Number.isInteger(item.id);
+              const Wrapper = canEdit ? Link : "article";
+              const wrapperProps = canEdit
+                ? { to: `/habits/${item.id}/edit` }
+                : {};
+
               return (
-                <article
+                <Wrapper
                   key={item.segmentId}
                   className={`group absolute left-4 right-4 overflow-hidden rounded-[28px] bg-gradient-to-r ${item.color} text-slate-900 shadow-[0_12px_30px_rgba(0,0,0,0.15)] transition hover:scale-[1.01]`}
                   style={{ top: `${item.top}px`, height: `${item.height}px` }}
+                  {...wrapperProps}
                 >
                   <div className="relative flex h-full flex-col justify-between px-6 py-4">
                     <div className="flex items-start justify-between gap-4">
@@ -374,7 +426,7 @@ export default function DailyRoutine() {
                       </div>
                     </div>
                   </div>
-                </article>
+                </Wrapper>
               );
             })}
           </div>

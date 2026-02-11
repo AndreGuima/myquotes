@@ -47,12 +47,12 @@ export default function MainLayout() {
             Rotina do Dia
           </NavLink>
 
-          <NavLink to="/reading-list" className={navClass}>
-            Leituras
-          </NavLink>
-
           <NavLink to="/dreams" className={navClass}>
             Sonhos
+          </NavLink>
+
+          <NavLink to="/reading-list" className={navClass}>
+            Leituras
           </NavLink>
 
           <NavLink to="/preferences" className={navClass}>
