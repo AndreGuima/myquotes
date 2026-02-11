@@ -4,7 +4,7 @@ from datetime import date
 def test_toggle_habit_creates_log(client):
     r = client.post(
         "/habits/",
-        json={"title": "Beber água", "start_time": "07:00"},
+        json={"title": "Beber água", "start_time": "00:00"},
     )
     habit_id = r.json()["id"]
 
@@ -27,20 +27,23 @@ def test_toggle_habit_creates_log(client):
 def test_toggle_habit_flips_completed(client):
     r = client.post(
         "/habits/",
-        json={"title": "Alongar", "start_time": "08:00"},
+        json={"title": "Alongar", "start_time": "00:00"},
     )
     habit_id = r.json()["id"]
 
     r1 = client.post(f"/habits/{habit_id}/toggle")
+    assert r1.status_code == 200
     assert r1.json()["log"]["completed"] is True
     assert r1.json()["stats"]["current_streak"] == 1
 
     r2 = client.post(f"/habits/{habit_id}/toggle")
+    assert r2.status_code == 200
     assert r2.json()["log"]["completed"] is False
     assert r2.json()["stats"]["today_completed"] is False
     assert r2.json()["stats"]["current_streak"] == 0
 
     r3 = client.post(f"/habits/{habit_id}/toggle")
+    assert r3.status_code == 200
     assert r3.json()["log"]["completed"] is True
     assert r3.json()["stats"]["current_streak"] == 1
 
@@ -53,7 +56,7 @@ def test_toggle_nonexistent_habit(client):
 def test_toggle_returns_log_and_stats(client):
     r = client.post(
         "/habits/",
-        json={"title": "Beber água", "start_time": "07:00"},
+        json={"title": "Beber água", "start_time": "00:00"},
     )
     habit_id = r.json()["id"]
 
@@ -75,13 +78,15 @@ def test_toggle_returns_log_and_stats(client):
 def test_toggle_updates_stats(client):
     r = client.post(
         "/habits/",
-        json={"title": "Alongar", "start_time": "08:00"},
+        json={"title": "Alongar", "start_time": "00:00"},
     )
     habit_id = r.json()["id"]
 
     r1 = client.post(f"/habits/{habit_id}/toggle")
+    assert r1.status_code == 200
     assert r1.json()["stats"]["today_completed"] is True
 
     r2 = client.post(f"/habits/{habit_id}/toggle")
+    assert r2.status_code == 200
     assert r2.json()["stats"]["today_completed"] is False
     assert r2.json()["stats"]["current_streak"] == 0

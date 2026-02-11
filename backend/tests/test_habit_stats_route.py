@@ -7,7 +7,7 @@ def test_get_habit_stats_route(client, db_sessionmaker):
     # cria hábito via API
     r = client.post(
         "/habits/",
-        json={"title": "Hábito Teste", "start_time": "07:00"},
+        json={"title": "Hábito Teste", "start_time": "00:00"},
     )
     habit_id = r.json()["id"]
 
