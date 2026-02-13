@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import habitsService from "../services/habitsService";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
@@ -20,8 +20,6 @@ const gradientPalette = [
   "from-[#BFDBFE] to-[#93C5FD]",
   "from-[#FDE2E4] to-[#F9A8D4]",
 ];
-
-const iconPool = ["✨", "⚡", "🎯", "🧠", "📌", "🗓️", "🧩", "🌿"];
 
 const defaultStartOfDay = 6 * 60;
 const defaultEndOfDay = 22 * 60;
@@ -118,8 +116,10 @@ function getHabitApplyFlags(
 }
 
 export default function DailyRoutine() {
+  const navigate = useNavigate();
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toggling, setToggling] = useState(null);
   const todayWeekday = useMemo(() => new Date().getDay(), []);
   const todayDate = useMemo(() => new Date().getDate(), []);
   const yesterdayDate = useMemo(() => {
@@ -135,7 +135,7 @@ export default function DailyRoutine() {
   useEffect(() => {
     async function loadHabits() {
       try {
-        const data = await habitsService.list({ include_stats: false });
+        const data = await habitsService.list({ include_stats: true });
         setHabits(Array.isArray(data) ? data : []);
       } catch (err) {
         notify.error(getApiErrorMessage(err, "Erro ao carregar hábitos"));
@@ -146,6 +146,34 @@ export default function DailyRoutine() {
 
     loadHabits();
   }, []);
+
+  async function handleToggle(habitId) {
+    setToggling(habitId);
+
+    try {
+      const result = await habitsService.toggle(habitId);
+      setHabits((prev) =>
+        prev.map((habit) =>
+          habit.id === habitId ? { ...habit, stats: result.stats } : habit,
+        ),
+      );
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      if (detail === "Habit is before scheduled time") {
+        const habit = habits.find((h) => h.id === habitId);
+        const startLabel = habit?.start_time
+          ? habit.start_time.slice(0, 5)
+          : "o horário definido";
+        notify.error(
+          `Esse hábito só pode ser marcado a partir de ${startLabel}.`,
+        );
+      } else {
+        notify.error(getApiErrorMessage(err, "Erro ao atualizar hábito"));
+      }
+    } finally {
+      setToggling(null);
+    }
+  }
 
   const { scheduledHabits, unscheduledHabits } = useMemo(() => {
     const scheduled = [];
@@ -183,7 +211,6 @@ export default function DailyRoutine() {
           const key = `${habit.id ?? habit.title ?? ""}`;
           const hash = hashString(key);
           const color = gradientPalette[hash % gradientPalette.length];
-          const icon = iconPool[hash % iconPool.length];
           const start = habit.start_time?.slice(0, 5);
           const end = habit.end_time?.slice(0, 5);
           const ranges = getVisualRanges(start, end);
@@ -214,7 +241,7 @@ export default function DailyRoutine() {
               end: end ?? "",
               duration: formatDuration(start, end),
               color,
-              icon,
+              completed: Boolean(habit.stats?.today_completed),
               visualStart: range.visualStart,
               visualEnd: range.visualEnd,
             }));
@@ -397,17 +424,24 @@ export default function DailyRoutine() {
 
             {layout.map((item) => {
               const canEdit = Number.isInteger(item.id);
-              const Wrapper = canEdit ? Link : "article";
-              const wrapperProps = canEdit
-                ? { to: `/habits/${item.id}/edit` }
-                : {};
 
               return (
-                <Wrapper
+                <article
                   key={item.segmentId}
-                  className={`group absolute left-4 right-4 overflow-hidden rounded-[28px] bg-gradient-to-r ${item.color} text-slate-900 shadow-[0_12px_30px_rgba(0,0,0,0.15)] transition hover:scale-[1.01]`}
+                  className={`group absolute left-4 right-4 overflow-hidden rounded-[28px] bg-gradient-to-r ${item.color} text-slate-900 shadow-[0_12px_30px_rgba(0,0,0,0.15)] transition hover:scale-[1.01] ${canEdit ? "cursor-pointer" : ""}`}
                   style={{ top: `${item.top}px`, height: `${item.height}px` }}
-                  {...wrapperProps}
+                  onClick={() => {
+                    if (canEdit) navigate(`/habits/${item.id}/edit`);
+                  }}
+                  onKeyDown={(event) => {
+                    if (!canEdit) return;
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      navigate(`/habits/${item.id}/edit`);
+                    }
+                  }}
+                  role={canEdit ? "link" : undefined}
+                  tabIndex={canEdit ? 0 : undefined}
                 >
                   <div className="relative flex h-full flex-col justify-between px-6 py-4">
                     <div className="flex items-start justify-between gap-4">
@@ -416,17 +450,53 @@ export default function DailyRoutine() {
                           {item.start}
                           {item.end ? ` - ${item.end}` : ""}
                         </p>
-                        <h3 className="text-lg font-semibold">{item.title}</h3>
+                        {canEdit ? (
+                          <Link
+                            to={`/habits/${item.id}/edit`}
+                            className="text-lg font-semibold hover:underline"
+                          >
+                            {item.title}
+                          </Link>
+                        ) : (
+                          <h3 className="text-lg font-semibold">
+                            {item.title}
+                          </h3>
+                        )}
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{item.icon}</span>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleToggle(item.id);
+                          }}
+                          disabled={toggling === item.id}
+                          className={`h-8 min-w-[78px] rounded-md px-2 text-xs font-semibold transition ${
+                            item.completed
+                              ? "bg-green-600 text-white hover:bg-green-700"
+                              : "bg-white/70 text-black/70 hover:bg-white"
+                          } ${toggling === item.id ? "cursor-not-allowed opacity-60" : ""}`}
+                          aria-label={
+                            item.completed
+                              ? "Desmarcar feito hoje"
+                              : "Marcar feito hoje"
+                          }
+                          title={item.completed ? "Feito hoje" : "Marcar feito"}
+                        >
+                          {toggling === item.id
+                            ? "Salvando"
+                            : item.completed
+                              ? "✓ Feito"
+                              : "○ Marcar"}
+                        </button>
                         <span className="rounded-full bg-white/50 px-3 py-1 text-xs font-semibold text-black/60">
                           {item.duration}
                         </span>
                       </div>
                     </div>
                   </div>
-                </Wrapper>
+                </article>
               );
             })}
           </div>

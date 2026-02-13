@@ -28,11 +28,13 @@ export default function MainLayout() {
     <div className="flex h-screen">
       {/* Sidebar */}
       <aside className="w-64 bg-gray-900 text-white flex flex-col p-4">
-        <h2 className="text-xl font-bold mb-6">MyLife</h2>
+        <NavLink to="/home" className="text-xl font-bold mb-6">
+          MyLife
+        </NavLink>
 
         <nav className="flex flex-col gap-3 flex-1">
           <NavLink to="/home" className={navClass}>
-            Dashboard
+            Home
           </NavLink>
 
           <NavLink to="/quotes" className={navClass}>

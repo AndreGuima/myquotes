@@ -100,7 +100,7 @@ export default function Home() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6">Home</h1>
 
       <div className="mb-8 border rounded-xl bg-white p-4 flex items-center justify-between gap-4">
         <div>
