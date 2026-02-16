@@ -39,15 +39,15 @@ export default function HabitHistorySummary({ habit }) {
   }, [habit.id]);
 
   if (loading) {
-    return <div className="text-sm text-gray-400">Carregando histórico…</div>;
+    return <div className="text-sm themed-muted">Carregando histórico…</div>;
   }
 
   if (!summary || summary.total === 0) {
-    return <div className="text-sm text-gray-500">Nenhum histórico ainda</div>;
+    return <div className="text-sm themed-muted">Nenhum histórico ainda</div>;
   }
 
   return (
-    <div className="text-sm text-gray-700 mt-2 space-y-1">
+    <div className="text-sm themed-muted mt-2 space-y-1">
       <div>
         ✔️ {summary.completed} / {summary.total} dias
       </div>

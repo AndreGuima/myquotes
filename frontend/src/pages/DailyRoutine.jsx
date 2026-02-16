@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import habitsService from "../services/habitsService";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
@@ -20,8 +20,6 @@ const gradientPalette = [
   "from-[#BFDBFE] to-[#93C5FD]",
   "from-[#FDE2E4] to-[#F9A8D4]",
 ];
-
-const iconPool = ["✨", "⚡", "🎯", "🧠", "📌", "🗓️", "🧩", "🌿"];
 
 const defaultStartOfDay = 6 * 60;
 const defaultEndOfDay = 22 * 60;
@@ -118,8 +116,10 @@ function getHabitApplyFlags(
 }
 
 export default function DailyRoutine() {
+  const navigate = useNavigate();
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toggling, setToggling] = useState(null);
   const todayWeekday = useMemo(() => new Date().getDay(), []);
   const todayDate = useMemo(() => new Date().getDate(), []);
   const yesterdayDate = useMemo(() => {
@@ -135,7 +135,7 @@ export default function DailyRoutine() {
   useEffect(() => {
     async function loadHabits() {
       try {
-        const data = await habitsService.list({ include_stats: false });
+        const data = await habitsService.list({ include_stats: true });
         setHabits(Array.isArray(data) ? data : []);
       } catch (err) {
         notify.error(getApiErrorMessage(err, "Erro ao carregar hábitos"));
@@ -146,6 +146,34 @@ export default function DailyRoutine() {
 
     loadHabits();
   }, []);
+
+  async function handleToggle(habitId) {
+    setToggling(habitId);
+
+    try {
+      const result = await habitsService.toggle(habitId);
+      setHabits((prev) =>
+        prev.map((habit) =>
+          habit.id === habitId ? { ...habit, stats: result.stats } : habit,
+        ),
+      );
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      if (detail === "Habit is before scheduled time") {
+        const habit = habits.find((h) => h.id === habitId);
+        const startLabel = habit?.start_time
+          ? habit.start_time.slice(0, 5)
+          : "o horário definido";
+        notify.error(
+          `Esse hábito só pode ser marcado a partir de ${startLabel}.`,
+        );
+      } else {
+        notify.error(getApiErrorMessage(err, "Erro ao atualizar hábito"));
+      }
+    } finally {
+      setToggling(null);
+    }
+  }
 
   const { scheduledHabits, unscheduledHabits } = useMemo(() => {
     const scheduled = [];
@@ -183,7 +211,6 @@ export default function DailyRoutine() {
           const key = `${habit.id ?? habit.title ?? ""}`;
           const hash = hashString(key);
           const color = gradientPalette[hash % gradientPalette.length];
-          const icon = iconPool[hash % iconPool.length];
           const start = habit.start_time?.slice(0, 5);
           const end = habit.end_time?.slice(0, 5);
           const ranges = getVisualRanges(start, end);
@@ -214,7 +241,7 @@ export default function DailyRoutine() {
               end: end ?? "",
               duration: formatDuration(start, end),
               color,
-              icon,
+              completed: Boolean(habit.stats?.today_completed),
               visualStart: range.visualStart,
               visualEnd: range.visualEnd,
             }));
@@ -303,7 +330,7 @@ export default function DailyRoutine() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border border-white/60 bg-[#f7f2e8] shadow-[0_20px_60px_rgba(18,28,38,0.18)]"
+      className="relative overflow-hidden rounded-3xl border themed-border themed-card shadow-[0_20px_60px_rgba(18,28,38,0.18)]"
       style={{ fontFamily: '"Space Grotesk", "IBM Plex Sans", sans-serif' }}
     >
       <style>{`
@@ -337,15 +364,13 @@ export default function DailyRoutine() {
       <div className="absolute -top-24 right-10 h-64 w-64 rounded-full bg-[radial-gradient(circle_at_top,#fff6d6,#f5d98f)] opacity-70 blur-3xl float-slow" />
       <div className="absolute -bottom-28 left-0 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_top,#d7fff1,#9eecc9)] opacity-60 blur-3xl float-slower" />
 
-      <header className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b border-black/10 px-8 py-6">
+      <header className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b themed-border px-8 py-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.32em] text-gray-500">
+          <p className="text-xs uppercase tracking-[0.32em] themed-muted">
             Rotina do Dia
           </p>
-          <h1 className="text-2xl font-semibold text-gray-900 capitalize">
-            {dayLabel}
-          </h1>
-          <p className="text-sm text-gray-600">
+          <h1 className="text-2xl font-semibold capitalize">{dayLabel}</h1>
+          <p className="text-sm themed-muted">
             {loading
               ? "Carregando hábitos do dia..."
               : `Resumo: ${scheduledHabits.length + unscheduledHabits.length} atividades, ${scheduledHabits.length} com horário.`}
@@ -353,7 +378,7 @@ export default function DailyRoutine() {
         </div>
         <Link
           to="/habits"
-          className="rounded-full border border-gray-900/10 bg-white/80 px-5 py-2 text-sm font-semibold text-gray-900 transition hover:scale-[1.02] hover:bg-white"
+          className="rounded-full border themed-border themed-subtle px-5 py-2 text-sm font-semibold transition hover:scale-[1.02] hover:opacity-90"
         >
           Ir para hábitos
         </Link>
@@ -365,12 +390,12 @@ export default function DailyRoutine() {
             {hours.map((hour) => (
               <div
                 key={hour}
-                className="absolute left-0 flex items-center gap-3 text-xs text-gray-500"
+                className="absolute left-0 flex items-center gap-3 text-xs themed-muted"
                 style={{
                   top: `${(hour * 60 - timeBounds.startOfDay) * pxPerMinute}px`,
                 }}
               >
-                <span className="h-2 w-2 rounded-full bg-gray-400" />
+                <span className="h-2 w-2 rounded-full bg-[var(--muted-text)]" />
                 <span>{formatHourLabel(hour)}</span>
               </div>
             ))}
@@ -379,17 +404,17 @@ export default function DailyRoutine() {
 
         <div className="relative">
           <div
-            className="relative rounded-[32px] border border-white/80 bg-white/60 p-6 shadow-inner backdrop-blur"
+            className="relative rounded-[32px] border themed-border themed-subtle p-6 shadow-inner backdrop-blur"
             style={{ height: `${timelineHeight}px` }}
           >
             {loading && (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-white/70 p-6 text-sm text-gray-500">
+              <div className="rounded-2xl border border-dashed themed-border themed-card p-6 text-sm themed-muted">
                 Carregando hábitos do dia...
               </div>
             )}
 
             {!loading && schedule.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-white/70 p-6 text-sm text-gray-500">
+              <div className="rounded-2xl border border-dashed themed-border themed-card p-6 text-sm themed-muted">
                 Nenhum hábito com horário definido. Edite seus hábitos para
                 adicionar horários e ver a rotina aqui.
               </div>
@@ -397,17 +422,24 @@ export default function DailyRoutine() {
 
             {layout.map((item) => {
               const canEdit = Number.isInteger(item.id);
-              const Wrapper = canEdit ? Link : "article";
-              const wrapperProps = canEdit
-                ? { to: `/habits/${item.id}/edit` }
-                : {};
 
               return (
-                <Wrapper
+                <article
                   key={item.segmentId}
-                  className={`group absolute left-4 right-4 overflow-hidden rounded-[28px] bg-gradient-to-r ${item.color} text-slate-900 shadow-[0_12px_30px_rgba(0,0,0,0.15)] transition hover:scale-[1.01]`}
+                  className={`group absolute left-4 right-4 overflow-hidden rounded-[28px] bg-gradient-to-r ${item.color} text-slate-900 shadow-[0_12px_30px_rgba(0,0,0,0.15)] transition hover:scale-[1.01] ${canEdit ? "cursor-pointer" : ""}`}
                   style={{ top: `${item.top}px`, height: `${item.height}px` }}
-                  {...wrapperProps}
+                  onClick={() => {
+                    if (canEdit) navigate(`/habits/${item.id}/edit`);
+                  }}
+                  onKeyDown={(event) => {
+                    if (!canEdit) return;
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      navigate(`/habits/${item.id}/edit`);
+                    }
+                  }}
+                  role={canEdit ? "link" : undefined}
+                  tabIndex={canEdit ? 0 : undefined}
                 >
                   <div className="relative flex h-full flex-col justify-between px-6 py-4">
                     <div className="flex items-start justify-between gap-4">
@@ -416,31 +448,67 @@ export default function DailyRoutine() {
                           {item.start}
                           {item.end ? ` - ${item.end}` : ""}
                         </p>
-                        <h3 className="text-lg font-semibold">{item.title}</h3>
+                        {canEdit ? (
+                          <Link
+                            to={`/habits/${item.id}/edit`}
+                            className="text-lg font-semibold hover:underline"
+                          >
+                            {item.title}
+                          </Link>
+                        ) : (
+                          <h3 className="text-lg font-semibold">
+                            {item.title}
+                          </h3>
+                        )}
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{item.icon}</span>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleToggle(item.id);
+                          }}
+                          disabled={toggling === item.id}
+                          className={`h-8 min-w-[78px] rounded-md px-2 text-xs font-semibold transition ${
+                            item.completed
+                              ? "bg-green-600 text-white hover:bg-green-700"
+                              : "bg-white/70 text-black/70 hover:bg-white"
+                          } ${toggling === item.id ? "cursor-not-allowed opacity-60" : ""}`}
+                          aria-label={
+                            item.completed
+                              ? "Desmarcar feito hoje"
+                              : "Marcar feito hoje"
+                          }
+                          title={item.completed ? "Feito hoje" : "Marcar feito"}
+                        >
+                          {toggling === item.id
+                            ? "Salvando"
+                            : item.completed
+                              ? "✓ Feito"
+                              : "○ Marcar"}
+                        </button>
                         <span className="rounded-full bg-white/50 px-3 py-1 text-xs font-semibold text-black/60">
                           {item.duration}
                         </span>
                       </div>
                     </div>
                   </div>
-                </Wrapper>
+                </article>
               );
             })}
           </div>
 
           {unscheduledHabits.length > 0 && (
-            <div className="mt-6 rounded-2xl border border-white/60 bg-white/80 px-6 py-4 shadow-sm">
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
+            <div className="mt-6 rounded-2xl border themed-border themed-card px-6 py-4 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.3em] themed-muted">
                 Sem Horário
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {unscheduledHabits.map((habit) => (
                   <span
                     key={habit.id ?? habit.title}
-                    className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white"
+                    className="rounded-full bg-[var(--panel-bg)] px-3 py-1 text-xs font-semibold text-[var(--panel-text)]"
                   >
                     {habit.title ?? "Hábito"}
                   </span>

@@ -2,7 +2,138 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Estilos opcionais adicionais (não obrigatórios) */
+:root {
+  --app-bg: #f3f4f6;
+  --app-text: #111827;
+  --panel-bg: #111827;
+  --panel-text: #f9fafb;
+  --panel-subtle-bg: #1f2937;
+  --content-bg: #f3f4f6;
+  --input-bg: #ffffff;
+  --input-text: #111827;
+  --input-border: #cbd5e1;
+  --input-disabled-bg: #e5e7eb;
+  --input-disabled-text: #6b7280;
+  --card-bg: #ffffff;
+  --card-text: #111827;
+  --muted-text: #6b7280;
+  --line-color: #e5e7eb;
+  --link-color: #2563eb;
+  --subtle-bg: #f8fafc;
+}
+
+body.theme-light {
+  --app-bg: #f3f4f6;
+  --app-text: #111827;
+  --panel-bg: #111827;
+  --panel-text: #f9fafb;
+  --panel-subtle-bg: #1f2937;
+  --content-bg: #f3f4f6;
+  --input-bg: #ffffff;
+  --input-text: #111827;
+  --input-border: #cbd5e1;
+  --input-disabled-bg: #e5e7eb;
+  --input-disabled-text: #6b7280;
+  --card-bg: #ffffff;
+  --card-text: #111827;
+  --muted-text: #6b7280;
+  --line-color: #e5e7eb;
+  --link-color: #2563eb;
+  --subtle-bg: #f8fafc;
+}
+
+body.theme-dark {
+  --app-bg: #020617;
+  --app-text: #e2e8f0;
+  --panel-bg: #0f172a;
+  --panel-text: #e2e8f0;
+  --panel-subtle-bg: #1e293b;
+  --content-bg: #0b1220;
+  --input-bg: #0f172a;
+  --input-text: #e2e8f0;
+  --input-border: #334155;
+  --input-disabled-bg: #1e293b;
+  --input-disabled-text: #94a3b8;
+  --card-bg: #0f172a;
+  --card-text: #e2e8f0;
+  --muted-text: #94a3b8;
+  --line-color: #334155;
+  --link-color: #60a5fa;
+  --subtle-bg: #1e293b;
+}
+
+body.theme-ocean {
+  --app-bg: #e0f2fe;
+  --app-text: #0c4a6e;
+  --panel-bg: #0c4a6e;
+  --panel-text: #e0f2fe;
+  --panel-subtle-bg: #075985;
+  --content-bg: #f0f9ff;
+  --input-bg: #ffffff;
+  --input-text: #0c4a6e;
+  --input-border: #7dd3fc;
+  --input-disabled-bg: #e0f2fe;
+  --input-disabled-text: #075985;
+  --card-bg: #ffffff;
+  --card-text: #0c4a6e;
+  --muted-text: #0369a1;
+  --line-color: #bae6fd;
+  --link-color: #0369a1;
+  --subtle-bg: #e0f2fe;
+}
+
 body {
-  @apply bg-white text-gray-900;
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.themed-input {
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--input-border);
+}
+
+.themed-input:disabled {
+  background-color: var(--input-disabled-bg);
+  color: var(--input-disabled-text);
+  cursor: not-allowed;
+}
+
+.themed-card {
+  background-color: var(--card-bg);
+  color: var(--card-text);
+}
+
+.themed-muted {
+  color: var(--muted-text);
+}
+
+.themed-border {
+  border-color: var(--line-color);
+}
+
+.themed-link {
+  color: var(--link-color);
+}
+
+.themed-subtle {
+  background-color: var(--subtle-bg);
+}
+
+.dreams-page input:not([type="checkbox"]),
+.dreams-page textarea,
+.dreams-page select {
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border-color: var(--input-border);
+}
+
+.dreams-page input:not([type="checkbox"]):disabled,
+.dreams-page textarea:disabled,
+.dreams-page select:disabled {
+  background-color: var(--input-disabled-bg);
+  color: var(--input-disabled-text);
 }

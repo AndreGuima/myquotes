@@ -2,6 +2,8 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthProvider.jsx";
+import { ThemeProvider } from "./contexts/ThemeProvider.jsx";
+import { initializeTheme } from "./core/theme";
 
 import "./index.css";
 
@@ -30,6 +32,8 @@ import ReadingList from "./pages/ReadingList.jsx";
 import DailyRoutine from "./pages/DailyRoutine.jsx";
 import Dreams from "./pages/Dreams.jsx";
 
+initializeTheme();
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <>
     {/* 🔔 Toast global */}
@@ -45,50 +49,55 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     />
 
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          {/* Rotas públicas */}
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-instructions" element={<VerifyInstructions />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/verify-success" element={<VerifySuccess />} />
-          <Route path="/verify-error" element={<VerifyError />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-
-          {/* Rotas protegidas */}
-          <Route
-            element={
-              <PrivateRoute>
-                <MainLayout />
-              </PrivateRoute>
-            }
-          >
-            <Route path="/home" element={<Home />} />
-            <Route path="/quotes" element={<Quotes />} />
-            <Route path="/quotes/new" element={<CreateQuote />} />
-            <Route path="/quotes/:id/edit" element={<EditQuote />} />
-            <Route path="/habits" element={<Habits />} />
-            <Route path="/habits/new" element={<CreateHabit />} />
-            <Route path="/habits/:id/edit" element={<EditHabit />} />
-            <Route path="/reading-list" element={<ReadingList />} />
-            <Route path="/daily-routine" element={<DailyRoutine />} />
-            <Route path="/dreams" element={<Dreams />} />
-            <Route path="/preferences" element={<Preferences />} />
-
+      <ThemeProvider>
+        <AuthProvider>
+          <Routes>
+            {/* Rotas públicas */}
+            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route
-              path="/users"
-              element={
-                <AdminRoute>
-                  <Users />
-                </AdminRoute>
-              }
+              path="/verify-instructions"
+              element={<VerifyInstructions />}
             />
-          </Route>
-        </Routes>
-      </AuthProvider>
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/verify-success" element={<VerifySuccess />} />
+            <Route path="/verify-error" element={<VerifyError />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* Rotas protegidas */}
+            <Route
+              element={
+                <PrivateRoute>
+                  <MainLayout />
+                </PrivateRoute>
+              }
+            >
+              <Route path="/home" element={<Home />} />
+              <Route path="/quotes" element={<Quotes />} />
+              <Route path="/quotes/new" element={<CreateQuote />} />
+              <Route path="/quotes/:id/edit" element={<EditQuote />} />
+              <Route path="/habits" element={<Habits />} />
+              <Route path="/habits/new" element={<CreateHabit />} />
+              <Route path="/habits/:id/edit" element={<EditHabit />} />
+              <Route path="/reading-list" element={<ReadingList />} />
+              <Route path="/daily-routine" element={<DailyRoutine />} />
+              <Route path="/dreams" element={<Dreams />} />
+              <Route path="/preferences" element={<Preferences />} />
+
+              <Route
+                path="/users"
+                element={
+                  <AdminRoute>
+                    <Users />
+                  </AdminRoute>
+                }
+              />
+            </Route>
+          </Routes>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </>,
 );

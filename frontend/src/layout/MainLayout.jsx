@@ -25,14 +25,16 @@ export default function MainLayout() {
     isActive ? "text-blue-400 font-semibold" : "hover:text-blue-400";
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-[var(--app-bg)] text-[var(--app-text)]">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 text-white flex flex-col p-4">
-        <h2 className="text-xl font-bold mb-6">MyLife</h2>
+      <aside className="w-64 bg-[var(--panel-bg)] text-[var(--panel-text)] flex flex-col p-4">
+        <NavLink to="/home" className="text-xl font-bold mb-6">
+          MyLife
+        </NavLink>
 
         <nav className="flex flex-col gap-3 flex-1">
           <NavLink to="/home" className={navClass}>
-            Dashboard
+            Home
           </NavLink>
 
           <NavLink to="/quotes" className={navClass}>
@@ -67,7 +69,7 @@ export default function MainLayout() {
         </nav>
 
         {/* User info */}
-        <div className="bg-gray-800 p-3 rounded mb-4 text-sm">
+        <div className="bg-[var(--panel-subtle-bg)] p-3 rounded mb-4 text-sm">
           Logado como: <span className="font-semibold">{user?.username}</span>
         </div>
 
@@ -81,7 +83,7 @@ export default function MainLayout() {
       </aside>
 
       {/* Conteúdo */}
-      <div className="flex-1 bg-gray-100 p-6 overflow-auto">
+      <div className="flex-1 bg-[var(--content-bg)] p-6 overflow-auto">
         <Outlet />
       </div>
     </div>

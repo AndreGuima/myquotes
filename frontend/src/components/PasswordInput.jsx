@@ -32,14 +32,14 @@ export default function PasswordInput({
           onChange={onChange}
           placeholder={placeholder}
           required={required}
-          className="w-full border p-2 rounded pr-10"
+          className="themed-input w-full p-2 rounded pr-10"
         />
 
         <button
           type="button"
           aria-label={show ? "Ocultar senha" : "Mostrar senha"}
           onClick={() => setShow((v) => !v)}
-          className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
+          className="absolute inset-y-0 right-0 flex items-center px-3 themed-muted hover:opacity-80"
           tabIndex={-1}
         >
           {show ? <EyeOff size={18} /> : <Eye size={18} />}
