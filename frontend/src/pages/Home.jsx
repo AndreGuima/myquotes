@@ -92,8 +92,8 @@ export default function Home() {
   if (loadingQuote) {
     return (
       <div className="animate-pulse p-6 max-w-5xl mx-auto">
-        <div className="h-6 bg-gray-300 rounded w-48 mb-6"></div>
-        <div className="h-24 bg-gray-300 rounded"></div>
+        <div className="h-6 bg-[var(--line-color)] rounded w-48 mb-6"></div>
+        <div className="h-24 bg-[var(--line-color)] rounded"></div>
       </div>
     );
   }
@@ -102,10 +102,10 @@ export default function Home() {
     <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Home</h1>
 
-      <div className="mb-8 border rounded-xl bg-white p-4 flex items-center justify-between gap-4">
+      <div className="mb-8 border themed-border rounded-xl themed-card p-4 flex items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Módulo de Sonhos SMART</h2>
-          <p className="text-gray-600 text-sm mt-1">
+          <p className="themed-muted text-sm mt-1">
             Planeje sonhos com metas SMART, marcos em timeline e vínculo com
             hábitos.
           </p>
@@ -128,9 +128,9 @@ export default function Home() {
           <span className="font-light">— {quote.author}</span>
         </div>
       ) : (
-        <p className="text-gray-700 mb-10">
+        <p className="themed-muted mb-10">
           Você ainda não possui quotes cadastradas.
-          <Link to="/quotes/new" className="text-blue-600 underline ml-1">
+          <Link to="/quotes/new" className="themed-link underline ml-1">
             Criar agora →
           </Link>
         </p>
@@ -143,9 +143,9 @@ export default function Home() {
         <h2 className="text-2xl font-bold mb-4">📅 Seus hábitos</h2>
 
         {loadingHabits ? (
-          <p className="text-gray-500">Carregando hábitos…</p>
+          <p className="themed-muted">Carregando hábitos…</p>
         ) : habits.length === 0 ? (
-          <p className="text-gray-600">
+          <p className="themed-muted">
             Você ainda não possui hábitos cadastrados.
           </p>
         ) : (
@@ -163,9 +163,10 @@ export default function Home() {
                 key={habit.id}
                 className="
                   border
+                  themed-border
                   rounded-lg
                   p-4
-                  bg-white
+                  themed-card
                   hover:shadow-md
                   transition
                 "
@@ -173,12 +174,12 @@ export default function Home() {
                 {/* Título */}
                 <Link
                   to={`/habits/${habit.id}/edit`}
-                  className="text-lg font-semibold text-blue-700 hover:underline"
+                  className="text-lg font-semibold themed-link hover:underline"
                 >
                   {habit.title}
                 </Link>
 
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs themed-muted mt-1">
                   ⏰ {formatTimeRange(habit.start_time, habit.end_time)}
                 </div>
 
@@ -196,7 +197,7 @@ export default function Home() {
 
                 {/* Heatmap binário */}
                 <div className="mt-3">
-                  <div className="text-xs text-gray-400 mb-1">
+                  <div className="text-xs themed-muted mb-1">
                     Últimos 90 dias
                   </div>
                   <HabitHeatmap habitId={habit.id} />
@@ -206,7 +207,7 @@ export default function Home() {
                 <div className="mt-3 text-sm">
                   <Link
                     to={`/habits/${habit.id}/edit`}
-                    className="text-gray-500 hover:text-blue-600 hover:underline"
+                    className="themed-muted hover:text-blue-600 hover:underline"
                   >
                     Ver histórico →
                   </Link>

@@ -9,7 +9,7 @@ import { getApiErrorMessage } from "../core/apiError";
  * 1 = feito
  */
 function getColor(count) {
-  return count === 1 ? "bg-green-500" : "bg-gray-200";
+  return count === 1 ? "bg-green-500" : "bg-[var(--line-color)]";
 }
 
 export default function HabitHeatmap({ habitId, days = 90 }) {
@@ -36,7 +36,10 @@ export default function HabitHeatmap({ habitId, days = 90 }) {
     return (
       <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: days }).map((_, i) => (
-          <div key={i} className="w-3 h-3 rounded bg-gray-200 animate-pulse" />
+          <div
+            key={i}
+            className="w-3 h-3 rounded bg-[var(--line-color)] animate-pulse"
+          />
         ))}
       </div>
     );

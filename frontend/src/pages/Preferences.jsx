@@ -2,23 +2,32 @@ import { useEffect, useState } from "react";
 import preferencesService from "../services/preferencesService";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
+import { useTheme } from "../contexts/useTheme";
 
 export default function Preferences() {
+  const { theme, setTheme } = useTheme();
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [receiveDailyQuote, setReceiveDailyQuote] = useState(true);
   const [dailyQuoteTime, setDailyQuoteTime] = useState("08:00");
+  const [selectedTheme, setSelectedTheme] = useState(theme);
 
   useEffect(() => {
     async function load() {
       try {
-        const data = await preferencesService.get("quotes");
+        const [quotesData, themeData] = await Promise.all([
+          preferencesService.get("quotes"),
+          preferencesService.get("theme"),
+        ]);
 
-        const prefs = data?.preferences ?? {};
+        const prefs = quotesData?.preferences ?? {};
+        const themePrefs = themeData?.preferences ?? {};
 
         setReceiveDailyQuote(prefs.receive_daily_quote ?? true);
         setDailyQuoteTime(prefs.daily_quote_time ?? "08:00");
+        setSelectedTheme(themePrefs.theme ?? theme);
       } catch (err) {
         notify.error(getApiErrorMessage(err, "Erro ao carregar preferências"));
       } finally {
@@ -27,17 +36,24 @@ export default function Preferences() {
     }
 
     load();
-  }, []);
+  }, [theme]);
 
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
 
     try {
-      await preferencesService.update("quotes", {
-        receive_daily_quote: receiveDailyQuote,
-        daily_quote_time: dailyQuoteTime,
-      });
+      const normalizedTheme = setTheme(selectedTheme);
+
+      await Promise.all([
+        preferencesService.update("quotes", {
+          receive_daily_quote: receiveDailyQuote,
+          daily_quote_time: dailyQuoteTime,
+        }),
+        preferencesService.update("theme", {
+          theme: normalizedTheme,
+        }),
+      ]);
 
       notify.success("Preferências salvas com sucesso");
     } catch (err) {
@@ -67,11 +83,27 @@ export default function Preferences() {
           <label className="block mb-1 font-medium">Horário de envio</label>
           <input
             type="time"
-            className="border p-2 rounded"
+            className="themed-input p-2 rounded"
             value={dailyQuoteTime}
             onChange={(e) => setDailyQuoteTime(e.target.value)}
             disabled={!receiveDailyQuote}
           />
+        </div>
+
+        <div>
+          <label htmlFor="theme" className="block mb-1 font-medium">
+            Tema da interface
+          </label>
+          <select
+            id="theme"
+            className="themed-input p-2 rounded w-full max-w-xs"
+            value={selectedTheme}
+            onChange={(e) => setSelectedTheme(e.target.value)}
+          >
+            <option value="light">Claro</option>
+            <option value="dark">Escuro</option>
+            <option value="ocean">Oceano</option>
+          </select>
         </div>
 
         <button

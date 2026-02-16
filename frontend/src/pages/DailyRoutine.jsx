@@ -330,7 +330,7 @@ export default function DailyRoutine() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border border-white/60 bg-[#f7f2e8] shadow-[0_20px_60px_rgba(18,28,38,0.18)]"
+      className="relative overflow-hidden rounded-3xl border themed-border themed-card shadow-[0_20px_60px_rgba(18,28,38,0.18)]"
       style={{ fontFamily: '"Space Grotesk", "IBM Plex Sans", sans-serif' }}
     >
       <style>{`
@@ -364,15 +364,13 @@ export default function DailyRoutine() {
       <div className="absolute -top-24 right-10 h-64 w-64 rounded-full bg-[radial-gradient(circle_at_top,#fff6d6,#f5d98f)] opacity-70 blur-3xl float-slow" />
       <div className="absolute -bottom-28 left-0 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_top,#d7fff1,#9eecc9)] opacity-60 blur-3xl float-slower" />
 
-      <header className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b border-black/10 px-8 py-6">
+      <header className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b themed-border px-8 py-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.32em] text-gray-500">
+          <p className="text-xs uppercase tracking-[0.32em] themed-muted">
             Rotina do Dia
           </p>
-          <h1 className="text-2xl font-semibold text-gray-900 capitalize">
-            {dayLabel}
-          </h1>
-          <p className="text-sm text-gray-600">
+          <h1 className="text-2xl font-semibold capitalize">{dayLabel}</h1>
+          <p className="text-sm themed-muted">
             {loading
               ? "Carregando hábitos do dia..."
               : `Resumo: ${scheduledHabits.length + unscheduledHabits.length} atividades, ${scheduledHabits.length} com horário.`}
@@ -380,7 +378,7 @@ export default function DailyRoutine() {
         </div>
         <Link
           to="/habits"
-          className="rounded-full border border-gray-900/10 bg-white/80 px-5 py-2 text-sm font-semibold text-gray-900 transition hover:scale-[1.02] hover:bg-white"
+          className="rounded-full border themed-border themed-subtle px-5 py-2 text-sm font-semibold transition hover:scale-[1.02] hover:opacity-90"
         >
           Ir para hábitos
         </Link>
@@ -392,12 +390,12 @@ export default function DailyRoutine() {
             {hours.map((hour) => (
               <div
                 key={hour}
-                className="absolute left-0 flex items-center gap-3 text-xs text-gray-500"
+                className="absolute left-0 flex items-center gap-3 text-xs themed-muted"
                 style={{
                   top: `${(hour * 60 - timeBounds.startOfDay) * pxPerMinute}px`,
                 }}
               >
-                <span className="h-2 w-2 rounded-full bg-gray-400" />
+                <span className="h-2 w-2 rounded-full bg-[var(--muted-text)]" />
                 <span>{formatHourLabel(hour)}</span>
               </div>
             ))}
@@ -406,17 +404,17 @@ export default function DailyRoutine() {
 
         <div className="relative">
           <div
-            className="relative rounded-[32px] border border-white/80 bg-white/60 p-6 shadow-inner backdrop-blur"
+            className="relative rounded-[32px] border themed-border themed-subtle p-6 shadow-inner backdrop-blur"
             style={{ height: `${timelineHeight}px` }}
           >
             {loading && (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-white/70 p-6 text-sm text-gray-500">
+              <div className="rounded-2xl border border-dashed themed-border themed-card p-6 text-sm themed-muted">
                 Carregando hábitos do dia...
               </div>
             )}
 
             {!loading && schedule.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-white/70 p-6 text-sm text-gray-500">
+              <div className="rounded-2xl border border-dashed themed-border themed-card p-6 text-sm themed-muted">
                 Nenhum hábito com horário definido. Edite seus hábitos para
                 adicionar horários e ver a rotina aqui.
               </div>
@@ -502,15 +500,15 @@ export default function DailyRoutine() {
           </div>
 
           {unscheduledHabits.length > 0 && (
-            <div className="mt-6 rounded-2xl border border-white/60 bg-white/80 px-6 py-4 shadow-sm">
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
+            <div className="mt-6 rounded-2xl border themed-border themed-card px-6 py-4 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.3em] themed-muted">
                 Sem Horário
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {unscheduledHabits.map((habit) => (
                   <span
                     key={habit.id ?? habit.title}
-                    className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white"
+                    className="rounded-full bg-[var(--panel-bg)] px-3 py-1 text-xs font-semibold text-[var(--panel-text)]"
                   >
                     {habit.title ?? "Hábito"}
                   </span>

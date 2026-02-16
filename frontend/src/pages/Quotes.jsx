@@ -49,7 +49,7 @@ export default function Quotes() {
   };
 
   if (loading) {
-    return <p className="p-4 text-gray-600">Carregando frases...</p>;
+    return <p className="p-4 themed-muted">Carregando frases...</p>;
   }
 
   return (
@@ -68,14 +68,14 @@ export default function Quotes() {
       ]}
       data={quotes}
       renderRow={(q) => (
-        <tr key={q.id} className="border">
-          <td className="p-2 border">{q.text}</td>
-          <td className="p-2 border">{q.author || "—"}</td>
-          <td className="p-2 border text-blue-700 font-medium">
+        <tr key={q.id} className="border themed-border">
+          <td className="p-2 border themed-border">{q.text}</td>
+          <td className="p-2 border themed-border">{q.author || "—"}</td>
+          <td className="p-2 border themed-border themed-link font-medium">
             {q.user_name ?? "—"}
           </td>
 
-          <td className="p-2 border flex gap-2">
+          <td className="p-2 border themed-border flex gap-2">
             <Link
               to={`/quotes/${q.id}/edit`}
               className="px-2 py-1 bg-blue-500 text-white rounded"

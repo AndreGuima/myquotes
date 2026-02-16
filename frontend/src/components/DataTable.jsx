@@ -69,7 +69,7 @@ export default function DataTable({
         <div className="mb-4">
           <input
             type="text"
-            className="border p-2 rounded w-full"
+            className="themed-input p-2 rounded w-full"
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => {
@@ -82,13 +82,13 @@ export default function DataTable({
 
       {/* Tabela */}
       <div className="overflow-x-auto">
-        <table className="w-full border text-left">
-          <thead className="bg-gray-100">
+        <table className="w-full border themed-border text-left themed-card">
+          <thead className="themed-subtle">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className="p-2 border"
+                  className="p-2 border themed-border"
                   style={col.width ? { width: col.width } : {}}
                 >
                   {col.label}
@@ -102,7 +102,7 @@ export default function DataTable({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="p-4 text-center text-gray-500"
+                  className="p-4 text-center themed-muted"
                 >
                   Nenhum registro encontrado.
                 </td>
@@ -116,7 +116,7 @@ export default function DataTable({
 
       {/* Paginação */}
       <div className="flex items-center justify-between mt-4">
-        <span className="text-gray-600">
+        <span className="themed-muted">
           Página {currentPage} de {totalPages} — Total filtrado:{" "}
           {filteredData.length}
         </span>
@@ -125,7 +125,7 @@ export default function DataTable({
           <button
             onClick={goPrev}
             disabled={currentPage === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-3 py-1 border themed-border rounded disabled:opacity-50 hover:opacity-90"
           >
             ◀
           </button>
@@ -136,10 +136,10 @@ export default function DataTable({
               <button
                 key={p}
                 onClick={() => goTo(p)}
-                className={`px-3 py-1 border rounded ${
+                className={`px-3 py-1 border themed-border rounded ${
                   p === currentPage
                     ? "bg-blue-600 text-white"
-                    : "hover:bg-gray-200"
+                    : "themed-subtle hover:opacity-90"
                 }`}
               >
                 {p}
@@ -150,7 +150,7 @@ export default function DataTable({
           <button
             onClick={goNext}
             disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-3 py-1 border themed-border rounded disabled:opacity-50 hover:opacity-90"
           >
             ▶
           </button>

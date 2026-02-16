@@ -27,11 +27,11 @@ export default function Login() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
+    <div className="flex items-center justify-center min-h-screen bg-[var(--app-bg)] p-4 text-[var(--app-text)]">
+      <div className="themed-card themed-border border p-8 rounded-xl shadow-lg w-full max-w-sm">
         <h1 className="text-3xl font-bold text-center mb-4">MyLife</h1>
 
-        <p className="text-center text-gray-600 mb-6">
+        <p className="text-center themed-muted mb-6">
           Controle sobre seus hábitos e alcance seus objetivos!
         </p>
 
@@ -47,7 +47,7 @@ export default function Login() {
             <label className="block font-medium mb-1">Email</label>
             <input
               type="email"
-              className="w-full border p-2 rounded"
+              className="themed-input w-full p-2 rounded"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -72,7 +72,7 @@ export default function Login() {
         <div className="text-center mt-4 space-y-2">
           <button
             type="button"
-            className="text-sm text-blue-600 hover:underline block w-full"
+            className="text-sm themed-link hover:underline block w-full"
             onClick={() => navigate("/forgot-password")}
           >
             Esqueceu sua senha?
@@ -80,7 +80,7 @@ export default function Login() {
 
           <button
             type="button"
-            className="text-blue-600 hover:underline"
+            className="themed-link hover:underline"
             onClick={() => navigate("/register")}
           >
             Criar conta

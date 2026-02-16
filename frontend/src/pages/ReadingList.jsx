@@ -156,7 +156,7 @@ export default function ReadingList() {
   };
 
   if (loading) {
-    return <p className="p-4 text-gray-600">Carregando lista...</p>;
+    return <p className="p-4 themed-muted">Carregando lista...</p>;
   }
 
   return (
@@ -165,12 +165,12 @@ export default function ReadingList() {
 
       <form
         onSubmit={handleCreate}
-        className="bg-white rounded-lg shadow p-4 mb-8 grid grid-cols-1 md:grid-cols-4 gap-4"
+        className="themed-card themed-border border rounded-lg shadow p-4 mb-8 grid grid-cols-1 md:grid-cols-4 gap-4"
       >
         <input
           type="text"
           placeholder="Título"
-          className="border rounded px-3 py-2"
+          className="themed-input rounded px-3 py-2"
           value={newBook.title}
           onChange={(e) =>
             setNewBook((prev) => ({ ...prev, title: e.target.value }))
@@ -179,14 +179,14 @@ export default function ReadingList() {
         <input
           type="text"
           placeholder="Autor (opcional)"
-          className="border rounded px-3 py-2"
+          className="themed-input rounded px-3 py-2"
           value={newBook.author}
           onChange={(e) =>
             setNewBook((prev) => ({ ...prev, author: e.target.value }))
           }
         />
         <select
-          className="border rounded px-3 py-2"
+          className="themed-input rounded px-3 py-2"
           value={newBook.status}
           onChange={(e) =>
             setNewBook((prev) => ({ ...prev, status: e.target.value }))
@@ -199,7 +199,7 @@ export default function ReadingList() {
           ))}
         </select>
         <div className="flex gap-2">
-          <div className="flex items-center gap-1 px-2 border rounded">
+          <div className="flex items-center gap-1 px-2 border themed-border rounded">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 type="button"
@@ -210,7 +210,7 @@ export default function ReadingList() {
                 className={`text-lg ${
                   Number(newBook.rating) >= star
                     ? "text-yellow-400"
-                    : "text-gray-300"
+                    : "themed-muted"
                 }`}
                 disabled={newBook.status === "to_read"}
                 aria-label={`Nota ${star}`}
@@ -229,18 +229,18 @@ export default function ReadingList() {
       </form>
 
       {books.length === 0 ? (
-        <p className="text-gray-600">Sua lista está vazia.</p>
+        <p className="themed-muted">Sua lista está vazia.</p>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {books.map((book) => (
             <div
               key={book.id}
-              className="bg-white rounded-lg border p-4 shadow-sm"
+              className="themed-card themed-border border rounded-lg p-4 shadow-sm"
             >
               <div className="flex justify-between items-start gap-4">
                 <div>
                   <h2 className="text-lg font-semibold">{book.title}</h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm themed-muted">
                     {book.author || "Autor desconhecido"}
                   </p>
                 </div>
@@ -254,7 +254,7 @@ export default function ReadingList() {
 
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <select
-                  className="border rounded px-3 py-2"
+                  className="themed-input rounded px-3 py-2"
                   value={book.status}
                   onChange={(e) => handleStatusChange(book, e.target.value)}
                   disabled={savingId === book.id}
@@ -266,7 +266,7 @@ export default function ReadingList() {
                   ))}
                 </select>
 
-                <div className="flex items-center gap-1 border rounded px-2 py-2">
+                <div className="flex items-center gap-1 border themed-border rounded px-2 py-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       type="button"
@@ -278,7 +278,7 @@ export default function ReadingList() {
                       className={`text-lg ${
                         Number(book.rating) >= star
                           ? "text-yellow-400"
-                          : "text-gray-300"
+                          : "themed-muted"
                       }`}
                       disabled={
                         book.status === "to_read" || savingId === book.id
@@ -290,14 +290,14 @@ export default function ReadingList() {
                   ))}
                 </div>
 
-                <div className="text-sm text-gray-500 flex items-center">
+                <div className="text-sm themed-muted flex items-center">
                   {savingId === book.id ? "Salvando..." : " "}
                 </div>
               </div>
 
               <div className="mt-4">
                 <textarea
-                  className="border rounded px-3 py-2 w-full"
+                  className="themed-input rounded px-3 py-2 w-full"
                   rows={2}
                   placeholder="Comentário do dia..."
                   value={logInputs[book.id] || ""}
@@ -312,7 +312,7 @@ export default function ReadingList() {
                   </button>
                   <button
                     onClick={() => handleLoadLogs(book.id)}
-                    className="text-sm text-blue-600"
+                    className="text-sm themed-link"
                   >
                     Ver últimos comentários
                   </button>
@@ -320,9 +320,9 @@ export default function ReadingList() {
               </div>
 
               {logsByBook[book.id]?.length > 0 && (
-                <div className="mt-3 text-sm text-gray-600">
+                <div className="mt-3 text-sm themed-muted">
                   {logsByBook[book.id].slice(0, 3).map((log) => (
-                    <div key={log.id} className="border-t py-2">
+                    <div key={log.id} className="border-t themed-border py-2">
                       <span className="font-medium">{log.log_date}</span> —{" "}
                       {log.comment}
                     </div>
