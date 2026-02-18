@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import quotesService from "../services/quotesService";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
-import { useNavigate } from "react-router-dom";
 
 export default function CreateQuote() {
   const navigate = useNavigate();
@@ -33,13 +33,24 @@ export default function CreateQuote() {
 
   return (
     <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Criar Quote</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Criar Quote</h1>
+        <Link
+          to="/quotes"
+          className="themed-card themed-border border px-3 py-2 rounded hover:opacity-90 transition"
+        >
+          Voltar para Frases
+        </Link>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 themed-card themed-border border rounded-xl p-5"
+      >
         <div>
           <label className="block mb-1 font-medium">Texto</label>
           <textarea
-            className="w-full border p-2 rounded"
+            className="w-full themed-input p-2 rounded"
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={TEXT_LIMIT}
@@ -47,7 +58,7 @@ export default function CreateQuote() {
             required
           ></textarea>
 
-          <div className="text-right text-sm text-gray-500 mt-1">
+          <div className="text-right text-sm themed-muted mt-1">
             {text.length}/{TEXT_LIMIT}
           </div>
         </div>
@@ -55,7 +66,7 @@ export default function CreateQuote() {
         <div>
           <label className="block mb-1 font-medium">Autor</label>
           <input
-            className="w-full border p-2 rounded"
+            className="w-full themed-input p-2 rounded"
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
             placeholder="Autor (opcional)"

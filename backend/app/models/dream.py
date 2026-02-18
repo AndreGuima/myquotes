@@ -4,7 +4,7 @@ from datetime import date, datetime
 from typing import List, Optional
 
 from database import Base
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -24,6 +24,9 @@ class Dream(Base):
     smart_relevant: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     smart_time_bound: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     smart_target_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    smart_financial_target_value: Mapped[Optional[float]] = mapped_column(
+        Numeric(14, 2), nullable=True
+    )
 
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime, server_default=func.current_timestamp()
@@ -46,6 +49,10 @@ class Dream(Base):
         back_populates="dream",
         cascade="all, delete-orphan",
     )
+    bank_accounts: Mapped[List["BankAccount"]] = relationship(
+        "BankAccount",
+        back_populates="objective_dream",
+    )
 
 
 class DreamMilestone(Base):
@@ -58,6 +65,12 @@ class DreamMilestone(Base):
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     target_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    financial_target_value: Mapped[Optional[float]] = mapped_column(
+        Numeric(14, 2), nullable=True
+    )
+    progress_percent: Mapped[float] = mapped_column(
+        Numeric(5, 2), nullable=False, server_default="0"
+    )
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     dream: Mapped["Dream"] = relationship("Dream", back_populates="milestones")
@@ -80,5 +93,6 @@ class DreamHabitLink(Base):
     habit: Mapped["Habit"] = relationship("Habit")
 
 
+from models.bank_account import BankAccount  # noqa: E402,F401
 from models.habit import Habit  # noqa: E402,F401
 from models.user import User  # noqa: E402,F401

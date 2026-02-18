@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import habitsService from "../services/habitsService";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
@@ -87,14 +87,25 @@ export default function CreateHabit() {
 
   return (
     <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Criar Hábito</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Criar Hábito</h1>
+        <Link
+          to="/habits"
+          className="themed-card themed-border border px-3 py-2 rounded hover:opacity-90 transition"
+        >
+          Voltar para Hábitos
+        </Link>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 themed-card themed-border border rounded-xl p-5"
+      >
         {/* Título */}
         <div>
           <label className="block mb-1 font-medium">Título</label>
           <input
-            className="w-full border p-2 rounded"
+            className="w-full themed-input p-2 rounded"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
@@ -106,7 +117,7 @@ export default function CreateHabit() {
         <div>
           <label className="block mb-1 font-medium">Frequência</label>
           <select
-            className="w-full border p-2 rounded"
+            className="w-full themed-input p-2 rounded"
             value={frequencyType}
             onChange={(e) => {
               const nextFrequency = e.target.value;
@@ -131,19 +142,19 @@ export default function CreateHabit() {
           <div className="flex gap-3">
             <input
               type="time"
-              className="w-full border p-2 rounded"
+              className="w-full themed-input p-2 rounded"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
             />
             <input
               type="time"
-              className="w-full border p-2 rounded"
+              className="w-full themed-input p-2 rounded"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
               placeholder="Fim (opcional)"
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs themed-muted mt-1">
             Defina um intervalo se quiser, inclusive atravessando a meia-noite.
           </p>
         </div>
@@ -165,7 +176,7 @@ export default function CreateHabit() {
                     className={`h-10 w-10 rounded-full border text-sm font-semibold transition ${
                       active
                         ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                        : "themed-card themed-border hover:border-blue-400"
                     }`}
                   >
                     {day.short}
@@ -173,7 +184,7 @@ export default function CreateHabit() {
                 );
               })}
             </div>
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs themed-muted mt-2">
               Selecione em quais dias esse hábito deve aparecer.
             </p>
           </div>
@@ -186,12 +197,12 @@ export default function CreateHabit() {
               type="number"
               min={1}
               max={31}
-              className="w-full border p-2 rounded"
+              className="w-full themed-input p-2 rounded"
               value={monthDay}
               onChange={(e) => setMonthDay(e.target.value)}
               placeholder="Ex.: 10"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs themed-muted mt-1">
               Escolha de 1 a 31. Em meses curtos, use o último dia disponível.
             </p>
           </div>

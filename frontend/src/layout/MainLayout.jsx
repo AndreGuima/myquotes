@@ -41,16 +41,16 @@ export default function MainLayout() {
             Quotes
           </NavLink>
 
-          <NavLink to="/habits" className={navClass}>
-            Hábitos
-          </NavLink>
-
-          <NavLink to="/daily-routine" className={navClass}>
-            Rotina do Dia
+          <NavLink to="/day-management" className={navClass}>
+            Gestão do Dia
           </NavLink>
 
           <NavLink to="/dreams" className={navClass}>
             Sonhos
+          </NavLink>
+
+          <NavLink to="/finances" className={navClass}>
+            Finanças
           </NavLink>
 
           <NavLink to="/reading-list" className={navClass}>

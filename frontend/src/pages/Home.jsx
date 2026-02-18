@@ -36,6 +36,13 @@ function formatTimeRange(startTime, endTime) {
   return end ? `${start}–${end}` : start;
 }
 
+function formatQuoteCreatedAt(value) {
+  if (!value) return "Data não informada";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Data não informada";
+  return date.toLocaleDateString("pt-BR");
+}
+
 export default function Home() {
   const [quote, setQuote] = useState(null);
   const [loadingQuote, setLoadingQuote] = useState(true);
@@ -102,9 +109,41 @@ export default function Home() {
     <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Home</h1>
 
+      {/* ============================
+          ✨ Quote do Dia
+      ============================ */}
+      {quote ? (
+        <div className="p-6 bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-xl rounded-xl mb-10">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold mb-3">✨ Quote do Dia</h2>
+              <p className="text-2xl italic mb-3">"{quote.text}"</p>
+              <div className="font-light">— {quote.author}</div>
+              <p className="text-sm text-blue-100 mt-2">
+                Cadastrada em: {formatQuoteCreatedAt(quote.created_at)}
+              </p>
+            </div>
+
+            <Link
+              to="/quotes"
+              className="inline-flex items-center justify-center bg-white text-blue-700 px-4 py-2 rounded hover:bg-blue-50 font-medium whitespace-nowrap h-fit"
+            >
+              Ir para Frases
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <p className="themed-muted mb-10">
+          Você ainda não possui quotes cadastradas.
+          <Link to="/quotes/new" className="themed-link underline ml-1">
+            Criar agora →
+          </Link>
+        </p>
+      )}
+
       <div className="mb-8 border themed-border rounded-xl themed-card p-4 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold">Módulo de Sonhos SMART</h2>
+          <h2 className="text-xl font-semibold">Módulo de Sonhos</h2>
           <p className="themed-muted text-sm mt-1">
             Planeje sonhos com metas SMART, marcos em timeline e vínculo com
             hábitos.
@@ -118,23 +157,20 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* ============================
-          ✨ Quote do Dia
-      ============================ */}
-      {quote ? (
-        <div className="p-6 bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-xl rounded-xl mb-10">
-          <h2 className="text-lg font-semibold mb-3">✨ Quote do Dia</h2>
-          <p className="text-2xl italic mb-3">"{quote.text}"</p>
-          <span className="font-light">— {quote.author}</span>
+      <div className="mb-8 border themed-border rounded-xl themed-card p-4 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Módulo de Finanças</h2>
+          <p className="themed-muted text-sm mt-1">
+            Gerencie patrimônio, despesas e investimentos em um só lugar.
+          </p>
         </div>
-      ) : (
-        <p className="themed-muted mb-10">
-          Você ainda não possui quotes cadastradas.
-          <Link to="/quotes/new" className="themed-link underline ml-1">
-            Criar agora →
-          </Link>
-        </p>
-      )}
+        <Link
+          to="/finances"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 whitespace-nowrap"
+        >
+          Abrir Finanças
+        </Link>
+      </div>
 
       {/* ============================
           📅 Seus hábitos
