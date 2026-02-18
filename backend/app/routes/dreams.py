@@ -15,6 +15,7 @@ from schemas.dream import (
     DreamSmartRead,
     DreamUpdate,
 )
+from services.dream_financial_progress import sync_dream_milestone_financial_progress
 from sqlalchemy.orm import Session, selectinload
 
 router = APIRouter(prefix="/dreams", tags=["Dreams"])
@@ -28,6 +29,8 @@ def _to_response(dream: Dream) -> DreamRead:
             title=item.title,
             targetDate=item.target_date,
             completedAt=item.completed_at,
+            financialTargetValue=item.financial_target_value,
+            progressPercent=item.progress_percent,
             position=item.position,
         )
         for item in sorted(dream.milestones, key=lambda x: x.position)
@@ -44,6 +47,7 @@ def _to_response(dream: Dream) -> DreamRead:
             relevant=dream.smart_relevant,
             timeBound=dream.smart_time_bound,
             targetDate=dream.smart_target_date,
+            financialTargetValue=dream.smart_financial_target_value,
         ),
         linkedHabitIds=linked_habit_ids,
         milestones=milestones,
@@ -92,6 +96,7 @@ def _apply_payload_to_dream(
         dream.smart_relevant = smart.relevant
         dream.smart_time_bound = smart.timeBound
         dream.smart_target_date = smart.targetDate
+        dream.smart_financial_target_value = smart.financialTargetValue
 
     if is_create or payload.linkedHabitIds is not None:
         linked_habits = list(dict.fromkeys(payload.linkedHabitIds or []))
@@ -114,6 +119,8 @@ def _apply_payload_to_dream(
                     title=clean_title,
                     target_date=item.targetDate,
                     completed_at=item.completedAt,
+                    financial_target_value=item.financialTargetValue,
+                    progress_percent=item.progressPercent or 0,
                     position=index,
                 )
             )
@@ -149,6 +156,19 @@ def list_dreams(
         .order_by(Dream.created_at.desc())
         .all()
     )
+    for dream in dreams:
+        sync_dream_milestone_financial_progress(db, user.id, dream.id)
+    db.commit()
+    dreams = (
+        db.query(Dream)
+        .options(
+            selectinload(Dream.milestones),
+            selectinload(Dream.habit_links),
+        )
+        .filter(Dream.user_id == user.id)
+        .order_by(Dream.created_at.desc())
+        .all()
+    )
     return [_to_response(dream) for dream in dreams]
 
 
@@ -162,9 +182,24 @@ def create_dream(
     _apply_payload_to_dream(db, dream, payload, is_create=True)
 
     db.add(dream)
+    db.flush()
+    sync_dream_milestone_financial_progress(db, user.id, dream.id)
     db.commit()
     db.refresh(dream)
     dream = _get_user_dream_or_404(db, user.id, dream.id)
+    return _to_response(dream)
+
+
+@router.get("/{dream_id}", response_model=DreamRead)
+def get_dream(
+    dream_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    dream = _get_user_dream_or_404(db, user.id, dream_id)
+    sync_dream_milestone_financial_progress(db, user.id, dream.id)
+    db.commit()
+    dream = _get_user_dream_or_404(db, user.id, dream_id)
     return _to_response(dream)
 
 
@@ -177,6 +212,8 @@ def update_dream(
 ):
     dream = _get_user_dream_or_404(db, user.id, dream_id)
     _apply_payload_to_dream(db, dream, payload, is_create=False)
+    db.flush()
+    sync_dream_milestone_financial_progress(db, user.id, dream.id)
     db.commit()
     db.refresh(dream)
     dream = _get_user_dream_or_404(db, user.id, dream.id)

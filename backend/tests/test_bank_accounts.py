@@ -1,0 +1,80 @@
+from fastapi.testclient import TestClient
+from models.dream import Dream
+from models.user import User
+
+
+def test_bank_accounts_crud(client: TestClient):
+    dream_res = client.post(
+        "/dreams",
+        json={
+            "title": "Comprar casa",
+            "milestones": [],
+        },
+    )
+    assert dream_res.status_code == 201
+    dream_id = dream_res.json()["id"]
+
+    create_res = client.post(
+        "/bank-accounts",
+        json={
+            "name": "Conta Principal",
+            "objective_dream_id": dream_id,
+            "total_value": "2500.50",
+        },
+    )
+    assert create_res.status_code == 201
+    created = create_res.json()
+    assert created["name"] == "Conta Principal"
+    assert created["objective_dream_id"] == dream_id
+    assert created["objective_dream_title"] == "Comprar casa"
+    assert created["total_value"] == "2500.50"
+
+    list_res = client.get("/bank-accounts")
+    assert list_res.status_code == 200
+    listed = list_res.json()
+    assert len(listed) == 1
+    assert listed[0]["id"] == created["id"]
+
+    update_res = client.patch(
+        f"/bank-accounts/{created['id']}",
+        json={"name": "Conta Corrente", "total_value": "3000.00"},
+    )
+    assert update_res.status_code == 200
+    updated = update_res.json()
+    assert updated["name"] == "Conta Corrente"
+    assert updated["total_value"] == "3000.00"
+
+    delete_res = client.delete(f"/bank-accounts/{created['id']}")
+    assert delete_res.status_code == 204
+
+    list_after_delete_res = client.get("/bank-accounts")
+    assert list_after_delete_res.status_code == 200
+    assert list_after_delete_res.json() == []
+
+
+def test_cannot_link_bank_account_to_other_user_dream(client: TestClient, db_session):
+    other_user = User(
+        id=2,
+        username="other",
+        email="other@example.com",
+        password_hash="hash",
+        role="user",
+        is_active=True,
+        is_verified=True,
+    )
+    db_session.add(other_user)
+    db_session.flush()
+
+    foreign_dream = Dream(user_id=other_user.id, title="Sonho de outro usuário")
+    db_session.add(foreign_dream)
+    db_session.commit()
+
+    res = client.post(
+        "/bank-accounts",
+        json={
+            "name": "Conta indevida",
+            "objective_dream_id": foreign_dream.id,
+            "total_value": "100.00",
+        },
+    )
+    assert res.status_code == 400

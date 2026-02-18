@@ -39,8 +39,12 @@ class User(Base):
     dreams: Mapped[List["Dream"]] = relationship(
         "Dream", back_populates="user", cascade="all, delete-orphan"
     )
+    bank_accounts: Mapped[List["BankAccount"]] = relationship(
+        "BankAccount", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
+from models.bank_account import BankAccount  # noqa: E402,F401
 from models.dream import Dream  # noqa: E402,F401
 from models.quote import Quote  # noqa: E402,F401
 from models.reading_list_book import ReadingListBook  # noqa: E402,F401

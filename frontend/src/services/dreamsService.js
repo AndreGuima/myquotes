@@ -5,6 +5,10 @@ const dreamsService = {
     return api.get("/dreams");
   },
 
+  getById(id) {
+    return api.get(`/dreams/${id}`);
+  },
+
   create(payload) {
     return api.post("/dreams", payload);
   },

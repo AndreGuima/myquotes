@@ -31,6 +31,12 @@ import EditHabit from "./pages/EditHabit.jsx";
 import ReadingList from "./pages/ReadingList.jsx";
 import DailyRoutine from "./pages/DailyRoutine.jsx";
 import Dreams from "./pages/Dreams.jsx";
+import DreamDetails from "./pages/DreamDetails.jsx";
+import Finances from "./pages/Finances.jsx";
+import DayManagement from "./pages/DayManagement.jsx";
+import Patrimony from "./pages/Patrimony.jsx";
+import Expenses from "./pages/Expenses.jsx";
+import Investments from "./pages/Investments.jsx";
 
 initializeTheme();
 
@@ -78,12 +84,18 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               <Route path="/quotes" element={<Quotes />} />
               <Route path="/quotes/new" element={<CreateQuote />} />
               <Route path="/quotes/:id/edit" element={<EditQuote />} />
+              <Route path="/day-management" element={<DayManagement />} />
               <Route path="/habits" element={<Habits />} />
               <Route path="/habits/new" element={<CreateHabit />} />
               <Route path="/habits/:id/edit" element={<EditHabit />} />
               <Route path="/reading-list" element={<ReadingList />} />
               <Route path="/daily-routine" element={<DailyRoutine />} />
               <Route path="/dreams" element={<Dreams />} />
+              <Route path="/dreams/:id" element={<DreamDetails />} />
+              <Route path="/finances" element={<Finances />} />
+              <Route path="/finances/patrimony" element={<Patrimony />} />
+              <Route path="/finances/expenses" element={<Expenses />} />
+              <Route path="/finances/investments" element={<Investments />} />
               <Route path="/preferences" element={<Preferences />} />
 
               <Route

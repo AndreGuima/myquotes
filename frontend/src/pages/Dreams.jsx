@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { confirm, notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
 import habitsService from "../services/habitsService";
@@ -15,6 +16,7 @@ function newDraft() {
       relevant: "",
       timeBound: "",
       targetDate: "",
+      financialTargetValue: "",
     },
     linkedHabitIds: [],
     milestones: [],
@@ -32,6 +34,9 @@ function draftFromDream(dream) {
       relevant: dream.smart?.relevant || "",
       timeBound: dream.smart?.timeBound || "",
       targetDate: dream.smart?.targetDate || "",
+      financialTargetValue: dream.smart?.financialTargetValue
+        ? String(dream.smart.financialTargetValue)
+        : "",
     },
     linkedHabitIds: [...(dream.linkedHabitIds || [])],
     milestones: (dream.milestones || []).map((milestone, index) => ({
@@ -39,6 +44,11 @@ function draftFromDream(dream) {
       title: milestone.title,
       targetDate: milestone.targetDate || "",
       completedAt: milestone.completedAt || null,
+      financialTargetValue:
+        milestone.financialTargetValue != null
+          ? String(milestone.financialTargetValue)
+          : "",
+      progressPercent: milestone.progressPercent ?? 0,
       position: milestone.position ?? index,
     })),
   };
@@ -55,6 +65,9 @@ function dreamPayloadFromDraft(draft) {
       relevant: draft.smart.relevant || null,
       timeBound: draft.smart.timeBound || null,
       targetDate: draft.smart.targetDate || null,
+      financialTargetValue: draft.smart.financialTargetValue
+        ? Number(draft.smart.financialTargetValue)
+        : null,
     },
     linkedHabitIds: draft.linkedHabitIds,
     milestones: draft.milestones.map((milestone) => ({
@@ -62,6 +75,13 @@ function dreamPayloadFromDraft(draft) {
       title: milestone.title,
       targetDate: milestone.targetDate || null,
       completedAt: milestone.completedAt || null,
+      financialTargetValue: milestone.financialTargetValue
+        ? Number(milestone.financialTargetValue)
+        : null,
+      progressPercent:
+        milestone.progressPercent != null
+          ? Number(milestone.progressPercent)
+          : 0,
     })),
   };
 }
@@ -96,6 +116,18 @@ function computeSmartScore(dream) {
 function computeMilestoneProgress(dream) {
   const total = dream.milestones?.length ?? 0;
   if (!total) return 0;
+  const hasFinancialProgress = dream.milestones.some(
+    (milestone) => milestone.progressPercent != null,
+  );
+
+  if (hasFinancialProgress) {
+    const totalPercent = dream.milestones.reduce(
+      (acc, milestone) => acc + Number(milestone.progressPercent ?? 0),
+      0,
+    );
+    return Math.round(totalPercent / total);
+  }
+
   const completed = dream.milestones.filter((m) =>
     Boolean(m.completedAt),
   ).length;
@@ -150,7 +182,15 @@ function toggleLinkedHabit(setDraftState, habitId) {
   });
 }
 
-function addMilestone(setDraftState, title, targetDate, setTitle, setDate) {
+function addMilestone(
+  setDraftState,
+  title,
+  targetDate,
+  targetValue,
+  setTitle,
+  setDate,
+  setTargetValue,
+) {
   const cleanTitle = title.trim();
   if (!cleanTitle) {
     notify.error("Informe o nome do marco");
@@ -166,12 +206,15 @@ function addMilestone(setDraftState, title, targetDate, setTitle, setDate) {
         title: cleanTitle,
         targetDate: targetDate || "",
         completedAt: null,
+        financialTargetValue: targetValue || "",
+        progressPercent: 0,
         position: prev.milestones.length,
       },
     ],
   }));
   setTitle("");
   setDate("");
+  setTargetValue("");
 }
 
 function removeMilestone(setDraftState, milestoneId) {
@@ -191,11 +234,13 @@ export default function Dreams() {
   const [draft, setDraft] = useState(newDraft);
   const [milestoneTitle, setMilestoneTitle] = useState("");
   const [milestoneDate, setMilestoneDate] = useState("");
+  const [milestoneTargetValue, setMilestoneTargetValue] = useState("");
 
   const [editingDreamId, setEditingDreamId] = useState(null);
   const [editDraft, setEditDraft] = useState(newDraft);
   const [editMilestoneTitle, setEditMilestoneTitle] = useState("");
   const [editMilestoneDate, setEditMilestoneDate] = useState("");
+  const [editMilestoneTargetValue, setEditMilestoneTargetValue] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -239,6 +284,7 @@ export default function Dreams() {
       setDraft(newDraft());
       setMilestoneTitle("");
       setMilestoneDate("");
+      setMilestoneTargetValue("");
       notify.success("Sonho criado com sucesso");
     } catch (err) {
       notify.error(getApiErrorMessage(err, "Erro ao criar sonho"));
@@ -252,6 +298,7 @@ export default function Dreams() {
     setEditDraft(draftFromDream(dream));
     setEditMilestoneTitle("");
     setEditMilestoneDate("");
+    setEditMilestoneTargetValue("");
   }
 
   function cancelEdit() {
@@ -259,6 +306,7 @@ export default function Dreams() {
     setEditDraft(newDraft());
     setEditMilestoneTitle("");
     setEditMilestoneDate("");
+    setEditMilestoneTargetValue("");
   }
 
   async function saveEdit(dreamId) {
@@ -305,30 +353,6 @@ export default function Dreams() {
         }
       },
     });
-  }
-
-  async function toggleMilestone(dreamId, milestoneId) {
-    try {
-      const toggled = await dreamsService.toggleMilestone(dreamId, milestoneId);
-
-      setDreams((prev) =>
-        prev.map((dream) => {
-          if (dream.id !== dreamId) return dream;
-          return {
-            ...dream,
-            milestones: dream.milestones.map((milestone) => {
-              if (milestone.id !== milestoneId) return milestone;
-              return {
-                ...milestone,
-                completedAt: toggled.completedAt,
-              };
-            }),
-          };
-        }),
-      );
-    } catch (err) {
-      notify.error(getApiErrorMessage(err, "Erro ao atualizar marco"));
-    }
   }
 
   const orderedDreams = useMemo(
@@ -444,6 +468,21 @@ export default function Dreams() {
                   className="w-full border themed-border rounded px-3 py-2"
                 />
               </div>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={draft.smart.financialTargetValue}
+                onChange={(e) =>
+                  updateDraftState(
+                    setDraft,
+                    "smart.financialTargetValue",
+                    e.target.value,
+                  )
+                }
+                className="w-full border themed-border rounded px-3 py-2"
+                placeholder="Meta financeira (R$)"
+              />
             </div>
           </div>
 
@@ -474,7 +513,7 @@ export default function Dreams() {
 
           <div className="border themed-border rounded-lg p-3">
             <h3 className="font-medium mb-2">Marcos</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
               <input
                 value={milestoneTitle}
                 onChange={(e) => setMilestoneTitle(e.target.value)}
@@ -487,6 +526,15 @@ export default function Dreams() {
                 onChange={(e) => setMilestoneDate(e.target.value)}
                 className="sm:col-span-2 border themed-border rounded px-3 py-2"
               />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={milestoneTargetValue}
+                onChange={(e) => setMilestoneTargetValue(e.target.value)}
+                placeholder="Meta R$"
+                className="sm:col-span-2 border themed-border rounded px-3 py-2"
+              />
             </div>
 
             <button
@@ -496,8 +544,10 @@ export default function Dreams() {
                   setDraft,
                   milestoneTitle,
                   milestoneDate,
+                  milestoneTargetValue,
                   setMilestoneTitle,
                   setMilestoneDate,
+                  setMilestoneTargetValue,
                 )
               }
               className="mt-2 text-sm themed-link hover:underline"
@@ -517,6 +567,17 @@ export default function Dreams() {
                       <div className="themed-muted">
                         {toDateLabel(milestone.targetDate)}
                       </div>
+                      {milestone.financialTargetValue && (
+                        <div className="themed-muted">
+                          Meta: R${" "}
+                          {Number(
+                            milestone.financialTargetValue,
+                          ).toLocaleString("pt-BR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -553,6 +614,9 @@ export default function Dreams() {
               const linkedHabits = dream.linkedHabitIds
                 .map((id) => habitsById.get(id))
                 .filter(Boolean);
+              const completedMilestones = dream.milestones.filter((milestone) =>
+                Boolean(milestone.completedAt),
+              ).length;
 
               const isEditing = editingDreamId === dream.id;
 
@@ -584,6 +648,12 @@ export default function Dreams() {
                           editar
                         </button>
                       )}
+                      <Link
+                        to={`/dreams/${dream.id}`}
+                        className="text-sm themed-link hover:underline"
+                      >
+                        visualizar
+                      </Link>
                       <button
                         onClick={() => handleDeleteDream(dream.id)}
                         className="text-sm text-red-600 hover:underline"
@@ -697,6 +767,21 @@ export default function Dreams() {
                           }
                           className="border themed-border rounded px-3 py-2"
                         />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={editDraft.smart.financialTargetValue}
+                          onChange={(e) =>
+                            updateDraftState(
+                              setEditDraft,
+                              "smart.financialTargetValue",
+                              e.target.value,
+                            )
+                          }
+                          className="border themed-border rounded px-3 py-2"
+                          placeholder="Meta financeira (R$)"
+                        />
                       </div>
 
                       <div className="border themed-border rounded themed-card p-3">
@@ -726,7 +811,7 @@ export default function Dreams() {
 
                       <div className="border themed-border rounded themed-card p-3">
                         <div className="font-medium text-sm mb-2">Marcos</div>
-                        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
                           <input
                             value={editMilestoneTitle}
                             onChange={(e) =>
@@ -743,6 +828,17 @@ export default function Dreams() {
                             }
                             className="sm:col-span-2 border themed-border rounded px-3 py-2"
                           />
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={editMilestoneTargetValue}
+                            onChange={(e) =>
+                              setEditMilestoneTargetValue(e.target.value)
+                            }
+                            placeholder="Meta R$"
+                            className="sm:col-span-2 border themed-border rounded px-3 py-2"
+                          />
                         </div>
                         <button
                           type="button"
@@ -751,8 +847,10 @@ export default function Dreams() {
                               setEditDraft,
                               editMilestoneTitle,
                               editMilestoneDate,
+                              editMilestoneTargetValue,
                               setEditMilestoneTitle,
                               setEditMilestoneDate,
+                              setEditMilestoneTargetValue,
                             )
                           }
                           className="mt-2 text-sm themed-link hover:underline"
@@ -775,6 +873,17 @@ export default function Dreams() {
                                     <div className="themed-muted">
                                       {toDateLabel(milestone.targetDate)}
                                     </div>
+                                    {milestone.financialTargetValue && (
+                                      <div className="themed-muted">
+                                        Meta: R${" "}
+                                        {Number(
+                                          milestone.financialTargetValue,
+                                        ).toLocaleString("pt-BR", {
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2,
+                                        })}
+                                      </div>
+                                    )}
                                   </div>
                                   <button
                                     type="button"
@@ -871,66 +980,9 @@ export default function Dreams() {
                       </div>
                     )}
                   </div>
-
-                  <div className="mt-5">
-                    <h3 className="font-medium mb-3">Timeline de marcos</h3>
-                    {dream.milestones.length === 0 ? (
-                      <p className="text-sm themed-muted">
-                        Nenhum marco cadastrado.
-                      </p>
-                    ) : (
-                      <div className="relative pl-5">
-                        <div className="absolute top-0 bottom-0 left-2 w-px bg-[var(--line-color)]" />
-                        <div className="space-y-3">
-                          {sortByDate(dream.milestones).map((milestone) => (
-                            <div key={milestone.id} className="relative">
-                              <div
-                                className={`absolute -left-[13px] top-1 w-3 h-3 rounded-full border ${
-                                  milestone.completedAt
-                                    ? "bg-green-500 border-green-500"
-                                    : "themed-card border-[var(--muted-text)]"
-                                }`}
-                              />
-                              <div className="border themed-border rounded-lg p-3">
-                                <div className="flex justify-between gap-3 items-start">
-                                  <div>
-                                    <div className="font-medium">
-                                      {milestone.title}
-                                    </div>
-                                    <div className="text-xs themed-muted mt-1">
-                                      Previsto:{" "}
-                                      {toDateLabel(milestone.targetDate)}
-                                    </div>
-                                    {milestone.completedAt && (
-                                      <div className="text-xs text-green-700 mt-1">
-                                        Concluido em{" "}
-                                        {new Date(
-                                          milestone.completedAt,
-                                        ).toLocaleDateString("pt-BR")}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <button
-                                    onClick={() =>
-                                      toggleMilestone(dream.id, milestone.id)
-                                    }
-                                    className={`text-sm px-2 py-1 rounded ${
-                                      milestone.completedAt
-                                        ? "bg-green-100 text-green-700"
-                                        : "themed-subtle themed-muted"
-                                    }`}
-                                  >
-                                    {milestone.completedAt
-                                      ? "Desmarcar"
-                                      : "Marcar feito"}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <div className="mt-4 text-sm themed-muted">
+                    {dream.milestones.length} marcos cadastrados •{" "}
+                    {completedMilestones} concluídos
                   </div>
                 </section>
               );
