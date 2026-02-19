@@ -78,3 +78,81 @@ def test_cannot_link_bank_account_to_other_user_dream(client: TestClient, db_ses
         },
     )
     assert res.status_code == 400
+
+
+def test_patrimony_snapshots_are_created_and_listed(client: TestClient):
+    dream_res = client.post(
+        "/dreams",
+        json={
+            "title": "Reserva",
+            "milestones": [],
+        },
+    )
+    assert dream_res.status_code == 201
+    dream_id = dream_res.json()["id"]
+
+    create_res = client.post(
+        "/bank-accounts",
+        json={
+            "name": "Conta Snapshot",
+            "objective_dream_id": dream_id,
+            "total_value": "100.00",
+        },
+    )
+    assert create_res.status_code == 201
+    account_id = create_res.json()["id"]
+
+    update_res = client.patch(
+        f"/bank-accounts/{account_id}",
+        json={"total_value": "250.00"},
+    )
+    assert update_res.status_code == 200
+
+    list_res = client.get("/bank-accounts/patrimony-snapshots")
+    assert list_res.status_code == 200
+    snapshots = list_res.json()
+    assert len(snapshots) >= 2
+    assert all("snapshot_at" in snapshot for snapshot in snapshots)
+    assert snapshots[-1]["total_value"] == "250.00"
+
+
+def test_patrimony_snapshot_after_delete_has_zero_total(client: TestClient):
+    dream_res = client.post(
+        "/dreams",
+        json={
+            "title": "Objetivo para zerar",
+            "milestones": [],
+        },
+    )
+    assert dream_res.status_code == 201
+    dream_id = dream_res.json()["id"]
+
+    create_res = client.post(
+        "/bank-accounts",
+        json={
+            "name": "Conta a remover",
+            "objective_dream_id": dream_id,
+            "total_value": "500.00",
+        },
+    )
+    assert create_res.status_code == 201
+    account_id = create_res.json()["id"]
+
+    delete_res = client.delete(f"/bank-accounts/{account_id}")
+    assert delete_res.status_code == 204
+
+    snapshots_res = client.get("/bank-accounts/patrimony-snapshots")
+    assert snapshots_res.status_code == 200
+    snapshots = snapshots_res.json()
+    assert len(snapshots) >= 2
+    assert snapshots[-1]["total_value"] == "0.00"
+
+
+def test_patrimony_snapshots_days_validation(client: TestClient):
+    low_days_res = client.get("/bank-accounts/patrimony-snapshots?days=6")
+    assert low_days_res.status_code == 400
+    assert low_days_res.json()["detail"] == "days must be between 7 and 3650"
+
+    high_days_res = client.get("/bank-accounts/patrimony-snapshots?days=3651")
+    assert high_days_res.status_code == 400
+    assert high_days_res.json()["detail"] == "days must be between 7 and 3650"

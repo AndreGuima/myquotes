@@ -1,11 +1,20 @@
+from datetime import datetime, timedelta
+
 from core.dependencies import get_current_user
 from database import get_db
 from fastapi import APIRouter, Depends, HTTPException, status
 from models.bank_account import BankAccount
 from models.dream import Dream
+from models.patrimony_snapshot import PatrimonySnapshot
 from models.user import User
-from schemas.bank_account import BankAccountCreate, BankAccountRead, BankAccountUpdate
+from schemas.bank_account import (
+    BankAccountCreate,
+    BankAccountRead,
+    BankAccountUpdate,
+    PatrimonySnapshotRead,
+)
 from services.dream_financial_progress import sync_dream_milestone_financial_progress
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 router = APIRouter(prefix="/bank-accounts", tags=["Bank Accounts"])
@@ -35,6 +44,15 @@ def _validate_dream_belongs_to_user(db: Session, user_id: int, dream_id: int) ->
     if not dream:
         raise HTTPException(status_code=400, detail="Objetivo inválido")
     return dream
+
+
+def _capture_patrimony_snapshot(db: Session, user_id: int) -> None:
+    total = (
+        db.query(func.coalesce(func.sum(BankAccount.total_value), 0))
+        .filter(BankAccount.user_id == user_id)
+        .scalar()
+    )
+    db.add(PatrimonySnapshot(user_id=user_id, total_value=total))
 
 
 def _get_user_account_or_404(db: Session, user_id: int, account_id: int) -> BankAccount:
@@ -85,6 +103,7 @@ def create_account(
     db.add(account)
     db.flush()
     sync_dream_milestone_financial_progress(db, user.id, account.objective_dream_id)
+    _capture_patrimony_snapshot(db, user.id)
     db.commit()
 
     account = _get_user_account_or_404(db, user.id, account.id)
@@ -118,6 +137,7 @@ def update_account(
     sync_dream_milestone_financial_progress(db, user.id, account.objective_dream_id)
     if previous_dream_id != account.objective_dream_id:
         sync_dream_milestone_financial_progress(db, user.id, previous_dream_id)
+    _capture_patrimony_snapshot(db, user.id)
     db.commit()
 
     account = _get_user_account_or_404(db, user.id, account.id)
@@ -135,5 +155,31 @@ def delete_account(
     db.delete(account)
     db.flush()
     sync_dream_milestone_financial_progress(db, user.id, dream_id)
+    _capture_patrimony_snapshot(db, user.id)
     db.commit()
     return None
+
+
+@router.get("/patrimony-snapshots", response_model=list[PatrimonySnapshotRead])
+def list_patrimony_snapshots(
+    days: int = 365,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if days < 7 or days > 3650:
+        raise HTTPException(
+            status_code=400,
+            detail="days must be between 7 and 3650",
+        )
+
+    from_dt = datetime.now() - timedelta(days=days - 1)
+    snapshots = (
+        db.query(PatrimonySnapshot)
+        .filter(
+            PatrimonySnapshot.user_id == user.id,
+            PatrimonySnapshot.snapshot_at >= from_dt,
+        )
+        .order_by(PatrimonySnapshot.snapshot_at.asc(), PatrimonySnapshot.id.asc())
+        .all()
+    )
+    return snapshots

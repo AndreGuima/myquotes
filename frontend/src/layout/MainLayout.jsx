@@ -45,10 +45,6 @@ export default function MainLayout() {
             Gestão do Dia
           </NavLink>
 
-          <NavLink to="/dreams" className={navClass}>
-            Sonhos
-          </NavLink>
-
           <NavLink to="/finances" className={navClass}>
             Finanças
           </NavLink>

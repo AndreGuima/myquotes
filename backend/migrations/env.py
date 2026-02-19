@@ -54,6 +54,7 @@ from database import Base
 from models.auth_login_attempt import AuthLoginAttempt
 from models.bank_account import BankAccount
 from models.dream import Dream, DreamHabitLink, DreamMilestone
+from models.patrimony_snapshot import PatrimonySnapshot
 from models.quote import Quote
 from models.reading_list_book import ReadingListBook
 from models.reading_list_log import ReadingListLog

@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import bankAccountsService from "../services/bankAccountsService";
 import dreamsService from "../services/dreamsService";
 import { confirm, notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
+
+const PATRIMONY_SHOW_VALUES_KEY = "patrimony_show_values";
 
 export default function Patrimony() {
   const [accounts, setAccounts] = useState([]);
@@ -11,6 +14,11 @@ export default function Patrimony() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [showValues, setShowValues] = useState(() => {
+    const stored = localStorage.getItem(PATRIMONY_SHOW_VALUES_KEY);
+    if (stored === null) return true;
+    return stored === "true";
+  });
 
   const [form, setForm] = useState({
     name: "",
@@ -37,6 +45,10 @@ export default function Patrimony() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem(PATRIMONY_SHOW_VALUES_KEY, String(showValues));
+  }, [showValues]);
+
   const totalPatrimony = useMemo(
     () =>
       accounts.reduce(
@@ -54,6 +66,8 @@ export default function Patrimony() {
       }),
     [totalPatrimony],
   );
+
+  const maskedMoney = "R$ •••••";
 
   function resetForm() {
     setEditingId(null);
@@ -148,22 +162,38 @@ export default function Patrimony() {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Patrimônio</h1>
-        <Link
-          to="/finances"
-          className="themed-card themed-border border px-3 py-2 rounded hover:opacity-90 transition"
-        >
-          Voltar para Finanças
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowValues((prev) => !prev)}
+            className="themed-card themed-border border px-3 py-2 rounded hover:opacity-90 transition inline-flex items-center gap-2"
+            aria-label={showValues ? "Ocultar valores" : "Mostrar valores"}
+            title={showValues ? "Ocultar valores" : "Mostrar valores"}
+          >
+            {showValues ? <EyeOff size={18} /> : <Eye size={18} />}
+            <span className="hidden sm:inline">
+              {showValues ? "Ocultar valores" : "Mostrar valores"}
+            </span>
+          </button>
+          <Link
+            to="/finances"
+            className="themed-card themed-border border px-3 py-2 rounded hover:opacity-90 transition"
+          >
+            Voltar para Finanças
+          </Link>
+        </div>
       </div>
 
       <p className="themed-muted mb-6">
         Acompanhe seus ativos, passivos e evolução patrimonial.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="themed-card themed-border border rounded-xl p-5">
           <h2 className="font-semibold mb-1">Total em Contas</h2>
-          <p className="text-2xl font-bold">{formattedTotal}</p>
+          <p className="text-2xl font-bold">
+            {showValues ? formattedTotal : maskedMoney}
+          </p>
           <p className="themed-muted text-sm mt-1">Soma do valor total</p>
         </div>
 
@@ -178,6 +208,17 @@ export default function Patrimony() {
           <p className="text-2xl font-bold">{dreams.length}</p>
           <p className="themed-muted text-sm mt-1">Sonhos para vincular</p>
         </div>
+
+        <Link
+          to="/finances/patrimony/dashboards"
+          className="themed-card themed-border border rounded-xl p-5 hover:shadow-md transition block"
+        >
+          <h2 className="font-semibold mb-1">Dashboards</h2>
+          <p className="text-2xl font-bold">Abrir</p>
+          <p className="themed-muted text-sm mt-1">
+            Visualize os painéis do patrimônio.
+          </p>
+        </Link>
       </div>
 
       <div className="themed-card themed-border border rounded-xl p-5 mt-6">
@@ -225,7 +266,7 @@ export default function Patrimony() {
           </select>
 
           <input
-            type="number"
+            type={showValues ? "number" : "password"}
             step="0.01"
             min="0"
             className="themed-input rounded px-3 py-2"
@@ -277,10 +318,12 @@ export default function Patrimony() {
                   Objetivo: {account.objective_dream_title}
                 </p>
                 <p className="text-xl font-bold mt-2">
-                  {Number(account.total_value).toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  })}
+                  {showValues
+                    ? Number(account.total_value).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })
+                    : maskedMoney}
                 </p>
 
                 <div className="flex gap-4 text-sm mt-3">

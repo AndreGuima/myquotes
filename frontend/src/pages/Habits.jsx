@@ -94,14 +94,23 @@ export default function Habits() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Meus Hábitos</h1>
 
-        {habits.length > 0 && (
+        <div className="flex items-center gap-2">
           <Link
-            to="/habits/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            to="/day-management"
+            className="themed-card themed-border border px-4 py-2 rounded hover:opacity-90 transition"
           >
-            + Novo Hábito
+            Voltar para Gestão do Dia
           </Link>
-        )}
+
+          {habits.length > 0 && (
+            <Link
+              to="/habits/new"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              + Novo Hábito
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Empty state */}

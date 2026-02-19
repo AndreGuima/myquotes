@@ -6,7 +6,7 @@ export default function Finances() {
       <h1 className="text-3xl font-bold mb-2">Finanças</h1>
       <p className="themed-muted mb-8">Escolha o módulo que deseja acessar.</p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
           to="/finances/patrimony"
           className="themed-card themed-border border rounded-xl p-5 text-left hover:shadow-md transition"
@@ -36,6 +36,16 @@ export default function Finances() {
           <div className="text-lg font-semibold mb-1">Investimentos</div>
           <div className="themed-muted text-sm">
             Visualize e acompanhe sua carteira de investimentos.
+          </div>
+        </Link>
+
+        <Link
+          to="/dreams"
+          className="themed-card themed-border border rounded-xl p-5 text-left hover:shadow-md transition"
+        >
+          <div className="text-lg font-semibold mb-1">Metas e Conquistas</div>
+          <div className="themed-muted text-sm">
+            Acesse o gerenciamento dos seus sonhos e metas SMART.
           </div>
         </Link>
       </div>

@@ -26,3 +26,11 @@ class BankAccountRead(BaseModel):
     updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PatrimonySnapshotRead(BaseModel):
+    id: int
+    total_value: Decimal
+    snapshot_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

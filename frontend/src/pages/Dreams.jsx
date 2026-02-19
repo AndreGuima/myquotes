@@ -100,6 +100,13 @@ function sortByDate(items) {
   });
 }
 
+function isMilestoneCompleted(milestone) {
+  return (
+    Boolean(milestone?.completedAt) ||
+    Number(milestone?.progressPercent ?? 0) >= 100
+  );
+}
+
 function computeSmartScore(dream) {
   const fields = [
     dream.smart?.specific,
@@ -128,15 +135,13 @@ function computeMilestoneProgress(dream) {
     return Math.round(totalPercent / total);
   }
 
-  const completed = dream.milestones.filter((m) =>
-    Boolean(m.completedAt),
-  ).length;
+  const completed = dream.milestones.filter(isMilestoneCompleted).length;
   return Math.round((completed / total) * 100);
 }
 
 function computeXp(dream, habitsById) {
   const completedMilestones =
-    dream.milestones?.filter((m) => Boolean(m.completedAt)).length ?? 0;
+    dream.milestones?.filter(isMilestoneCompleted).length ?? 0;
   const smartScore = computeSmartScore(dream);
 
   const linkedHabits = dream.linkedHabitIds
@@ -379,10 +384,10 @@ export default function Dreams() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         <form
           onSubmit={handleCreateDream}
-          className="xl:col-span-1 themed-card border themed-border rounded-xl p-5 shadow-sm space-y-4 h-fit"
+          className="xl:col-span-2 themed-card border themed-border rounded-xl p-5 shadow-sm space-y-4 h-fit"
         >
           <h2 className="text-xl font-semibold">Novo sonho</h2>
 
@@ -513,18 +518,18 @@ export default function Dreams() {
 
           <div className="border themed-border rounded-lg p-3">
             <h3 className="font-medium mb-2">Marcos</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <input
                 value={milestoneTitle}
                 onChange={(e) => setMilestoneTitle(e.target.value)}
                 placeholder="Nome do marco"
-                className="sm:col-span-3 border themed-border rounded px-3 py-2"
+                className="sm:col-span-2 border themed-border rounded px-3 py-2"
               />
               <input
                 type="date"
                 value={milestoneDate}
                 onChange={(e) => setMilestoneDate(e.target.value)}
-                className="sm:col-span-2 border themed-border rounded px-3 py-2"
+                className="border themed-border rounded px-3 py-2"
               />
               <input
                 type="number"
@@ -533,7 +538,7 @@ export default function Dreams() {
                 value={milestoneTargetValue}
                 onChange={(e) => setMilestoneTargetValue(e.target.value)}
                 placeholder="Meta R$"
-                className="sm:col-span-2 border themed-border rounded px-3 py-2"
+                className="border themed-border rounded px-3 py-2"
               />
             </div>
 
@@ -601,7 +606,7 @@ export default function Dreams() {
           </button>
         </form>
 
-        <div className="xl:col-span-2 space-y-4">
+        <div className="xl:col-span-3 space-y-4">
           {orderedDreams.length === 0 ? (
             <div className="themed-card border themed-border rounded-xl p-6 themed-muted">
               Nenhum sonho cadastrado ainda.
@@ -614,9 +619,8 @@ export default function Dreams() {
               const linkedHabits = dream.linkedHabitIds
                 .map((id) => habitsById.get(id))
                 .filter(Boolean);
-              const completedMilestones = dream.milestones.filter((milestone) =>
-                Boolean(milestone.completedAt),
-              ).length;
+              const completedMilestones =
+                dream.milestones.filter(isMilestoneCompleted).length;
 
               const isEditing = editingDreamId === dream.id;
 
@@ -811,14 +815,14 @@ export default function Dreams() {
 
                       <div className="border themed-border rounded themed-card p-3">
                         <div className="font-medium text-sm mb-2">Marcos</div>
-                        <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <input
                             value={editMilestoneTitle}
                             onChange={(e) =>
                               setEditMilestoneTitle(e.target.value)
                             }
                             placeholder="Nome do marco"
-                            className="sm:col-span-3 border themed-border rounded px-3 py-2"
+                            className="sm:col-span-2 border themed-border rounded px-3 py-2"
                           />
                           <input
                             type="date"
@@ -826,7 +830,7 @@ export default function Dreams() {
                             onChange={(e) =>
                               setEditMilestoneDate(e.target.value)
                             }
-                            className="sm:col-span-2 border themed-border rounded px-3 py-2"
+                            className="border themed-border rounded px-3 py-2"
                           />
                           <input
                             type="number"
@@ -837,7 +841,7 @@ export default function Dreams() {
                               setEditMilestoneTargetValue(e.target.value)
                             }
                             placeholder="Meta R$"
-                            className="sm:col-span-2 border themed-border rounded px-3 py-2"
+                            className="border themed-border rounded px-3 py-2"
                           />
                         </div>
                         <button

@@ -5,6 +5,12 @@ const bankAccountsService = {
     return api.get("/bank-accounts");
   },
 
+  snapshots(days = 365) {
+    return api.get("/bank-accounts/patrimony-snapshots", {
+      params: { days },
+    });
+  },
+
   create(payload) {
     return api.post("/bank-accounts", payload);
   },
