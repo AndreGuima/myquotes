@@ -100,6 +100,13 @@ function sortByDate(items) {
   });
 }
 
+function isMilestoneCompleted(milestone) {
+  return (
+    Boolean(milestone?.completedAt) ||
+    Number(milestone?.progressPercent ?? 0) >= 100
+  );
+}
+
 function computeSmartScore(dream) {
   const fields = [
     dream.smart?.specific,
@@ -128,15 +135,13 @@ function computeMilestoneProgress(dream) {
     return Math.round(totalPercent / total);
   }
 
-  const completed = dream.milestones.filter((m) =>
-    Boolean(m.completedAt),
-  ).length;
+  const completed = dream.milestones.filter(isMilestoneCompleted).length;
   return Math.round((completed / total) * 100);
 }
 
 function computeXp(dream, habitsById) {
   const completedMilestones =
-    dream.milestones?.filter((m) => Boolean(m.completedAt)).length ?? 0;
+    dream.milestones?.filter(isMilestoneCompleted).length ?? 0;
   const smartScore = computeSmartScore(dream);
 
   const linkedHabits = dream.linkedHabitIds
@@ -379,615 +384,642 @@ export default function Dreams() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <form
-          onSubmit={handleCreateDream}
-          className="xl:col-span-1 themed-card border themed-border rounded-xl p-5 shadow-sm space-y-4 h-fit"
-        >
-          <h2 className="text-xl font-semibold">Novo sonho</h2>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Nome</label>
-            <input
-              value={draft.title}
-              onChange={(e) =>
-                updateDraftState(setDraft, "title", e.target.value)
-              }
-              placeholder="Ex: Correr minha primeira meia maratona"
-              className="w-full border themed-border rounded px-3 py-2"
-            />
+      <div className="grid grid-cols-1 xl:grid-cols-[220px_minmax(0,1fr)] gap-6">
+        <aside className="themed-card themed-border border rounded-xl p-4 h-fit xl:sticky xl:top-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide themed-muted mb-3">
+            Menu
+          </h2>
+          <div className="themed-subtle themed-border border rounded-lg px-3 py-2 font-medium">
+            Metas e Conquistas
           </div>
+        </aside>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Descrição</label>
-            <textarea
-              value={draft.description}
-              onChange={(e) =>
-                updateDraftState(setDraft, "description", e.target.value)
-              }
-              rows={3}
-              className="w-full border themed-border rounded px-3 py-2"
-            />
-          </div>
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+          <form
+            onSubmit={handleCreateDream}
+            className="xl:col-span-2 themed-card border themed-border rounded-xl p-5 shadow-sm space-y-4 h-fit"
+          >
+            <h2 className="text-xl font-semibold">Novo sonho</h2>
 
-          <div className="border themed-border rounded-lg p-3 themed-subtle">
-            <h3 className="font-medium mb-2">SMART</h3>
-            <div className="space-y-2">
+            <div>
+              <label className="block text-sm font-medium mb-1">Nome</label>
               <input
-                value={draft.smart.specific}
+                value={draft.title}
                 onChange={(e) =>
-                  updateDraftState(setDraft, "smart.specific", e.target.value)
+                  updateDraftState(setDraft, "title", e.target.value)
                 }
+                placeholder="Ex: Correr minha primeira meia maratona"
                 className="w-full border themed-border rounded px-3 py-2"
-                placeholder="S - Específico"
               />
-              <input
-                value={draft.smart.measurable}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Descrição
+              </label>
+              <textarea
+                value={draft.description}
                 onChange={(e) =>
-                  updateDraftState(setDraft, "smart.measurable", e.target.value)
+                  updateDraftState(setDraft, "description", e.target.value)
                 }
+                rows={3}
                 className="w-full border themed-border rounded px-3 py-2"
-                placeholder="M - Mensurável"
               />
-              <input
-                value={draft.smart.achievable}
-                onChange={(e) =>
-                  updateDraftState(setDraft, "smart.achievable", e.target.value)
-                }
-                className="w-full border themed-border rounded px-3 py-2"
-                placeholder="A - Atingível"
-              />
-              <input
-                value={draft.smart.relevant}
-                onChange={(e) =>
-                  updateDraftState(setDraft, "smart.relevant", e.target.value)
-                }
-                className="w-full border themed-border rounded px-3 py-2"
-                placeholder="R - Relevante"
-              />
-              <input
-                value={draft.smart.timeBound}
-                onChange={(e) =>
-                  updateDraftState(setDraft, "smart.timeBound", e.target.value)
-                }
-                className="w-full border themed-border rounded px-3 py-2"
-                placeholder="T - Temporal"
-              />
-              <div>
-                <label className="block text-sm mb-1">Data alvo final</label>
+            </div>
+
+            <div className="border themed-border rounded-lg p-3 themed-subtle">
+              <h3 className="font-medium mb-2">SMART</h3>
+              <div className="space-y-2">
                 <input
-                  type="date"
-                  value={draft.smart.targetDate}
+                  value={draft.smart.specific}
+                  onChange={(e) =>
+                    updateDraftState(setDraft, "smart.specific", e.target.value)
+                  }
+                  className="w-full border themed-border rounded px-3 py-2"
+                  placeholder="S - Específico"
+                />
+                <input
+                  value={draft.smart.measurable}
                   onChange={(e) =>
                     updateDraftState(
                       setDraft,
-                      "smart.targetDate",
+                      "smart.measurable",
                       e.target.value,
                     )
                   }
                   className="w-full border themed-border rounded px-3 py-2"
+                  placeholder="M - Mensurável"
+                />
+                <input
+                  value={draft.smart.achievable}
+                  onChange={(e) =>
+                    updateDraftState(
+                      setDraft,
+                      "smart.achievable",
+                      e.target.value,
+                    )
+                  }
+                  className="w-full border themed-border rounded px-3 py-2"
+                  placeholder="A - Atingível"
+                />
+                <input
+                  value={draft.smart.relevant}
+                  onChange={(e) =>
+                    updateDraftState(setDraft, "smart.relevant", e.target.value)
+                  }
+                  className="w-full border themed-border rounded px-3 py-2"
+                  placeholder="R - Relevante"
+                />
+                <input
+                  value={draft.smart.timeBound}
+                  onChange={(e) =>
+                    updateDraftState(
+                      setDraft,
+                      "smart.timeBound",
+                      e.target.value,
+                    )
+                  }
+                  className="w-full border themed-border rounded px-3 py-2"
+                  placeholder="T - Temporal"
+                />
+                <div>
+                  <label className="block text-sm mb-1">Data alvo final</label>
+                  <input
+                    type="date"
+                    value={draft.smart.targetDate}
+                    onChange={(e) =>
+                      updateDraftState(
+                        setDraft,
+                        "smart.targetDate",
+                        e.target.value,
+                      )
+                    }
+                    className="w-full border themed-border rounded px-3 py-2"
+                  />
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={draft.smart.financialTargetValue}
+                  onChange={(e) =>
+                    updateDraftState(
+                      setDraft,
+                      "smart.financialTargetValue",
+                      e.target.value,
+                    )
+                  }
+                  className="w-full border themed-border rounded px-3 py-2"
+                  placeholder="Meta financeira (R$)"
                 />
               </div>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={draft.smart.financialTargetValue}
-                onChange={(e) =>
-                  updateDraftState(
+            </div>
+
+            <div className="border themed-border rounded-lg p-3">
+              <h3 className="font-medium mb-2">Hábitos vinculados</h3>
+              {habits.length === 0 ? (
+                <p className="text-sm themed-muted">
+                  Cadastre hábitos antes de vincular.
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-44 overflow-auto pr-1">
+                  {habits.map((habit) => (
+                    <label
+                      key={habit.id}
+                      className="flex items-center justify-between gap-2 text-sm"
+                    >
+                      <span>{habit.title}</span>
+                      <input
+                        type="checkbox"
+                        checked={draft.linkedHabitIds.includes(habit.id)}
+                        onChange={() => toggleLinkedHabit(setDraft, habit.id)}
+                      />
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border themed-border rounded-lg p-3">
+              <h3 className="font-medium mb-2">Marcos</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  value={milestoneTitle}
+                  onChange={(e) => setMilestoneTitle(e.target.value)}
+                  placeholder="Nome do marco"
+                  className="sm:col-span-2 border themed-border rounded px-3 py-2"
+                />
+                <input
+                  type="date"
+                  value={milestoneDate}
+                  onChange={(e) => setMilestoneDate(e.target.value)}
+                  className="border themed-border rounded px-3 py-2"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={milestoneTargetValue}
+                  onChange={(e) => setMilestoneTargetValue(e.target.value)}
+                  placeholder="Meta R$"
+                  className="border themed-border rounded px-3 py-2"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  addMilestone(
                     setDraft,
-                    "smart.financialTargetValue",
-                    e.target.value,
+                    milestoneTitle,
+                    milestoneDate,
+                    milestoneTargetValue,
+                    setMilestoneTitle,
+                    setMilestoneDate,
+                    setMilestoneTargetValue,
                   )
                 }
-                className="w-full border themed-border rounded px-3 py-2"
-                placeholder="Meta financeira (R$)"
-              />
-            </div>
-          </div>
+                className="mt-2 text-sm themed-link hover:underline"
+              >
+                + adicionar marco
+              </button>
 
-          <div className="border themed-border rounded-lg p-3">
-            <h3 className="font-medium mb-2">Hábitos vinculados</h3>
-            {habits.length === 0 ? (
-              <p className="text-sm themed-muted">
-                Cadastre hábitos antes de vincular.
-              </p>
-            ) : (
-              <div className="space-y-2 max-h-44 overflow-auto pr-1">
-                {habits.map((habit) => (
-                  <label
-                    key={habit.id}
-                    className="flex items-center justify-between gap-2 text-sm"
-                  >
-                    <span>{habit.title}</span>
-                    <input
-                      type="checkbox"
-                      checked={draft.linkedHabitIds.includes(habit.id)}
-                      onChange={() => toggleLinkedHabit(setDraft, habit.id)}
-                    />
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="border themed-border rounded-lg p-3">
-            <h3 className="font-medium mb-2">Marcos</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
-              <input
-                value={milestoneTitle}
-                onChange={(e) => setMilestoneTitle(e.target.value)}
-                placeholder="Nome do marco"
-                className="sm:col-span-3 border themed-border rounded px-3 py-2"
-              />
-              <input
-                type="date"
-                value={milestoneDate}
-                onChange={(e) => setMilestoneDate(e.target.value)}
-                className="sm:col-span-2 border themed-border rounded px-3 py-2"
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={milestoneTargetValue}
-                onChange={(e) => setMilestoneTargetValue(e.target.value)}
-                placeholder="Meta R$"
-                className="sm:col-span-2 border themed-border rounded px-3 py-2"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                addMilestone(
-                  setDraft,
-                  milestoneTitle,
-                  milestoneDate,
-                  milestoneTargetValue,
-                  setMilestoneTitle,
-                  setMilestoneDate,
-                  setMilestoneTargetValue,
-                )
-              }
-              className="mt-2 text-sm themed-link hover:underline"
-            >
-              + adicionar marco
-            </button>
-
-            {draft.milestones.length > 0 && (
-              <div className="mt-3 space-y-2">
-                {sortByDate(draft.milestones).map((milestone) => (
-                  <div
-                    key={milestone.id}
-                    className="text-sm border themed-border rounded px-3 py-2 flex justify-between gap-2"
-                  >
-                    <div>
-                      <div className="font-medium">{milestone.title}</div>
-                      <div className="themed-muted">
-                        {toDateLabel(milestone.targetDate)}
-                      </div>
-                      {milestone.financialTargetValue && (
-                        <div className="themed-muted">
-                          Meta: R${" "}
-                          {Number(
-                            milestone.financialTargetValue,
-                          ).toLocaleString("pt-BR", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeMilestone(setDraft, milestone.id)}
-                      className="text-red-600 hover:underline"
+              {draft.milestones.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {sortByDate(draft.milestones).map((milestone) => (
+                    <div
+                      key={milestone.id}
+                      className="text-sm border themed-border rounded px-3 py-2 flex justify-between gap-2"
                     >
-                      remover
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={savingDream}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-60"
-          >
-            {savingDream ? "Salvando..." : "Salvar sonho"}
-          </button>
-        </form>
-
-        <div className="xl:col-span-2 space-y-4">
-          {orderedDreams.length === 0 ? (
-            <div className="themed-card border themed-border rounded-xl p-6 themed-muted">
-              Nenhum sonho cadastrado ainda.
-            </div>
-          ) : (
-            orderedDreams.map((dream) => {
-              const smartScore = computeSmartScore(dream);
-              const progress = computeMilestoneProgress(dream);
-              const xp = computeXp(dream, habitsById);
-              const linkedHabits = dream.linkedHabitIds
-                .map((id) => habitsById.get(id))
-                .filter(Boolean);
-              const completedMilestones = dream.milestones.filter((milestone) =>
-                Boolean(milestone.completedAt),
-              ).length;
-
-              const isEditing = editingDreamId === dream.id;
-
-              return (
-                <section
-                  key={dream.id}
-                  className="themed-card border themed-border rounded-xl p-5"
-                >
-                  <div className="flex justify-between gap-4">
-                    <div>
-                      <h2 className="text-xl font-semibold">{dream.title}</h2>
-                      {dream.description && (
-                        <p className="themed-muted mt-1">{dream.description}</p>
-                      )}
-                    </div>
-                    <div className="flex gap-3 h-fit">
-                      {isEditing ? (
-                        <button
-                          onClick={cancelEdit}
-                          className="text-sm themed-muted hover:underline"
-                        >
-                          cancelar
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => startEdit(dream)}
-                          className="text-sm themed-link hover:underline"
-                        >
-                          editar
-                        </button>
-                      )}
-                      <Link
-                        to={`/dreams/${dream.id}`}
-                        className="text-sm themed-link hover:underline"
-                      >
-                        visualizar
-                      </Link>
+                      <div>
+                        <div className="font-medium">{milestone.title}</div>
+                        <div className="themed-muted">
+                          {toDateLabel(milestone.targetDate)}
+                        </div>
+                        {milestone.financialTargetValue && (
+                          <div className="themed-muted">
+                            Meta: R${" "}
+                            {Number(
+                              milestone.financialTargetValue,
+                            ).toLocaleString("pt-BR", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </div>
+                        )}
+                      </div>
                       <button
-                        onClick={() => handleDeleteDream(dream.id)}
-                        className="text-sm text-red-600 hover:underline"
+                        type="button"
+                        onClick={() => removeMilestone(setDraft, milestone.id)}
+                        className="text-red-600 hover:underline"
                       >
                         remover
                       </button>
                     </div>
-                  </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                  {isEditing && (
-                    <div className="mt-4 border themed-border rounded-lg p-4 themed-subtle space-y-3">
-                      <h3 className="font-medium">Editar sonho</h3>
+            <button
+              type="submit"
+              disabled={savingDream}
+              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-60"
+            >
+              {savingDream ? "Salvando..." : "Salvar sonho"}
+            </button>
+          </form>
 
-                      <input
-                        value={editDraft.title}
-                        onChange={(e) =>
-                          updateDraftState(
-                            setEditDraft,
-                            "title",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full border themed-border rounded px-3 py-2"
-                        placeholder="Nome"
-                      />
+          <div className="xl:col-span-3 space-y-4">
+            {orderedDreams.length === 0 ? (
+              <div className="themed-card border themed-border rounded-xl p-6 themed-muted">
+                Nenhum sonho cadastrado ainda.
+              </div>
+            ) : (
+              orderedDreams.map((dream) => {
+                const smartScore = computeSmartScore(dream);
+                const progress = computeMilestoneProgress(dream);
+                const xp = computeXp(dream, habitsById);
+                const linkedHabits = dream.linkedHabitIds
+                  .map((id) => habitsById.get(id))
+                  .filter(Boolean);
+                const completedMilestones =
+                  dream.milestones.filter(isMilestoneCompleted).length;
 
-                      <textarea
-                        value={editDraft.description}
-                        onChange={(e) =>
-                          updateDraftState(
-                            setEditDraft,
-                            "description",
-                            e.target.value,
-                          )
-                        }
-                        rows={3}
-                        className="w-full border themed-border rounded px-3 py-2"
-                        placeholder="Descrição"
-                      />
+                const isEditing = editingDreamId === dream.id;
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input
-                          value={editDraft.smart.specific}
-                          onChange={(e) =>
-                            updateDraftState(
-                              setEditDraft,
-                              "smart.specific",
-                              e.target.value,
-                            )
-                          }
-                          className="border themed-border rounded px-3 py-2"
-                          placeholder="S - Específico"
-                        />
-                        <input
-                          value={editDraft.smart.measurable}
-                          onChange={(e) =>
-                            updateDraftState(
-                              setEditDraft,
-                              "smart.measurable",
-                              e.target.value,
-                            )
-                          }
-                          className="border themed-border rounded px-3 py-2"
-                          placeholder="M - Mensurável"
-                        />
-                        <input
-                          value={editDraft.smart.achievable}
-                          onChange={(e) =>
-                            updateDraftState(
-                              setEditDraft,
-                              "smart.achievable",
-                              e.target.value,
-                            )
-                          }
-                          className="border themed-border rounded px-3 py-2"
-                          placeholder="A - Atingível"
-                        />
-                        <input
-                          value={editDraft.smart.relevant}
-                          onChange={(e) =>
-                            updateDraftState(
-                              setEditDraft,
-                              "smart.relevant",
-                              e.target.value,
-                            )
-                          }
-                          className="border themed-border rounded px-3 py-2"
-                          placeholder="R - Relevante"
-                        />
-                        <input
-                          value={editDraft.smart.timeBound}
-                          onChange={(e) =>
-                            updateDraftState(
-                              setEditDraft,
-                              "smart.timeBound",
-                              e.target.value,
-                            )
-                          }
-                          className="border themed-border rounded px-3 py-2"
-                          placeholder="T - Temporal"
-                        />
-                        <input
-                          type="date"
-                          value={editDraft.smart.targetDate}
-                          onChange={(e) =>
-                            updateDraftState(
-                              setEditDraft,
-                              "smart.targetDate",
-                              e.target.value,
-                            )
-                          }
-                          className="border themed-border rounded px-3 py-2"
-                        />
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={editDraft.smart.financialTargetValue}
-                          onChange={(e) =>
-                            updateDraftState(
-                              setEditDraft,
-                              "smart.financialTargetValue",
-                              e.target.value,
-                            )
-                          }
-                          className="border themed-border rounded px-3 py-2"
-                          placeholder="Meta financeira (R$)"
-                        />
+                return (
+                  <section
+                    key={dream.id}
+                    className="themed-card border themed-border rounded-xl p-5"
+                  >
+                    <div className="flex justify-between gap-4">
+                      <div>
+                        <h2 className="text-xl font-semibold">{dream.title}</h2>
+                        {dream.description && (
+                          <p className="themed-muted mt-1">
+                            {dream.description}
+                          </p>
+                        )}
                       </div>
-
-                      <div className="border themed-border rounded themed-card p-3">
-                        <div className="font-medium text-sm mb-2">
-                          Hábitos vinculados
-                        </div>
-                        <div className="space-y-2 max-h-40 overflow-auto pr-1">
-                          {habits.map((habit) => (
-                            <label
-                              key={habit.id}
-                              className="flex items-center justify-between gap-2 text-sm"
-                            >
-                              <span>{habit.title}</span>
-                              <input
-                                type="checkbox"
-                                checked={editDraft.linkedHabitIds.includes(
-                                  habit.id,
-                                )}
-                                onChange={() =>
-                                  toggleLinkedHabit(setEditDraft, habit.id)
-                                }
-                              />
-                            </label>
-                          ))}
-                        </div>
+                      <div className="flex gap-3 h-fit">
+                        {isEditing ? (
+                          <button
+                            onClick={cancelEdit}
+                            className="text-sm themed-muted hover:underline"
+                          >
+                            cancelar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => startEdit(dream)}
+                            className="text-sm themed-link hover:underline"
+                          >
+                            editar
+                          </button>
+                        )}
+                        <Link
+                          to={`/dreams/${dream.id}`}
+                          className="text-sm themed-link hover:underline"
+                        >
+                          visualizar
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteDream(dream.id)}
+                          className="text-sm text-red-600 hover:underline"
+                        >
+                          remover
+                        </button>
                       </div>
+                    </div>
 
-                      <div className="border themed-border rounded themed-card p-3">
-                        <div className="font-medium text-sm mb-2">Marcos</div>
-                        <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
+                    {isEditing && (
+                      <div className="mt-4 border themed-border rounded-lg p-4 themed-subtle space-y-3">
+                        <h3 className="font-medium">Editar sonho</h3>
+
+                        <input
+                          value={editDraft.title}
+                          onChange={(e) =>
+                            updateDraftState(
+                              setEditDraft,
+                              "title",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full border themed-border rounded px-3 py-2"
+                          placeholder="Nome"
+                        />
+
+                        <textarea
+                          value={editDraft.description}
+                          onChange={(e) =>
+                            updateDraftState(
+                              setEditDraft,
+                              "description",
+                              e.target.value,
+                            )
+                          }
+                          rows={3}
+                          className="w-full border themed-border rounded px-3 py-2"
+                          placeholder="Descrição"
+                        />
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <input
-                            value={editMilestoneTitle}
+                            value={editDraft.smart.specific}
                             onChange={(e) =>
-                              setEditMilestoneTitle(e.target.value)
+                              updateDraftState(
+                                setEditDraft,
+                                "smart.specific",
+                                e.target.value,
+                              )
                             }
-                            placeholder="Nome do marco"
-                            className="sm:col-span-3 border themed-border rounded px-3 py-2"
+                            className="border themed-border rounded px-3 py-2"
+                            placeholder="S - Específico"
+                          />
+                          <input
+                            value={editDraft.smart.measurable}
+                            onChange={(e) =>
+                              updateDraftState(
+                                setEditDraft,
+                                "smart.measurable",
+                                e.target.value,
+                              )
+                            }
+                            className="border themed-border rounded px-3 py-2"
+                            placeholder="M - Mensurável"
+                          />
+                          <input
+                            value={editDraft.smart.achievable}
+                            onChange={(e) =>
+                              updateDraftState(
+                                setEditDraft,
+                                "smart.achievable",
+                                e.target.value,
+                              )
+                            }
+                            className="border themed-border rounded px-3 py-2"
+                            placeholder="A - Atingível"
+                          />
+                          <input
+                            value={editDraft.smart.relevant}
+                            onChange={(e) =>
+                              updateDraftState(
+                                setEditDraft,
+                                "smart.relevant",
+                                e.target.value,
+                              )
+                            }
+                            className="border themed-border rounded px-3 py-2"
+                            placeholder="R - Relevante"
+                          />
+                          <input
+                            value={editDraft.smart.timeBound}
+                            onChange={(e) =>
+                              updateDraftState(
+                                setEditDraft,
+                                "smart.timeBound",
+                                e.target.value,
+                              )
+                            }
+                            className="border themed-border rounded px-3 py-2"
+                            placeholder="T - Temporal"
                           />
                           <input
                             type="date"
-                            value={editMilestoneDate}
+                            value={editDraft.smart.targetDate}
                             onChange={(e) =>
-                              setEditMilestoneDate(e.target.value)
+                              updateDraftState(
+                                setEditDraft,
+                                "smart.targetDate",
+                                e.target.value,
+                              )
                             }
-                            className="sm:col-span-2 border themed-border rounded px-3 py-2"
+                            className="border themed-border rounded px-3 py-2"
                           />
                           <input
                             type="number"
                             min="0"
                             step="0.01"
-                            value={editMilestoneTargetValue}
+                            value={editDraft.smart.financialTargetValue}
                             onChange={(e) =>
-                              setEditMilestoneTargetValue(e.target.value)
+                              updateDraftState(
+                                setEditDraft,
+                                "smart.financialTargetValue",
+                                e.target.value,
+                              )
                             }
-                            placeholder="Meta R$"
-                            className="sm:col-span-2 border themed-border rounded px-3 py-2"
+                            className="border themed-border rounded px-3 py-2"
+                            placeholder="Meta financeira (R$)"
                           />
                         </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            addMilestone(
-                              setEditDraft,
-                              editMilestoneTitle,
-                              editMilestoneDate,
-                              editMilestoneTargetValue,
-                              setEditMilestoneTitle,
-                              setEditMilestoneDate,
-                              setEditMilestoneTargetValue,
-                            )
-                          }
-                          className="mt-2 text-sm themed-link hover:underline"
-                        >
-                          + adicionar marco
-                        </button>
 
-                        {editDraft.milestones.length > 0 && (
-                          <div className="mt-3 space-y-2">
-                            {sortByDate(editDraft.milestones).map(
-                              (milestone) => (
-                                <div
-                                  key={milestone.id}
-                                  className="text-sm border themed-border rounded px-3 py-2 flex justify-between gap-2"
-                                >
-                                  <div>
-                                    <div className="font-medium">
-                                      {milestone.title}
-                                    </div>
-                                    <div className="themed-muted">
-                                      {toDateLabel(milestone.targetDate)}
-                                    </div>
-                                    {milestone.financialTargetValue && (
-                                      <div className="themed-muted">
-                                        Meta: R${" "}
-                                        {Number(
-                                          milestone.financialTargetValue,
-                                        ).toLocaleString("pt-BR", {
-                                          minimumFractionDigits: 2,
-                                          maximumFractionDigits: 2,
-                                        })}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      removeMilestone(
-                                        setEditDraft,
-                                        milestone.id,
-                                      )
-                                    }
-                                    className="text-red-600 hover:underline"
-                                  >
-                                    remover
-                                  </button>
-                                </div>
-                              ),
-                            )}
+                        <div className="border themed-border rounded themed-card p-3">
+                          <div className="font-medium text-sm mb-2">
+                            Hábitos vinculados
                           </div>
-                        )}
-                      </div>
+                          <div className="space-y-2 max-h-40 overflow-auto pr-1">
+                            {habits.map((habit) => (
+                              <label
+                                key={habit.id}
+                                className="flex items-center justify-between gap-2 text-sm"
+                              >
+                                <span>{habit.title}</span>
+                                <input
+                                  type="checkbox"
+                                  checked={editDraft.linkedHabitIds.includes(
+                                    habit.id,
+                                  )}
+                                  onChange={() =>
+                                    toggleLinkedHabit(setEditDraft, habit.id)
+                                  }
+                                />
+                              </label>
+                            ))}
+                          </div>
+                        </div>
 
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={cancelEdit}
-                          className="px-3 py-2 text-sm border themed-border rounded hover:opacity-90 themed-subtle"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          onClick={() => saveEdit(dream.id)}
-                          disabled={savingEdit}
-                          className="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60"
-                        >
-                          {savingEdit ? "Salvando..." : "Salvar alterações"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                    <div className="border themed-border rounded-lg p-3 bg-blue-50">
-                      <div className="text-xs text-blue-900">SMART</div>
-                      <div className="text-2xl font-bold text-blue-900">
-                        {smartScore}%
-                      </div>
-                    </div>
-                    <div className="border themed-border rounded-lg p-3 bg-green-50">
-                      <div className="text-xs text-green-900">Progresso</div>
-                      <div className="text-2xl font-bold text-green-900">
-                        {progress}%
-                      </div>
-                    </div>
-                    <div className="border themed-border rounded-lg p-3 bg-amber-50">
-                      <div className="text-xs text-amber-900">XP</div>
-                      <div className="text-2xl font-bold text-amber-900">
-                        {xp}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <div className="h-2 bg-[var(--line-color)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-green-500"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <h3 className="font-medium mb-2">
-                      Hábitos ligados ao sonho
-                    </h3>
-                    {linkedHabits.length === 0 ? (
-                      <p className="text-sm themed-muted">
-                        Nenhum hábito vinculado.
-                      </p>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {linkedHabits.map((habit) => (
-                          <span
-                            key={habit.id}
-                            className={`text-xs px-2 py-1 rounded-full border ${
-                              habit.stats?.today_completed
-                                ? "bg-green-50 text-green-700 border-green-200"
-                                : "themed-subtle themed-muted themed-border"
-                            }`}
+                        <div className="border themed-border rounded themed-card p-3">
+                          <div className="font-medium text-sm mb-2">Marcos</div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input
+                              value={editMilestoneTitle}
+                              onChange={(e) =>
+                                setEditMilestoneTitle(e.target.value)
+                              }
+                              placeholder="Nome do marco"
+                              className="sm:col-span-2 border themed-border rounded px-3 py-2"
+                            />
+                            <input
+                              type="date"
+                              value={editMilestoneDate}
+                              onChange={(e) =>
+                                setEditMilestoneDate(e.target.value)
+                              }
+                              className="border themed-border rounded px-3 py-2"
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={editMilestoneTargetValue}
+                              onChange={(e) =>
+                                setEditMilestoneTargetValue(e.target.value)
+                              }
+                              placeholder="Meta R$"
+                              className="border themed-border rounded px-3 py-2"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              addMilestone(
+                                setEditDraft,
+                                editMilestoneTitle,
+                                editMilestoneDate,
+                                editMilestoneTargetValue,
+                                setEditMilestoneTitle,
+                                setEditMilestoneDate,
+                                setEditMilestoneTargetValue,
+                              )
+                            }
+                            className="mt-2 text-sm themed-link hover:underline"
                           >
-                            {habit.title}
-                            {habit.stats?.today_completed
-                              ? " · feito hoje"
-                              : ""}
-                          </span>
-                        ))}
+                            + adicionar marco
+                          </button>
+
+                          {editDraft.milestones.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              {sortByDate(editDraft.milestones).map(
+                                (milestone) => (
+                                  <div
+                                    key={milestone.id}
+                                    className="text-sm border themed-border rounded px-3 py-2 flex justify-between gap-2"
+                                  >
+                                    <div>
+                                      <div className="font-medium">
+                                        {milestone.title}
+                                      </div>
+                                      <div className="themed-muted">
+                                        {toDateLabel(milestone.targetDate)}
+                                      </div>
+                                      {milestone.financialTargetValue && (
+                                        <div className="themed-muted">
+                                          Meta: R${" "}
+                                          {Number(
+                                            milestone.financialTargetValue,
+                                          ).toLocaleString("pt-BR", {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        removeMilestone(
+                                          setEditDraft,
+                                          milestone.id,
+                                        )
+                                      }
+                                      className="text-red-600 hover:underline"
+                                    >
+                                      remover
+                                    </button>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={cancelEdit}
+                            className="px-3 py-2 text-sm border themed-border rounded hover:opacity-90 themed-subtle"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={() => saveEdit(dream.id)}
+                            disabled={savingEdit}
+                            className="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60"
+                          >
+                            {savingEdit ? "Salvando..." : "Salvar alterações"}
+                          </button>
+                        </div>
                       </div>
                     )}
-                  </div>
-                  <div className="mt-4 text-sm themed-muted">
-                    {dream.milestones.length} marcos cadastrados •{" "}
-                    {completedMilestones} concluídos
-                  </div>
-                </section>
-              );
-            })
-          )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                      <div className="border themed-border rounded-lg p-3 bg-blue-50">
+                        <div className="text-xs text-blue-900">SMART</div>
+                        <div className="text-2xl font-bold text-blue-900">
+                          {smartScore}%
+                        </div>
+                      </div>
+                      <div className="border themed-border rounded-lg p-3 bg-green-50">
+                        <div className="text-xs text-green-900">Progresso</div>
+                        <div className="text-2xl font-bold text-green-900">
+                          {progress}%
+                        </div>
+                      </div>
+                      <div className="border themed-border rounded-lg p-3 bg-amber-50">
+                        <div className="text-xs text-amber-900">XP</div>
+                        <div className="text-2xl font-bold text-amber-900">
+                          {xp}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <div className="h-2 bg-[var(--line-color)] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <h3 className="font-medium mb-2">
+                        Hábitos ligados ao sonho
+                      </h3>
+                      {linkedHabits.length === 0 ? (
+                        <p className="text-sm themed-muted">
+                          Nenhum hábito vinculado.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {linkedHabits.map((habit) => (
+                            <Link
+                              key={habit.id}
+                              to={`/habits/${habit.id}/edit`}
+                              className={`text-xs px-2 py-1 rounded-full border hover:opacity-90 hover:underline transition ${
+                                habit.stats?.today_completed
+                                  ? "bg-green-50 text-green-700 border-green-200"
+                                  : "themed-subtle themed-muted themed-border"
+                              }`}
+                            >
+                              {habit.title}
+                              {habit.stats?.today_completed
+                                ? " · feito hoje"
+                                : ""}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-4 text-sm themed-muted">
+                      {dream.milestones.length} marcos cadastrados •{" "}
+                      {completedMilestones} concluídos
+                    </div>
+                  </section>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -169,7 +169,7 @@ export default function EditHabit() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-xl mx-auto text-gray-600">
+      <div className="p-6 max-w-xl mx-auto themed-muted">
         Carregando hábito...
       </div>
     );
@@ -202,7 +202,7 @@ export default function EditHabit() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full border rounded px-3 py-2"
+              className="w-full themed-input rounded px-3 py-2"
             />
           </div>
 
@@ -220,7 +220,7 @@ export default function EditHabit() {
                       : ""
               }
               disabled
-              className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-600"
+              className="w-full themed-input rounded px-3 py-2"
             />
           </div>
 
@@ -231,16 +231,16 @@ export default function EditHabit() {
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full border rounded px-3 py-2"
+                className="w-full themed-input rounded px-3 py-2"
               />
               <input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full border rounded px-3 py-2"
+                className="w-full themed-input rounded px-3 py-2"
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs themed-muted mt-1">
               Intervalo diário do hábito (pode atravessar a meia-noite).
             </p>
           </div>
@@ -263,7 +263,7 @@ export default function EditHabit() {
                       className={`h-10 w-10 rounded-full border text-sm font-semibold transition ${
                         active
                           ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                          : "themed-card themed-muted themed-border hover:border-blue-400"
                       }`}
                     >
                       {day.short}
@@ -285,7 +285,7 @@ export default function EditHabit() {
                 max={31}
                 value={monthDay}
                 onChange={(e) => setMonthDay(e.target.value)}
-                className="w-full border rounded px-3 py-2"
+                className="w-full themed-input rounded px-3 py-2"
               />
             </div>
           )}
@@ -294,7 +294,7 @@ export default function EditHabit() {
             <button
               type="button"
               onClick={() => navigate("/habits")}
-              className="px-4 py-2 border rounded"
+              className="px-4 py-2 border themed-border themed-card rounded hover:opacity-90"
               disabled={saving}
             >
               Cancelar
@@ -330,7 +330,7 @@ export default function EditHabit() {
       <div>
         <button
           onClick={() => setShowHistory((v) => !v)}
-          className="text-sm text-blue-600 hover:underline mb-3"
+          className="text-sm themed-link hover:underline mb-3"
         >
           {showHistory
             ? "Ocultar histórico detalhado ▲"
@@ -340,23 +340,23 @@ export default function EditHabit() {
         {showHistory && (
           <>
             {loadingHistory ? (
-              <p className="text-gray-600">Carregando histórico…</p>
+              <p className="themed-muted">Carregando histórico…</p>
             ) : history.length === 0 ? (
-              <p className="text-gray-500">Nenhum registro ainda.</p>
+              <p className="themed-muted">Nenhum registro ainda.</p>
             ) : (
               <ul className="space-y-2">
                 {history.map((day) => (
                   <li
                     key={day.date}
-                    className="relative group flex items-center justify-between border rounded px-3 py-2 hover:bg-gray-50"
+                    className="relative group flex items-center justify-between border themed-border rounded px-3 py-2 themed-card hover:opacity-90"
                   >
-                    <span className="text-gray-700">
+                    <span className="themed-muted">
                       {formatDateLabel(day.date)}
                     </span>
 
                     <span
                       className={`font-medium ${
-                        day.completed ? "text-green-600" : "text-gray-400"
+                        day.completed ? "text-green-600" : "themed-muted"
                       }`}
                     >
                       {day.completed ? "✔ Feito" : "✖ Não feito"}
@@ -367,13 +367,17 @@ export default function EditHabit() {
                       className="
                         pointer-events-none
                         absolute right-0 top-full mt-2
-                        w-64 rounded-lg bg-gray-900 text-white text-sm
+                        w-64 rounded-lg border themed-border text-sm
                         px-3 py-2 shadow-lg
                         opacity-0 scale-95
                         group-hover:opacity-100 group-hover:scale-100
                         transition-all duration-150
                         z-20
                       "
+                      style={{
+                        backgroundColor: "var(--panel-bg)",
+                        color: "var(--panel-text)",
+                      }}
                     >
                       <div className="font-medium mb-1">
                         {formatFullDate(day.date)}

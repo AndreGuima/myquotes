@@ -1,18 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import bankAccountsService from "../services/bankAccountsService";
 import dreamsService from "../services/dreamsService";
 import { confirm, notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
 
+const PATRIMONY_SHOW_VALUES_KEY = "patrimony_show_values";
+
 export default function Patrimony() {
   const [accounts, setAccounts] = useState([]);
   const [dreams, setDreams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [updatingValueId, setUpdatingValueId] = useState(null);
+  const [updatingValueInput, setUpdatingValueInput] = useState("");
+  const [savingValueId, setSavingValueId] = useState(null);
+  const [showValues, setShowValues] = useState(() => {
+    const stored = localStorage.getItem(PATRIMONY_SHOW_VALUES_KEY);
+    if (stored === null) return true;
+    return stored === "true";
+  });
 
-  const [form, setForm] = useState({
+  const [filters, setFilters] = useState({
     name: "",
     objectiveDreamId: "",
     totalValue: "",
@@ -37,6 +46,10 @@ export default function Patrimony() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem(PATRIMONY_SHOW_VALUES_KEY, String(showValues));
+  }, [showValues]);
+
   const totalPatrimony = useMemo(
     () =>
       accounts.reduce(
@@ -55,73 +68,30 @@ export default function Patrimony() {
     [totalPatrimony],
   );
 
-  function resetForm() {
-    setEditingId(null);
-    setForm({
-      name: "",
-      objectiveDreamId: "",
-      totalValue: "",
+  const maskedMoney = "R$ •••••";
+
+  const filteredAccounts = useMemo(() => {
+    const normalizedName = filters.name.trim().toLowerCase();
+    const objectiveDreamId = Number(filters.objectiveDreamId);
+    const minValue = Number(filters.totalValue);
+
+    return accounts.filter((account) => {
+      const matchesName = normalizedName
+        ? String(account.name || "")
+            .toLowerCase()
+            .includes(normalizedName)
+        : true;
+      const matchesObjective = objectiveDreamId
+        ? account.objective_dream_id === objectiveDreamId
+        : true;
+      const matchesValue =
+        Number.isFinite(minValue) && filters.totalValue !== ""
+          ? Number(account.total_value || 0) >= minValue
+          : true;
+
+      return matchesName && matchesObjective && matchesValue;
     });
-  }
-
-  function startEdit(account) {
-    setEditingId(account.id);
-    setForm({
-      name: account.name || "",
-      objectiveDreamId: String(account.objective_dream_id || ""),
-      totalValue: String(account.total_value || ""),
-    });
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-
-    const cleanName = form.name.trim();
-    const objectiveDreamId = Number(form.objectiveDreamId);
-    const totalValue = Number(form.totalValue);
-
-    if (!cleanName) {
-      notify.error("Informe o nome da conta");
-      return;
-    }
-
-    if (!objectiveDreamId) {
-      notify.error("Selecione o objetivo");
-      return;
-    }
-
-    if (!Number.isFinite(totalValue) || totalValue < 0) {
-      notify.error("Informe um valor total válido");
-      return;
-    }
-
-    const payload = {
-      name: cleanName,
-      objective_dream_id: objectiveDreamId,
-      total_value: totalValue,
-    };
-
-    setSaving(true);
-    try {
-      if (editingId) {
-        const updated = await bankAccountsService.update(editingId, payload);
-        setAccounts((prev) =>
-          prev.map((item) => (item.id === editingId ? updated : item)),
-        );
-        notify.success("Conta atualizada");
-      } else {
-        const created = await bankAccountsService.create(payload);
-        setAccounts((prev) => [created, ...prev]);
-        notify.success("Conta criada");
-      }
-
-      resetForm();
-    } catch (err) {
-      notify.error(getApiErrorMessage(err, "Erro ao salvar conta"));
-    } finally {
-      setSaving(false);
-    }
-  }
+  }, [accounts, filters]);
 
   function handleRemove(accountId) {
     confirm({
@@ -133,9 +103,6 @@ export default function Patrimony() {
         try {
           await bankAccountsService.remove(accountId);
           setAccounts((prev) => prev.filter((item) => item.id !== accountId));
-          if (editingId === accountId) {
-            resetForm();
-          }
           notify.success("Conta removida");
         } catch (err) {
           notify.error(getApiErrorMessage(err, "Erro ao remover conta"));
@@ -144,26 +111,77 @@ export default function Patrimony() {
     });
   }
 
+  function startUpdateValue(account) {
+    setUpdatingValueId(account.id);
+    setUpdatingValueInput(String(account.total_value || ""));
+  }
+
+  function cancelUpdateValue() {
+    setUpdatingValueId(null);
+    setUpdatingValueInput("");
+  }
+
+  async function handleUpdateValue(accountId) {
+    const totalValue = Number(updatingValueInput);
+
+    if (!Number.isFinite(totalValue) || totalValue < 0) {
+      notify.error("Informe um valor total válido");
+      return;
+    }
+
+    setSavingValueId(accountId);
+    try {
+      const updated = await bankAccountsService.update(accountId, {
+        total_value: totalValue,
+      });
+      setAccounts((prev) =>
+        prev.map((item) => (item.id === accountId ? updated : item)),
+      );
+      notify.success("Valor atualizado");
+      cancelUpdateValue();
+    } catch (err) {
+      notify.error(getApiErrorMessage(err, "Erro ao atualizar valor"));
+    } finally {
+      setSavingValueId(null);
+    }
+  }
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Patrimônio</h1>
-        <Link
-          to="/finances"
-          className="themed-card themed-border border px-3 py-2 rounded hover:opacity-90 transition"
-        >
-          Voltar para Finanças
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowValues((prev) => !prev)}
+            className="themed-card themed-border border px-3 py-2 rounded hover:opacity-90 transition inline-flex items-center gap-2"
+            aria-label={showValues ? "Ocultar valores" : "Mostrar valores"}
+            title={showValues ? "Ocultar valores" : "Mostrar valores"}
+          >
+            {showValues ? <EyeOff size={18} /> : <Eye size={18} />}
+            <span className="hidden sm:inline">
+              {showValues ? "Ocultar valores" : "Mostrar valores"}
+            </span>
+          </button>
+          <Link
+            to="/finances"
+            className="themed-card themed-border border px-3 py-2 rounded hover:opacity-90 transition"
+          >
+            Voltar para Finanças
+          </Link>
+        </div>
       </div>
 
       <p className="themed-muted mb-6">
         Acompanhe seus ativos, passivos e evolução patrimonial.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="themed-card themed-border border rounded-xl p-5">
           <h2 className="font-semibold mb-1">Total em Contas</h2>
-          <p className="text-2xl font-bold">{formattedTotal}</p>
+          <p className="text-2xl font-bold">
+            {showValues ? formattedTotal : maskedMoney}
+          </p>
           <p className="themed-muted text-sm mt-1">Soma do valor total</p>
         </div>
 
@@ -173,50 +191,54 @@ export default function Patrimony() {
           <p className="themed-muted text-sm mt-1">Quantidade de contas</p>
         </div>
 
-        <div className="themed-card themed-border border rounded-xl p-5">
+        <Link
+          to="/dreams"
+          className="themed-card themed-border border rounded-xl p-5 hover:shadow-md transition block"
+        >
           <h2 className="font-semibold mb-1">Objetivos Disponíveis</h2>
           <p className="text-2xl font-bold">{dreams.length}</p>
           <p className="themed-muted text-sm mt-1">Sonhos para vincular</p>
-        </div>
+        </Link>
+
+        <Link
+          to="/finances/patrimony/dashboards"
+          className="themed-card themed-border border rounded-xl p-5 hover:shadow-md transition block"
+        >
+          <h2 className="font-semibold mb-1">Dashboards</h2>
+          <p className="text-2xl font-bold">Abrir</p>
+          <p className="themed-muted text-sm mt-1">
+            Visualize os painéis do patrimônio.
+          </p>
+        </Link>
       </div>
 
       <div className="themed-card themed-border border rounded-xl p-5 mt-6">
-        <h2 className="text-xl font-semibold mb-4">
-          {editingId ? "Editar Conta Bancária" : "Nova Conta Bancária"}
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">Filtrar Contas Bancárias</h2>
 
-        {dreams.length === 0 && (
-          <p className="themed-muted mb-4">
-            Você precisa cadastrar ao menos um sonho no módulo de sonhos para
-            usar o campo objetivo.{" "}
-            <Link to="/dreams" className="themed-link underline">
-              Ir para Sonhos
-            </Link>
-          </p>
-        )}
-
-        <form
-          onSubmit={handleSubmit}
-          className="grid grid-cols-1 md:grid-cols-4 gap-3"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <input
             type="text"
             className="themed-input rounded px-3 py-2"
-            placeholder="Nome da conta"
-            value={form.name}
+            placeholder="Banco XYZ"
+            autoComplete="off"
+            name="bank-account-name-filter"
+            value={filters.name}
             onChange={(e) =>
-              setForm((prev) => ({ ...prev, name: e.target.value }))
+              setFilters((prev) => ({ ...prev, name: e.target.value }))
             }
           />
 
           <select
             className="themed-input rounded px-3 py-2"
-            value={form.objectiveDreamId}
+            value={filters.objectiveDreamId}
             onChange={(e) =>
-              setForm((prev) => ({ ...prev, objectiveDreamId: e.target.value }))
+              setFilters((prev) => ({
+                ...prev,
+                objectiveDreamId: e.target.value,
+              }))
             }
           >
-            <option value="">Selecione o objetivo</option>
+            <option value="">Todos os objetivos</option>
             {dreams.map((dream) => (
               <option key={dream.id} value={dream.id}>
                 {dream.title}
@@ -229,33 +251,29 @@ export default function Patrimony() {
             step="0.01"
             min="0"
             className="themed-input rounded px-3 py-2"
-            placeholder="Valor total"
-            value={form.totalValue}
+            placeholder="Valor mínimo"
+            value={filters.totalValue}
             onChange={(e) =>
-              setForm((prev) => ({ ...prev, totalValue: e.target.value }))
+              setFilters((prev) => ({ ...prev, totalValue: e.target.value }))
             }
           />
 
           <div className="flex gap-2">
             <button
-              type="submit"
-              disabled={saving || dreams.length === 0}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+              type="button"
+              onClick={() =>
+                setFilters({
+                  name: "",
+                  objectiveDreamId: "",
+                  totalValue: "",
+                })
+              }
+              className="themed-card themed-border border px-4 py-2 rounded hover:opacity-90"
             >
-              {saving ? "Salvando..." : editingId ? "Atualizar" : "Criar"}
+              Limpar filtros
             </button>
-
-            {editingId && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="themed-card themed-border border px-4 py-2 rounded hover:opacity-90"
-              >
-                Cancelar
-              </button>
-            )}
           </div>
-        </form>
+        </div>
       </div>
 
       <div className="mt-6">
@@ -263,44 +281,89 @@ export default function Patrimony() {
 
         {loading ? (
           <p className="themed-muted">Carregando contas...</p>
-        ) : accounts.length === 0 ? (
-          <p className="themed-muted">Nenhuma conta bancária cadastrada.</p>
+        ) : filteredAccounts.length === 0 ? (
+          <p className="themed-muted">
+            Nenhuma conta encontrada para os filtros informados.
+          </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {accounts.map((account) => (
-              <div
-                key={account.id}
-                className="themed-card themed-border border rounded-xl p-4"
-              >
-                <h3 className="text-lg font-semibold">{account.name}</h3>
-                <p className="themed-muted text-sm mt-1">
-                  Objetivo: {account.objective_dream_title}
-                </p>
-                <p className="text-xl font-bold mt-2">
-                  {Number(account.total_value).toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  })}
-                </p>
+            {filteredAccounts.map((account) => {
+              const isUpdatingValue = updatingValueId === account.id;
+              const isSavingValue = savingValueId === account.id;
 
-                <div className="flex gap-4 text-sm mt-3">
-                  <button
-                    type="button"
-                    onClick={() => startEdit(account)}
-                    className="themed-link hover:underline"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(account.id)}
-                    className="text-red-600 hover:underline"
-                  >
-                    Remover
-                  </button>
+              return (
+                <div
+                  key={account.id}
+                  className="themed-card themed-border border rounded-xl p-4"
+                >
+                  <h3 className="text-lg font-semibold">{account.name}</h3>
+                  <p className="themed-muted text-sm mt-1">
+                    Objetivo: {account.objective_dream_title}
+                  </p>
+                  <p className="text-xl font-bold mt-2">
+                    {showValues
+                      ? Number(account.total_value).toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })
+                      : maskedMoney}
+                  </p>
+
+                  {isUpdatingValue && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <input
+                        type={showValues ? "number" : "password"}
+                        step="0.01"
+                        min="0"
+                        className="themed-input rounded px-3 py-2 w-full"
+                        placeholder="Novo valor"
+                        value={updatingValueInput}
+                        onChange={(e) => setUpdatingValueInput(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        disabled={isSavingValue}
+                        onClick={() => handleUpdateValue(account.id)}
+                        className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {isSavingValue ? "Salvando..." : "Salvar"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSavingValue}
+                        onClick={cancelUpdateValue}
+                        className="themed-card themed-border border px-3 py-2 rounded hover:opacity-90 disabled:opacity-50"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex gap-4 text-sm mt-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        isUpdatingValue
+                          ? cancelUpdateValue()
+                          : startUpdateValue(account)
+                      }
+                      className="themed-link hover:underline"
+                    >
+                      {isUpdatingValue
+                        ? "Cancelar atualização"
+                        : "Atualizar Valor"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(account.id)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Remover
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

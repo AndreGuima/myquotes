@@ -1,0 +1,315 @@
+from fastapi.testclient import TestClient
+
+
+def _create_dream(client: TestClient) -> int:
+    dream_res = client.post(
+        "/dreams",
+        json={
+            "title": "Reserva de emergencia",
+            "milestones": [],
+        },
+    )
+    assert dream_res.status_code == 201
+    return dream_res.json()["id"]
+
+
+def _create_account(client: TestClient, dream_id: int) -> int:
+    create_res = client.post(
+        "/bank-accounts",
+        json={
+            "name": "Conta Principal",
+            "objective_dream_id": dream_id,
+            "total_value": "1000.00",
+        },
+    )
+    assert create_res.status_code == 201
+    return create_res.json()["id"]
+
+
+def _create_card(client: TestClient) -> int:
+    create_res = client.post(
+        "/credit-cards",
+        json={"name": "Nubank"},
+    )
+    assert create_res.status_code == 201
+    return create_res.json()["id"]
+
+
+def _create_category(client: TestClient, name: str = "Alimentacao") -> int:
+    create_res = client.post(
+        "/expense-categories",
+        json={"name": name},
+    )
+    assert create_res.status_code == 201
+    return create_res.json()["id"]
+
+
+def test_expenses_crud_debit_and_credit(client: TestClient):
+    dream_id = _create_dream(client)
+    account_id = _create_account(client, dream_id)
+    card_id = _create_card(client)
+    category_food_id = _create_category(client, "Alimentacao")
+    category_health_id = _create_category(client, "Saude")
+    category_market_id = _create_category(client, "Supermercado")
+
+    create_debit_res = client.post(
+        "/expenses",
+        json={
+            "value": "79.90",
+            "description": "Mercado",
+            "expense_category_id": category_food_id,
+            "payment_method": "debit",
+            "bank_account_id": account_id,
+            "credit_card_id": None,
+            "launch_date": "2026-02-20",
+        },
+    )
+    assert create_debit_res.status_code == 201
+    debit_created = create_debit_res.json()
+    assert debit_created["payment_method"] == "debit"
+    assert debit_created["bank_account_id"] == account_id
+    assert debit_created["credit_card_id"] is None
+    assert debit_created["expense_category_id"] == category_food_id
+    assert debit_created["expense_category_name"] == "Alimentacao"
+
+    create_credit_res = client.post(
+        "/expenses",
+        json={
+            "value": "220.00",
+            "description": "Farmacia",
+            "expense_category_id": category_health_id,
+            "payment_method": "credit",
+            "bank_account_id": None,
+            "credit_card_id": card_id,
+            "launch_date": "2026-02-21",
+        },
+    )
+    assert create_credit_res.status_code == 201
+    credit_created = create_credit_res.json()
+    assert credit_created["payment_method"] == "credit"
+    assert credit_created["credit_card_id"] == card_id
+    assert credit_created["bank_account_id"] is None
+    assert credit_created["expense_category_id"] == category_health_id
+
+    list_res = client.get("/expenses")
+    assert list_res.status_code == 200
+    listed = list_res.json()
+    assert len(listed) == 2
+
+    update_res = client.patch(
+        f"/expenses/{debit_created['id']}",
+        json={
+            "description": "Mercado Mensal",
+            "expense_category_id": category_market_id,
+            "value": "99.00",
+        },
+    )
+    assert update_res.status_code == 200
+    updated = update_res.json()
+    assert updated["description"] == "Mercado Mensal"
+    assert updated["expense_category_name"] == "Supermercado"
+    assert updated["value"] == "99.00"
+
+    delete_res = client.delete(f"/expenses/{credit_created['id']}")
+    assert delete_res.status_code == 204
+
+    list_after_delete_res = client.get("/expenses")
+    assert list_after_delete_res.status_code == 200
+    assert len(list_after_delete_res.json()) == 1
+
+
+def test_expenses_validation_for_payment_source(client: TestClient):
+    dream_id = _create_dream(client)
+    account_id = _create_account(client, dream_id)
+
+    create_res = client.post(
+        "/expenses",
+        json={
+            "value": "79.90",
+            "description": "Mercado",
+            "expense_category_id": 9999,
+            "payment_method": "debit",
+            "bank_account_id": account_id,
+            "credit_card_id": None,
+            "launch_date": "2026-02-20",
+        },
+    )
+    assert create_res.status_code == 400
+
+
+def test_list_expenses_filters(client: TestClient):
+    dream_id = _create_dream(client)
+    account_id = _create_account(client, dream_id)
+    category_food_id = _create_category(client, "Alimentacao")
+    category_transport_id = _create_category(client, "Transporte")
+
+    expense_1 = client.post(
+        "/expenses",
+        json={
+            "value": "30.00",
+            "description": "Padaria",
+            "expense_category_id": category_food_id,
+            "payment_method": "debit",
+            "bank_account_id": account_id,
+            "credit_card_id": None,
+            "launch_date": "2026-02-05",
+        },
+    )
+    assert expense_1.status_code == 201
+
+    expense_2 = client.post(
+        "/expenses",
+        json={
+            "value": "50.00",
+            "description": "Uber",
+            "expense_category_id": category_transport_id,
+            "payment_method": "debit",
+            "bank_account_id": account_id,
+            "credit_card_id": None,
+            "launch_date": "2026-02-20",
+        },
+    )
+    assert expense_2.status_code == 201
+
+    expense_3 = client.post(
+        "/expenses",
+        json={
+            "value": "100.00",
+            "description": "Mercado",
+            "expense_category_id": category_food_id,
+            "payment_method": "debit",
+            "bank_account_id": account_id,
+            "credit_card_id": None,
+            "launch_date": "2026-03-02",
+        },
+    )
+    assert expense_3.status_code == 201
+
+    by_year_month = client.get("/expenses?year=2026&month=2")
+    assert by_year_month.status_code == 200
+    assert len(by_year_month.json()) == 2
+
+    by_range = client.get("/expenses?from=2026-02-10&to=2026-02-28")
+    assert by_range.status_code == 200
+    assert len(by_range.json()) == 1
+    assert by_range.json()[0]["description"] == "Uber"
+
+    by_category = client.get(f"/expenses?category_id={category_food_id}")
+    assert by_category.status_code == 200
+    assert len(by_category.json()) == 2
+    assert all(
+        item["expense_category_id"] == category_food_id for item in by_category.json()
+    )
+
+
+def test_list_expenses_filters_validation(client: TestClient):
+    res_month_without_year = client.get("/expenses?month=2")
+    assert res_month_without_year.status_code == 400
+    assert (
+        res_month_without_year.json()["detail"]
+        == "year is required when month is provided"
+    )
+
+    res_invalid_range = client.get("/expenses?from=2026-03-10&to=2026-03-01")
+    assert res_invalid_range.status_code == 400
+    assert (
+        res_invalid_range.json()["detail"]
+        == "'from' must be less than or equal to 'to'"
+    )
+
+
+def test_list_expenses_pagination(client: TestClient):
+    dream_id = _create_dream(client)
+    account_id = _create_account(client, dream_id)
+    category_id = _create_category(client, "Compras")
+
+    for idx, launch_date in enumerate(
+        ["2026-03-01", "2026-03-02", "2026-03-03"], start=1
+    ):
+        res = client.post(
+            "/expenses",
+            json={
+                "value": str(10 * idx),
+                "description": f"Item {idx}",
+                "expense_category_id": category_id,
+                "payment_method": "debit",
+                "bank_account_id": account_id,
+                "credit_card_id": None,
+                "launch_date": launch_date,
+            },
+        )
+        assert res.status_code == 201
+
+    page_1 = client.get("/expenses?limit=2&offset=0")
+    assert page_1.status_code == 200
+    assert len(page_1.json()) == 2
+    assert page_1.json()[0]["description"] == "Item 3"
+    assert page_1.json()[1]["description"] == "Item 2"
+
+    page_2 = client.get("/expenses?limit=2&offset=2")
+    assert page_2.status_code == 200
+    assert len(page_2.json()) == 1
+    assert page_2.json()[0]["description"] == "Item 1"
+
+
+def test_expenses_summary_endpoint(client: TestClient):
+    dream_id = _create_dream(client)
+    account_id = _create_account(client, dream_id)
+    card_id = _create_card(client)
+    food_category_id = _create_category(client, "Alimentacao")
+    transport_category_id = _create_category(client, "Transporte")
+
+    debit_food = client.post(
+        "/expenses",
+        json={
+            "value": "80.00",
+            "description": "Mercado",
+            "expense_category_id": food_category_id,
+            "payment_method": "debit",
+            "bank_account_id": account_id,
+            "credit_card_id": None,
+            "launch_date": "2026-02-10",
+        },
+    )
+    assert debit_food.status_code == 201
+
+    credit_transport = client.post(
+        "/expenses",
+        json={
+            "value": "20.00",
+            "description": "Taxi",
+            "expense_category_id": transport_category_id,
+            "payment_method": "credit",
+            "bank_account_id": None,
+            "credit_card_id": card_id,
+            "launch_date": "2026-02-11",
+        },
+    )
+    assert credit_transport.status_code == 201
+
+    debit_transport = client.post(
+        "/expenses",
+        json={
+            "value": "50.00",
+            "description": "Onibus",
+            "expense_category_id": transport_category_id,
+            "payment_method": "debit",
+            "bank_account_id": account_id,
+            "credit_card_id": None,
+            "launch_date": "2026-03-01",
+        },
+    )
+    assert debit_transport.status_code == 201
+
+    summary = client.get("/expenses/summary?year=2026&month=2")
+    assert summary.status_code == 200
+    body = summary.json()
+
+    assert body["count"] == 2
+    assert body["total"] == "100.00"
+    assert body["average"] == "50.00"
+    assert body["credit_total"] == "20.00"
+    assert body["debit_total"] == "80.00"
+    assert len(body["by_category"]) == 2
+    assert body["by_category"][0]["category_name"] == "Alimentacao"
+    assert body["by_category"][0]["total"] == "80.00"

@@ -36,7 +36,9 @@ import Finances from "./pages/Finances.jsx";
 import DayManagement from "./pages/DayManagement.jsx";
 import Patrimony from "./pages/Patrimony.jsx";
 import Expenses from "./pages/Expenses.jsx";
+import ExpensesDashboards from "./pages/ExpensesDashboards.jsx";
 import Investments from "./pages/Investments.jsx";
+import PatrimonyDashboards from "./pages/PatrimonyDashboards.jsx";
 
 initializeTheme();
 
@@ -94,7 +96,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               <Route path="/dreams/:id" element={<DreamDetails />} />
               <Route path="/finances" element={<Finances />} />
               <Route path="/finances/patrimony" element={<Patrimony />} />
+              <Route
+                path="/finances/patrimony/dashboards"
+                element={<PatrimonyDashboards />}
+              />
               <Route path="/finances/expenses" element={<Expenses />} />
+              <Route
+                path="/finances/expenses/dashboards"
+                element={<ExpensesDashboards />}
+              />
               <Route path="/finances/investments" element={<Investments />} />
               <Route path="/preferences" element={<Preferences />} />
 

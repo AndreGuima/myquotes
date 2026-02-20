@@ -53,7 +53,11 @@ config.set_main_option("sqlalchemy.url", database_url)
 from database import Base
 from models.auth_login_attempt import AuthLoginAttempt
 from models.bank_account import BankAccount
+from models.credit_card import CreditCard
 from models.dream import Dream, DreamHabitLink, DreamMilestone
+from models.expense import Expense
+from models.expense_category import ExpenseCategory
+from models.patrimony_snapshot import PatrimonySnapshot
 from models.quote import Quote
 from models.reading_list_book import ReadingListBook
 from models.reading_list_log import ReadingListLog

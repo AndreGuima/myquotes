@@ -27,6 +27,13 @@ function sortByDate(items) {
   });
 }
 
+function isMilestoneCompleted(milestone) {
+  return (
+    Boolean(milestone?.completedAt) ||
+    Number(milestone?.progressPercent ?? 0) >= 100
+  );
+}
+
 export default function DreamDetails() {
   const { id } = useParams();
   const [dream, setDream] = useState(null);
@@ -177,7 +184,8 @@ export default function DreamDetails() {
                     />
                   </div>
                   <div className="text-sm themed-muted mt-2">
-                    Status: {milestone.completedAt ? "Concluído" : "Pendente"}
+                    Status:{" "}
+                    {isMilestoneCompleted(milestone) ? "Concluído" : "Pendente"}
                   </div>
                 </div>
               </div>

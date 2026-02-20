@@ -43,6 +43,36 @@ function formatQuoteCreatedAt(value) {
   return date.toLocaleDateString("pt-BR");
 }
 
+function isHabitForToday(habit) {
+  const today = new Date();
+  const frequency = habit?.frequency_type;
+
+  if (frequency === "daily") {
+    return true;
+  }
+
+  if (frequency === "weekly") {
+    const weekdays = Array.isArray(habit?.weekdays) ? habit.weekdays : [];
+    const pythonWeekday = (today.getDay() + 6) % 7;
+    return weekdays.includes(pythonWeekday);
+  }
+
+  if (frequency === "monthly") {
+    const monthDay = Number(habit?.month_day);
+    if (!Number.isInteger(monthDay)) {
+      return false;
+    }
+
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+    const effectiveDay = Math.min(monthDay, lastDayOfMonth);
+    return today.getDate() === effectiveDay;
+  }
+
+  return false;
+}
+
 export default function Home() {
   const [quote, setQuote] = useState(null);
   const [loadingQuote, setLoadingQuote] = useState(true);
@@ -92,6 +122,8 @@ export default function Home() {
 
     loadHabits();
   }, []);
+
+  const todayHabits = sortHabitsByPriority(habits.filter(isHabitForToday));
 
   // ============================
   // ⏳ Loading inicial
@@ -143,17 +175,19 @@ export default function Home() {
 
       <div className="mb-8 border themed-border rounded-xl themed-card p-4 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold">Módulo de Sonhos</h2>
+          <h2 className="text-xl font-semibold">
+            Módulo de Metas e Conquistas
+          </h2>
           <p className="themed-muted text-sm mt-1">
-            Planeje sonhos com metas SMART, marcos em timeline e vínculo com
-            hábitos.
+            Planeje metas com método SMART, marcos em timeline e vínculo com
+            hábitos para acompanhar suas conquistas.
           </p>
         </div>
         <Link
           to="/dreams"
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 whitespace-nowrap"
         >
-          Abrir Sonhos
+          Abrir Metas e Conquistas
         </Link>
       </div>
 
@@ -180,9 +214,9 @@ export default function Home() {
 
         {loadingHabits ? (
           <p className="themed-muted">Carregando hábitos…</p>
-        ) : habits.length === 0 ? (
+        ) : todayHabits.length === 0 ? (
           <p className="themed-muted">
-            Você ainda não possui hábitos cadastrados.
+            Você não possui hábitos programados para hoje.
           </p>
         ) : (
           <div
@@ -194,7 +228,7 @@ export default function Home() {
               gap-4
             "
           >
-            {sortHabitsByPriority(habits).map((habit) => (
+            {todayHabits.map((habit) => (
               <div
                 key={habit.id}
                 className="
@@ -234,9 +268,9 @@ export default function Home() {
                 {/* Heatmap binário */}
                 <div className="mt-3">
                   <div className="text-xs themed-muted mb-1">
-                    Últimos 90 dias
+                    Últimos 30 dias
                   </div>
-                  <HabitHeatmap habitId={habit.id} />
+                  <HabitHeatmap habitId={habit.id} days={30} />
                 </div>
 
                 {/* CTA */}

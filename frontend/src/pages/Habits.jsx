@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import habitsService from "../services/habitsService";
 import { Link } from "react-router-dom";
 import { notify, confirm } from "../core/toast";
@@ -9,6 +9,7 @@ export default function Habits() {
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(null);
   const [removing, setRemoving] = useState(null);
+  const [filterQuery, setFilterQuery] = useState("");
 
   function formatTimeRange(startTime, endTime) {
     if (!startTime) return "Sem horário";
@@ -31,6 +32,16 @@ export default function Habits() {
   useEffect(() => {
     loadHabits();
   }, []);
+
+  const filteredHabits = useMemo(() => {
+    const query = filterQuery.trim().toLowerCase();
+    if (!query) return habits;
+    return habits.filter((habit) =>
+      String(habit.title || "")
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [habits, filterQuery]);
 
   async function handleToggle(habitId) {
     setToggling(habitId);
@@ -94,15 +105,36 @@ export default function Habits() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Meus Hábitos</h1>
 
-        {habits.length > 0 && (
+        <div className="flex items-center gap-2">
           <Link
-            to="/habits/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            to="/day-management"
+            className="themed-card themed-border border px-4 py-2 rounded hover:opacity-90 transition"
           >
-            + Novo Hábito
+            Voltar para Gestão do Dia
           </Link>
-        )}
+
+          {habits.length > 0 && (
+            <Link
+              to="/habits/new"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              + Novo Hábito
+            </Link>
+          )}
+        </div>
       </div>
+
+      {habits.length > 0 && (
+        <div className="mb-4">
+          <input
+            type="text"
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            className="w-full themed-input rounded px-3 py-2"
+            placeholder="Filtrar hábitos por nome"
+          />
+        </div>
+      )}
 
       {/* Empty state */}
       {habits.length === 0 ? (
@@ -115,9 +147,13 @@ export default function Habits() {
             Criar meu primeiro hábito
           </Link>
         </div>
+      ) : filteredHabits.length === 0 ? (
+        <div className="themed-muted mt-8 text-center">
+          Nenhum hábito encontrado para o filtro informado.
+        </div>
       ) : (
         <div className="space-y-4">
-          {habits.map((habit) => {
+          {filteredHabits.map((habit) => {
             const completed = habit.stats?.today_completed;
 
             return (
