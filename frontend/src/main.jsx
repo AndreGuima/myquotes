@@ -36,6 +36,7 @@ import Finances from "./pages/Finances.jsx";
 import DayManagement from "./pages/DayManagement.jsx";
 import Patrimony from "./pages/Patrimony.jsx";
 import Expenses from "./pages/Expenses.jsx";
+import ExpensesDashboards from "./pages/ExpensesDashboards.jsx";
 import Investments from "./pages/Investments.jsx";
 import PatrimonyDashboards from "./pages/PatrimonyDashboards.jsx";
 
@@ -100,6 +101,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                 element={<PatrimonyDashboards />}
               />
               <Route path="/finances/expenses" element={<Expenses />} />
+              <Route
+                path="/finances/expenses/dashboards"
+                element={<ExpensesDashboards />}
+              />
               <Route path="/finances/investments" element={<Investments />} />
               <Route path="/preferences" element={<Preferences />} />
 
