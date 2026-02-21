@@ -90,14 +90,7 @@ function formatDuration(startTime, endTime) {
 function getHabitApplyFlags(habit, today, yesterday) {
   const frequencyType = habit?.frequency_type;
 
-  if (frequencyType === "weekly") {
-    return {
-      appliesToday: isHabitScheduledForDate(habit, today),
-      appliesYesterday: isHabitScheduledForDate(habit, yesterday),
-    };
-  }
-
-  if (frequencyType === "monthly") {
+  if (frequencyType === "weekly" || frequencyType === "monthly") {
     return {
       appliesToday: isHabitScheduledForDate(habit, today),
       appliesYesterday: isHabitScheduledForDate(habit, yesterday),
@@ -112,12 +105,22 @@ export default function DailyRoutine() {
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(null);
-  const today = useMemo(() => new Date(), []);
-  const yesterday = useMemo(() => {
-    const date = new Date(today);
-    date.setDate(date.getDate() - 1);
-    return date;
-  }, [today]);
+  const [referenceDates] = useState(() => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    return {
+      today,
+      yesterday,
+      dayLabel: today.toLocaleDateString("pt-BR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      }),
+    };
+  });
+  const { today, yesterday, dayLabel } = referenceDates;
 
   useEffect(() => {
     async function loadHabits() {
@@ -263,16 +266,7 @@ export default function DailyRoutine() {
       list.push(hour);
     }
     return list;
-  }, [timeBounds]);
-
-  const dayLabel = useMemo(() => {
-    const now = new Date();
-    return now.toLocaleDateString("pt-BR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-  }, []);
+  }, [timeBounds.startOfDay, timeBounds.endOfDay]);
 
   const { layout, timelineHeight } = useMemo(() => {
     const totalMinutes = timeBounds.endOfDay - timeBounds.startOfDay;
@@ -309,7 +303,7 @@ export default function DailyRoutine() {
       layout: positioned,
       timelineHeight: Math.max(baseHeight, Math.ceil(lastBottom + 24)),
     };
-  }, [schedule, timeBounds]);
+  }, [schedule, timeBounds.startOfDay, timeBounds.endOfDay]);
 
   return (
     <div
