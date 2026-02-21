@@ -7,6 +7,7 @@ import HabitHeatmap from "../components/HabitHeatmap";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
 import { useAuth } from "../contexts/useAuth";
+import { isHabitScheduledForDate } from "../utils/habitSchedule";
 
 // ============================
 // 🧠 Ordenação por prioridade
@@ -44,33 +45,7 @@ function formatQuoteCreatedAt(value) {
 }
 
 function isHabitForToday(habit) {
-  const today = new Date();
-  const frequency = habit?.frequency_type;
-
-  if (frequency === "daily") {
-    return true;
-  }
-
-  if (frequency === "weekly") {
-    const weekdays = Array.isArray(habit?.weekdays) ? habit.weekdays : [];
-    const pythonWeekday = (today.getDay() + 6) % 7;
-    return weekdays.includes(pythonWeekday);
-  }
-
-  if (frequency === "monthly") {
-    const monthDay = Number(habit?.month_day);
-    if (!Number.isInteger(monthDay)) {
-      return false;
-    }
-
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-    const effectiveDay = Math.min(monthDay, lastDayOfMonth);
-    return today.getDate() === effectiveDay;
-  }
-
-  return false;
+  return isHabitScheduledForDate(habit, new Date());
 }
 
 export default function Home() {

@@ -28,6 +28,12 @@ function toDateTimeLocalValue(date) {
     .slice(0, 16);
 }
 
+function normalizeDescription(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
 function getInitialForm() {
   const now = new Date();
   return {
@@ -63,6 +69,7 @@ export default function Expenses() {
   const [categoryNameInput, setCategoryNameInput] = useState("");
 
   const [form, setForm] = useState(getInitialForm);
+  const [autoCategoryDisabled, setAutoCategoryDisabled] = useState(false);
   const [expensesPage, setExpensesPage] = useState(1);
   const [launchFilters, setLaunchFilters] = useState({
     query: "",
@@ -165,6 +172,60 @@ export default function Expenses() {
     [filteredExpenses.length],
   );
 
+  const suggestedCategoryByPrefix = useMemo(() => {
+    const prefixStats = new Map();
+
+    expenses.forEach((expense) => {
+      const normalizedDescription = normalizeDescription(expense.description);
+      const categoryId = String(expense.expense_category_id || "");
+      if (!normalizedDescription || !categoryId) return;
+
+      const launchDate = String(expense.launch_date || "");
+      for (
+        let prefixLength = 3;
+        prefixLength <= normalizedDescription.length;
+        prefixLength += 1
+      ) {
+        const prefix = normalizedDescription.slice(0, prefixLength);
+        const categoryStats = prefixStats.get(prefix) || new Map();
+        const current = categoryStats.get(categoryId) || {
+          count: 0,
+          lastDate: "",
+        };
+
+        current.count += 1;
+        if (launchDate > current.lastDate) {
+          current.lastDate = launchDate;
+        }
+
+        categoryStats.set(categoryId, current);
+        prefixStats.set(prefix, categoryStats);
+      }
+    });
+
+    const suggestions = {};
+    prefixStats.forEach((categoryStats, prefix) => {
+      let bestCategoryId = "";
+      let bestCount = -1;
+      let bestLastDate = "";
+
+      categoryStats.forEach((stats, categoryId) => {
+        const isBetter =
+          stats.count > bestCount ||
+          (stats.count === bestCount && stats.lastDate > bestLastDate);
+        if (isBetter) {
+          bestCategoryId = categoryId;
+          bestCount = stats.count;
+          bestLastDate = stats.lastDate;
+        }
+      });
+
+      if (bestCategoryId) suggestions[prefix] = bestCategoryId;
+    });
+
+    return suggestions;
+  }, [expenses]);
+
   const paginatedExpenses = useMemo(() => {
     const start = (expensesPage - 1) * EXPENSES_PAGE_SIZE;
     return filteredExpenses.slice(start, start + EXPENSES_PAGE_SIZE);
@@ -178,9 +239,32 @@ export default function Expenses() {
     setExpensesPage(1);
   }, [launchFilters]);
 
+  useEffect(() => {
+    if (editingExpenseId || autoCategoryDisabled || form.categoryId) return;
+
+    const normalizedDescription = normalizeDescription(form.description);
+    if (normalizedDescription.length < 3) return;
+
+    const suggestedCategoryId =
+      suggestedCategoryByPrefix[normalizedDescription];
+    if (!suggestedCategoryId) return;
+
+    setForm((prev) => {
+      if (prev.categoryId) return prev;
+      return { ...prev, categoryId: suggestedCategoryId };
+    });
+  }, [
+    autoCategoryDisabled,
+    editingExpenseId,
+    form.categoryId,
+    form.description,
+    suggestedCategoryByPrefix,
+  ]);
+
   function resetExpenseForm() {
     setEditingExpenseId(null);
     setForm(getInitialForm());
+    setAutoCategoryDisabled(false);
   }
 
   async function handleSubmitExpense(e) {
@@ -252,6 +336,7 @@ export default function Expenses() {
 
   function handleEditExpense(expense) {
     setEditingExpenseId(expense.id);
+    setAutoCategoryDisabled(true);
     setForm({
       value: String(expense.value || ""),
       description: expense.description || "",
@@ -493,17 +578,19 @@ export default function Expenses() {
             className="themed-input rounded px-3 py-2"
             placeholder="Descricao"
             value={form.description}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, description: e.target.value }))
-            }
+            onChange={(e) => {
+              setAutoCategoryDisabled(false);
+              setForm((prev) => ({ ...prev, description: e.target.value }));
+            }}
           />
 
           <select
             className="themed-input rounded px-3 py-2"
             value={form.categoryId}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, categoryId: e.target.value }))
-            }
+            onChange={(e) => {
+              setAutoCategoryDisabled(true);
+              setForm((prev) => ({ ...prev, categoryId: e.target.value }));
+            }}
           >
             <option value="">Selecione a categoria</option>
             {categories.map((category) => (
