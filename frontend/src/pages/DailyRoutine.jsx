@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import habitsService from "../services/habitsService";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
+import { isHabitScheduledForDate } from "../utils/habitSchedule";
 
 const gradientPalette = [
   "from-[#A7F3D0] to-[#6EE7B7]",
@@ -86,29 +87,13 @@ function formatDuration(startTime, endTime) {
   return `${hours}h ${minutes}min`;
 }
 
-function getHabitApplyFlags(
-  habit,
-  todayWeekday,
-  yesterdayWeekday,
-  todayDate,
-  yesterdayDate,
-) {
+function getHabitApplyFlags(habit, today, yesterday) {
   const frequencyType = habit?.frequency_type;
 
-  if (frequencyType === "weekly") {
-    const weekdays = Array.isArray(habit?.weekdays) ? habit.weekdays : [];
+  if (frequencyType === "weekly" || frequencyType === "monthly") {
     return {
-      appliesToday: weekdays.includes(todayWeekday),
-      appliesYesterday: weekdays.includes(yesterdayWeekday),
-    };
-  }
-
-  if (frequencyType === "monthly") {
-    const monthDay = Number(habit?.month_day);
-    return {
-      appliesToday: Number.isInteger(monthDay) && monthDay === todayDate,
-      appliesYesterday:
-        Number.isInteger(monthDay) && monthDay === yesterdayDate,
+      appliesToday: isHabitScheduledForDate(habit, today),
+      appliesYesterday: isHabitScheduledForDate(habit, yesterday),
     };
   }
 
@@ -120,17 +105,22 @@ export default function DailyRoutine() {
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(null);
-  const todayWeekday = useMemo(() => new Date().getDay(), []);
-  const todayDate = useMemo(() => new Date().getDate(), []);
-  const yesterdayDate = useMemo(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 1);
-    return date.getDate();
-  }, []);
-  const yesterdayWeekday = useMemo(
-    () => (todayWeekday + 6) % 7,
-    [todayWeekday],
-  );
+  const [referenceDates] = useState(() => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    return {
+      today,
+      yesterday,
+      dayLabel: today.toLocaleDateString("pt-BR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      }),
+    };
+  });
+  const { today, yesterday, dayLabel } = referenceDates;
 
   useEffect(() => {
     async function loadHabits() {
@@ -182,10 +172,8 @@ export default function DailyRoutine() {
     habits.forEach((habit) => {
       const { appliesToday, appliesYesterday } = getHabitApplyFlags(
         habit,
-        todayWeekday,
-        yesterdayWeekday,
-        todayDate,
-        yesterdayDate,
+        today,
+        yesterday,
       );
       const isOvernight =
         Boolean(habit?.start_time && habit?.end_time) &&
@@ -202,7 +190,7 @@ export default function DailyRoutine() {
     });
 
     return { scheduledHabits: scheduled, unscheduledHabits: unscheduled };
-  }, [habits, todayWeekday, yesterdayWeekday, todayDate, yesterdayDate]);
+  }, [habits, today, yesterday]);
 
   const schedule = useMemo(
     () =>
@@ -216,10 +204,8 @@ export default function DailyRoutine() {
           const ranges = getVisualRanges(start, end);
           const { appliesToday, appliesYesterday } = getHabitApplyFlags(
             habit,
-            todayWeekday,
-            yesterdayWeekday,
-            todayDate,
-            yesterdayDate,
+            today,
+            yesterday,
           );
 
           return ranges
@@ -247,7 +233,7 @@ export default function DailyRoutine() {
             }));
         })
         .sort((a, b) => a.visualStart - b.visualStart),
-    [scheduledHabits, todayWeekday, yesterdayWeekday, todayDate, yesterdayDate],
+    [scheduledHabits, today, yesterday],
   );
 
   const timeBounds = useMemo(() => {
@@ -280,16 +266,7 @@ export default function DailyRoutine() {
       list.push(hour);
     }
     return list;
-  }, [timeBounds]);
-
-  const dayLabel = useMemo(() => {
-    const now = new Date();
-    return now.toLocaleDateString("pt-BR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-  }, []);
+  }, [timeBounds.startOfDay, timeBounds.endOfDay]);
 
   const { layout, timelineHeight } = useMemo(() => {
     const totalMinutes = timeBounds.endOfDay - timeBounds.startOfDay;
@@ -326,7 +303,7 @@ export default function DailyRoutine() {
       layout: positioned,
       timelineHeight: Math.max(baseHeight, Math.ceil(lastBottom + 24)),
     };
-  }, [schedule, timeBounds]);
+  }, [schedule, timeBounds.startOfDay, timeBounds.endOfDay]);
 
   return (
     <div
