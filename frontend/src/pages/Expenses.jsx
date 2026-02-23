@@ -78,6 +78,10 @@ export default function Expenses() {
     fromDate: "",
     toDate: "",
   });
+  const [launchSort, setLaunchSort] = useState({
+    key: "launch_date",
+    direction: "desc",
+  });
 
   useEffect(() => {
     async function loadData() {
@@ -167,9 +171,56 @@ export default function Expenses() {
     });
   }, [expenses, launchFilters]);
 
+  const sortedExpenses = useMemo(() => {
+    const list = [...filteredExpenses];
+
+    function getSortableValue(expense, key) {
+      switch (key) {
+        case "launch_date":
+          return expense.launch_date || "";
+        case "description":
+          return expense.description || "";
+        case "category":
+          return expense.expense_category_name || "";
+        case "payment":
+          return expense.payment_method === "credit" ? "Credito" : "Debito";
+        case "origin":
+          return expense.payment_method === "credit"
+            ? expense.credit_card_name || ""
+            : expense.bank_account_name || "";
+        case "value":
+          return Number(expense.value || 0);
+        case "created_at":
+          return expense.created_at || "";
+        case "actions":
+          return Number(expense.id || 0);
+        default:
+          return "";
+      }
+    }
+
+    list.sort((a, b) => {
+      const aValue = getSortableValue(a, launchSort.key);
+      const bValue = getSortableValue(b, launchSort.key);
+
+      let compareResult = 0;
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        compareResult = aValue - bValue;
+      } else {
+        compareResult = String(aValue).localeCompare(String(bValue), "pt-BR", {
+          sensitivity: "base",
+        });
+      }
+
+      return launchSort.direction === "asc" ? compareResult : -compareResult;
+    });
+
+    return list;
+  }, [filteredExpenses, launchSort]);
+
   const totalExpensePages = useMemo(
-    () => Math.max(1, Math.ceil(filteredExpenses.length / EXPENSES_PAGE_SIZE)),
-    [filteredExpenses.length],
+    () => Math.max(1, Math.ceil(sortedExpenses.length / EXPENSES_PAGE_SIZE)),
+    [sortedExpenses.length],
   );
 
   const suggestedCategoryByPrefix = useMemo(() => {
@@ -228,8 +279,8 @@ export default function Expenses() {
 
   const paginatedExpenses = useMemo(() => {
     const start = (expensesPage - 1) * EXPENSES_PAGE_SIZE;
-    return filteredExpenses.slice(start, start + EXPENSES_PAGE_SIZE);
-  }, [filteredExpenses, expensesPage]);
+    return sortedExpenses.slice(start, start + EXPENSES_PAGE_SIZE);
+  }, [sortedExpenses, expensesPage]);
 
   useEffect(() => {
     setExpensesPage((prev) => Math.min(prev, totalExpensePages));
@@ -237,7 +288,25 @@ export default function Expenses() {
 
   useEffect(() => {
     setExpensesPage(1);
-  }, [launchFilters]);
+  }, [launchFilters, launchSort]);
+
+  function toggleLaunchSort(key) {
+    setLaunchSort((prev) => {
+      if (prev.key === key) {
+        return {
+          key,
+          direction: prev.direction === "asc" ? "desc" : "asc",
+        };
+      }
+
+      return { key, direction: "asc" };
+    });
+  }
+
+  function getSortIndicator(key) {
+    if (launchSort.key !== key) return "↕";
+    return launchSort.direction === "asc" ? "↑" : "↓";
+  }
 
   useEffect(() => {
     if (editingExpenseId || autoCategoryDisabled || form.categoryId) return;
@@ -777,14 +846,78 @@ export default function Expenses() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left border-b themed-border">
-                  <th className="py-2 pr-2">Data Lançamento</th>
-                  <th className="py-2 pr-2">Descrição</th>
-                  <th className="py-2 pr-2">Categoria</th>
-                  <th className="py-2 pr-2">Pagamento</th>
-                  <th className="py-2 pr-2">Origem</th>
-                  <th className="py-2 pr-2">Valor</th>
-                  <th className="py-2 pr-2">Created at</th>
-                  <th className="py-2 pr-2">Ações</th>
+                  <th className="py-2 pr-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleLaunchSort("launch_date")}
+                      className="font-semibold hover:opacity-80"
+                    >
+                      Data Lançamento {getSortIndicator("launch_date")}
+                    </button>
+                  </th>
+                  <th className="py-2 pr-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleLaunchSort("description")}
+                      className="font-semibold hover:opacity-80"
+                    >
+                      Descrição {getSortIndicator("description")}
+                    </button>
+                  </th>
+                  <th className="py-2 pr-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleLaunchSort("category")}
+                      className="font-semibold hover:opacity-80"
+                    >
+                      Categoria {getSortIndicator("category")}
+                    </button>
+                  </th>
+                  <th className="py-2 pr-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleLaunchSort("payment")}
+                      className="font-semibold hover:opacity-80"
+                    >
+                      Pagamento {getSortIndicator("payment")}
+                    </button>
+                  </th>
+                  <th className="py-2 pr-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleLaunchSort("origin")}
+                      className="font-semibold hover:opacity-80"
+                    >
+                      Origem {getSortIndicator("origin")}
+                    </button>
+                  </th>
+                  <th className="py-2 pr-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleLaunchSort("value")}
+                      className="font-semibold hover:opacity-80"
+                    >
+                      Valor {getSortIndicator("value")}
+                    </button>
+                  </th>
+                  <th className="py-2 pr-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleLaunchSort("created_at")}
+                      className="font-semibold hover:opacity-80"
+                    >
+                      Created at {getSortIndicator("created_at")}
+                    </button>
+                  </th>
+                  <th className="py-2 pr-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleLaunchSort("actions")}
+                      className="font-semibold hover:opacity-80"
+                    >
+                      Ações {getSortIndicator("actions")}
+                    </button>
+                  </th>
                 </tr>
               </thead>
               <tbody>

@@ -181,6 +181,22 @@ export default function Home() {
         </Link>
       </div>
 
+      <div className="mb-8 border themed-border rounded-xl themed-card p-4 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Gerenciamento do Dia</h2>
+          <p className="themed-muted text-sm mt-1">
+            Organize sua rotina diária e acompanhe atividades do dia em um só
+            lugar.
+          </p>
+        </div>
+        <a
+          href="http://localhost:5173/day-management"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 whitespace-nowrap"
+        >
+          Abrir Gerenciamento do Dia
+        </a>
+      </div>
+
       {/* ============================
           📅 Seus hábitos
       ============================ */}
