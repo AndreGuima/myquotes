@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import investmentsService from "../services/investmentsService";
 import { confirm, notify } from "../core/toast";
-import {
-  INVESTMENT_SECTORS_BY_ASSET_TYPE,
-  normalizeInvestmentSector,
-} from "../constants/investmentSectors";
+import { normalizeInvestmentSector } from "../constants/investmentSectors";
+import InvestmentSummary from "./investments/components/InvestmentSummary";
+import InvestmentForm from "./investments/components/InvestmentForm";
+import InvestmentFilters from "./investments/components/InvestmentFilters";
+import InvestmentTable from "./investments/components/InvestmentTable";
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -31,22 +32,61 @@ function getAssetTypeLabel(type) {
   return "Ação";
 }
 
-function getSectorOptions(assetType) {
-  return INVESTMENT_SECTORS_BY_ASSET_TYPE[assetType] || [];
-}
+const SORT_MAP = {
+  asset_type: (item) => item.assetTypeLabel,
+  sector: (item) => item.sector || "",
+  ticker: (item) => item.ticker || "",
+  name: (item) => item.name || "",
+  quantity: (item) => item.quantityNumber,
+  average_price: (item) => item.averagePriceNumber,
+  current_price: (item) => item.currentPriceNumber,
+  invested: (item) => item.invested,
+  current: (item) => item.current,
+  result: (item) => item.result,
+};
 
 export default function Investments() {
+  const PAGE_SIZE = 10;
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [removingId, setRemovingId] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [sortConfig, setSortConfig] = useState({
+    key: "ticker",
+    direction: "asc",
+  });
 
   const [form, setForm] = useState(getInitialForm);
   const [filters, setFilters] = useState({
     query: "",
     assetType: "",
   });
+
+  const normalizedInvestments = useMemo(
+    () =>
+      investments.map((item) => {
+        const quantity = Number(item.quantity || 0);
+        const averagePrice = Number(item.average_price || 0);
+        const currentPrice = Number(item.current_price || 0);
+        const invested = quantity * averagePrice;
+        const current = quantity * currentPrice;
+        const result = current - invested;
+
+        return {
+          ...item,
+          quantityNumber: quantity,
+          averagePriceNumber: averagePrice,
+          currentPriceNumber: currentPrice,
+          invested,
+          current,
+          result,
+          assetTypeLabel: getAssetTypeLabel(item.asset_type),
+        };
+      }),
+    [investments],
+  );
 
   useEffect(() => {
     async function loadData() {
@@ -64,23 +104,13 @@ export default function Investments() {
   }, []);
 
   const totalInvested = useMemo(
-    () =>
-      investments.reduce(
-        (acc, item) =>
-          acc + Number(item.quantity || 0) * Number(item.average_price || 0),
-        0,
-      ),
-    [investments],
+    () => normalizedInvestments.reduce((acc, item) => acc + item.invested, 0),
+    [normalizedInvestments],
   );
 
   const totalCurrent = useMemo(
-    () =>
-      investments.reduce(
-        (acc, item) =>
-          acc + Number(item.quantity || 0) * Number(item.current_price || 0),
-        0,
-      ),
-    [investments],
+    () => normalizedInvestments.reduce((acc, item) => acc + item.current, 0),
+    [normalizedInvestments],
   );
 
   const profitability = useMemo(() => {
@@ -91,7 +121,7 @@ export default function Investments() {
   const filteredInvestments = useMemo(() => {
     const normalizedQuery = filters.query.trim().toLowerCase();
 
-    return investments.filter((item) => {
+    return normalizedInvestments.filter((item) => {
       const matchesType = filters.assetType
         ? item.asset_type === filters.assetType
         : true;
@@ -106,7 +136,75 @@ export default function Investments() {
 
       return matchesType && matchesQuery;
     });
-  }, [investments, filters]);
+  }, [normalizedInvestments, filters]);
+
+  const sortedInvestments = useMemo(() => {
+    const directionFactor = sortConfig.direction === "asc" ? 1 : -1;
+    const getSortValue = SORT_MAP[sortConfig.key] || (() => "");
+
+    return [...filteredInvestments].sort((a, b) => {
+      const aValue = getSortValue(a);
+      const bValue = getSortValue(b);
+
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return (aValue - bValue) * directionFactor;
+      }
+
+      return (
+        String(aValue).localeCompare(String(bValue), "pt-BR", {
+          sensitivity: "base",
+        }) * directionFactor
+      );
+    });
+  }, [filteredInvestments, sortConfig]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedInvestments.length / PAGE_SIZE),
+  );
+  const currentPage = Math.min(page, totalPages);
+
+  useEffect(() => {
+    setPage((prev) => Math.min(Math.max(prev, 1), totalPages));
+  }, [totalPages]);
+
+  const paginatedInvestments = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return sortedInvestments.slice(start, start + PAGE_SIZE);
+  }, [currentPage, sortedInvestments]);
+
+  const visiblePageNumbers = useMemo(() => {
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, currentPage + 2);
+    const pages = [];
+
+    for (let p = start; p <= end; p += 1) {
+      pages.push(p);
+    }
+
+    return pages;
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
+
+  function handleSort(columnKey) {
+    setSortConfig((prev) => {
+      if (prev.key === columnKey) {
+        return {
+          key: columnKey,
+          direction: prev.direction === "asc" ? "desc" : "asc",
+        };
+      }
+
+      return {
+        key: columnKey,
+        direction: "asc",
+      };
+    });
+    setPage(1);
+  }
 
   function resetForm() {
     setForm(getInitialForm());
@@ -224,299 +322,41 @@ export default function Investments() {
         Cadastre suas ações e FIIs para acompanhar posição e rentabilidade.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <div className="themed-card themed-border border rounded-xl p-5">
-          <h2 className="font-semibold mb-1">Valor Investido</h2>
-          <p className="text-2xl font-bold">{formatCurrency(totalInvested)}</p>
-          <p className="themed-muted text-sm mt-1">Baseado no preço médio</p>
-        </div>
+      <InvestmentSummary
+        totalInvested={totalInvested}
+        totalCurrent={totalCurrent}
+        profitability={profitability}
+        formatCurrency={formatCurrency}
+      />
 
-        <div className="themed-card themed-border border rounded-xl p-5">
-          <h2 className="font-semibold mb-1">Valor Atual</h2>
-          <p className="text-2xl font-bold">{formatCurrency(totalCurrent)}</p>
-          <p className="themed-muted text-sm mt-1">Posição atual da carteira</p>
-        </div>
-
-        <div className="themed-card themed-border border rounded-xl p-5">
-          <h2 className="font-semibold mb-1">Rentabilidade</h2>
-          <p
-            className={`text-2xl font-bold ${
-              profitability >= 0 ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {profitability.toFixed(2)}%
-          </p>
-          <p className="themed-muted text-sm mt-1">
-            {formatCurrency(totalCurrent - totalInvested)} no total
-          </p>
-        </div>
-
-        <div className="themed-card themed-border border rounded-xl p-5">
-          <h2 className="font-semibold mb-1">Dashboards</h2>
-          <p className="themed-muted text-sm mt-1 mb-4">
-            Visualize a carteira por setor em ações e FIIs.
-          </p>
-          <Link
-            to="/finances/investments/dashboards"
-            className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-          >
-            Abrir dashboard
-          </Link>
-        </div>
-      </div>
-
-      <form
+      <InvestmentForm
+        editingId={editingId}
+        form={form}
+        setForm={setForm}
+        saving={saving}
         onSubmit={handleSubmit}
-        className="themed-card themed-border border rounded-xl p-5 mb-6"
-      >
-        <h2 className="text-xl font-semibold mb-4">
-          {editingId ? "Editar investimento" : "Novo investimento"}
-        </h2>
+        onCancelEdit={resetForm}
+      />
 
-        <div className="grid grid-cols-1 md:grid-cols-8 gap-3">
-          <select
-            className="themed-input rounded px-3 py-2"
-            value={form.assetType}
-            onChange={(e) => {
-              const nextAssetType = e.target.value;
-              setForm((prev) => ({
-                ...prev,
-                assetType: nextAssetType,
-                sector: normalizeInvestmentSector(nextAssetType, prev.sector),
-              }));
-            }}
-          >
-            <option value="stock">Ação</option>
-            <option value="fii">FII</option>
-          </select>
+      <InvestmentFilters filters={filters} setFilters={setFilters} />
 
-          <select
-            className="themed-input rounded px-3 py-2"
-            value={form.sector}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, sector: e.target.value }))
-            }
-          >
-            <option value="">Setor (opcional)</option>
-            {getSectorOptions(form.assetType).map((sector) => (
-              <option key={sector} value={sector}>
-                {sector}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="text"
-            className="themed-input rounded px-3 py-2"
-            placeholder="Ticker (ex: PETR4)"
-            value={form.ticker}
-            onChange={(e) =>
-              setForm((prev) => ({
-                ...prev,
-                ticker: e.target.value.toUpperCase(),
-              }))
-            }
-          />
-
-          <input
-            type="text"
-            className="themed-input rounded px-3 py-2 md:col-span-2"
-            placeholder="Nome do ativo"
-            value={form.name}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, name: e.target.value }))
-            }
-          />
-
-          <input
-            type="number"
-            step="0.0001"
-            min="0"
-            className="themed-input rounded px-3 py-2"
-            placeholder="Quantidade"
-            value={form.quantity}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, quantity: e.target.value }))
-            }
-          />
-
-          <input
-            type="number"
-            step="0.0001"
-            min="0"
-            className="themed-input rounded px-3 py-2"
-            placeholder="Preço médio"
-            value={form.averagePrice}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, averagePrice: e.target.value }))
-            }
-          />
-
-          <input
-            type="number"
-            step="0.0001"
-            min="0"
-            className="themed-input rounded px-3 py-2"
-            placeholder="Preço atual"
-            value={form.currentPrice}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, currentPrice: e.target.value }))
-            }
-          />
-        </div>
-
-        <div className="flex gap-2 mt-4">
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-60"
-            disabled={saving}
-          >
-            {saving
-              ? "Salvando..."
-              : editingId
-                ? "Salvar alterações"
-                : "Cadastrar"}
-          </button>
-
-          {editingId && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="themed-card themed-border border px-4 py-2 rounded hover:opacity-90"
-            >
-              Cancelar edição
-            </button>
-          )}
-        </div>
-      </form>
-
-      <div className="themed-card themed-border border rounded-xl p-5 mb-4">
-        <h2 className="text-xl font-semibold mb-4">Filtrar carteira</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input
-            type="text"
-            className="themed-input rounded px-3 py-2"
-            placeholder="Buscar por ticker ou nome"
-            value={filters.query}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, query: e.target.value }))
-            }
-          />
-
-          <select
-            className="themed-input rounded px-3 py-2"
-            value={filters.assetType}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, assetType: e.target.value }))
-            }
-          >
-            <option value="">Todos os tipos</option>
-            <option value="stock">Ação</option>
-            <option value="fii">FII</option>
-          </select>
-
-          <button
-            type="button"
-            onClick={() => setFilters({ query: "", assetType: "" })}
-            className="themed-card themed-border border px-4 py-2 rounded hover:opacity-90"
-          >
-            Limpar filtros
-          </button>
-        </div>
-      </div>
-
-      <div className="themed-card themed-border border rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="themed-subtle">
-              <tr>
-                <th className="py-3 px-4">Tipo</th>
-                <th className="py-3 px-4">Setor</th>
-                <th className="py-3 px-4">Ticker</th>
-                <th className="py-3 px-4">Nome</th>
-                <th className="py-3 px-4 text-right">Qtd</th>
-                <th className="py-3 px-4 text-right">Preço Médio</th>
-                <th className="py-3 px-4 text-right">Preço Atual</th>
-                <th className="py-3 px-4 text-right">Investido</th>
-                <th className="py-3 px-4 text-right">Atual</th>
-                <th className="py-3 px-4 text-right">Resultado</th>
-                <th className="py-3 px-4 text-right">Ações</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {!loading && filteredInvestments.length === 0 && (
-                <tr>
-                  <td colSpan={11} className="py-6 text-center themed-muted">
-                    Nenhum investimento cadastrado.
-                  </td>
-                </tr>
-              )}
-
-              {filteredInvestments.map((item) => {
-                const invested =
-                  Number(item.quantity || 0) * Number(item.average_price || 0);
-                const current =
-                  Number(item.quantity || 0) * Number(item.current_price || 0);
-                const result = current - invested;
-
-                return (
-                  <tr key={item.id} className="border-t themed-border">
-                    <td className="py-3 px-4">
-                      {getAssetTypeLabel(item.asset_type)}
-                    </td>
-                    <td className="py-3 px-4">{item.sector || "-"}</td>
-                    <td className="py-3 px-4 font-semibold">{item.ticker}</td>
-                    <td className="py-3 px-4">{item.name || "-"}</td>
-                    <td className="py-3 px-4 text-right">
-                      {Number(item.quantity || 0)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {formatCurrency(item.average_price)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {formatCurrency(item.current_price)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {formatCurrency(invested)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {formatCurrency(current)}
-                    </td>
-                    <td
-                      className={`py-3 px-4 text-right font-semibold ${
-                        result >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {formatCurrency(result)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="inline-flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => startEditing(item)}
-                          className="themed-card themed-border border px-3 py-1 rounded hover:opacity-90"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRemove(item.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded disabled:opacity-60"
-                          disabled={removingId === item.id}
-                        >
-                          {removingId === item.id ? "Removendo..." : "Excluir"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <InvestmentTable
+        loading={loading}
+        sortedInvestments={sortedInvestments}
+        paginatedInvestments={paginatedInvestments}
+        sortConfig={sortConfig}
+        onSort={handleSort}
+        onEdit={startEditing}
+        onRemove={handleRemove}
+        removingId={removingId}
+        formatCurrency={formatCurrency}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        visiblePageNumbers={visiblePageNumbers}
+        onPrevPage={() => setPage((prev) => Math.max(1, prev - 1))}
+        onNextPage={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+        onGoToPage={setPage}
+      />
     </div>
   );
 }
