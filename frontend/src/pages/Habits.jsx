@@ -36,11 +36,11 @@ export default function Habits() {
   const filteredHabits = useMemo(() => {
     const query = filterQuery.trim().toLowerCase();
     if (!query) return habits;
-    return habits.filter((habit) =>
-      String(habit.title || "")
-        .toLowerCase()
-        .includes(query),
-    );
+    return habits.filter((habit) => {
+      const title = String(habit.title || "").toLowerCase();
+      const description = String(habit.description || "").toLowerCase();
+      return title.includes(query) || description.includes(query);
+    });
   }, [habits, filterQuery]);
 
   async function handleToggle(habitId) {
@@ -131,7 +131,7 @@ export default function Habits() {
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
             className="w-full themed-input rounded px-3 py-2"
-            placeholder="Filtrar hábitos por nome"
+            placeholder="Filtrar hábitos por nome ou descrição"
           />
         </div>
       )}
@@ -164,6 +164,11 @@ export default function Habits() {
                 {/* Info */}
                 <div>
                   <h2 className="text-lg font-semibold">{habit.title}</h2>
+                  {habit.description && (
+                    <p className="text-sm themed-muted mt-1 whitespace-pre-wrap">
+                      {habit.description}
+                    </p>
+                  )}
 
                   <div className="text-sm text-gray-600 mt-1">
                     ⏰ {formatTimeRange(habit.start_time, habit.end_time)}

@@ -10,6 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    Text,
     Time,
 )
 from sqlalchemy.sql import func
@@ -28,6 +29,7 @@ class Habit(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
 
     frequency_type = Column(
         Enum(

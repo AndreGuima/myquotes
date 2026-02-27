@@ -14,6 +14,9 @@ class HabitService:
         habit = Habit(
             user_id=user_id,
             title=data.title,
+            description=(
+                (data.description.strip() or None) if data.description else None
+            ),
             frequency_type=data.frequency_type,
             target_per_week=weekly_target,
             weekdays=weekdays,
@@ -51,7 +54,10 @@ class HabitService:
 
         # defesa extra (future-proof)
         updates.pop("user_id", None)
-        frequency = getattr(habit.frequency_type, "value", habit.frequency_type)
+        if "description" in updates and updates["description"] is not None:
+            updates["description"] = updates["description"].strip() or None
+        frequency = updates.get("frequency_type", habit.frequency_type)
+        frequency = getattr(frequency, "value", frequency)
         if frequency == "weekly":
             if "weekdays" in updates and updates["weekdays"] is not None:
                 updates["weekdays"] = sorted(set(updates["weekdays"]))

@@ -2,7 +2,7 @@ from datetime import time
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from schemas.habit_stats import HabitStatsResponse
 
 
@@ -14,6 +14,7 @@ class FrequencyType(str, Enum):
 
 class HabitCreate(BaseModel):
     title: str
+    description: Optional[str] = Field(default=None, max_length=1000)
     frequency_type: FrequencyType = FrequencyType.daily
     target_per_week: Optional[int] = None
     weekdays: Optional[list[int]] = None
@@ -45,6 +46,7 @@ class HabitCreate(BaseModel):
 
 class HabitUpdate(BaseModel):
     title: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=1000)
     is_active: Optional[bool] = None
     weekdays: Optional[list[int]] = None
     month_day: Optional[int] = None
@@ -70,6 +72,7 @@ class HabitUpdate(BaseModel):
 class HabitResponse(BaseModel):
     id: int
     title: str
+    description: Optional[str]
     frequency_type: FrequencyType
     target_per_week: Optional[int]
     weekdays: Optional[list[int]]

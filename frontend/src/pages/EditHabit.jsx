@@ -50,6 +50,7 @@ export default function EditHabit() {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [frequencyType, setFrequencyType] = useState("");
   const [weekdays, setWeekdays] = useState([]);
   const [monthDay, setMonthDay] = useState("");
@@ -93,6 +94,7 @@ export default function EditHabit() {
         }
 
         setTitle(habit.title);
+        setDescription(habit.description || "");
         setFrequencyType(habit.frequency_type);
         setWeekdays(Array.isArray(habit.weekdays) ? habit.weekdays : []);
         setMonthDay(habit.month_day ? String(habit.month_day) : "");
@@ -148,6 +150,7 @@ export default function EditHabit() {
     try {
       const payload = {
         title,
+        description: description.trim() || null,
         start_time: startTime || null,
         end_time: endTime || null,
       };
@@ -204,6 +207,21 @@ export default function EditHabit() {
               required
               className="w-full themed-input rounded px-3 py-2"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Descrição</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              maxLength={1000}
+              className="w-full themed-input rounded px-3 py-2"
+              placeholder="Detalhes opcionais do hábito"
+            />
+            <p className="text-xs themed-muted mt-1 text-right">
+              {description.length}/1000
+            </p>
           </div>
 
           <div>
