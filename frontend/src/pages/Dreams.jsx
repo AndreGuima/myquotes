@@ -384,16 +384,7 @@ export default function Dreams() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[220px_minmax(0,1fr)] gap-6">
-        <aside className="themed-card themed-border border rounded-xl p-4 h-fit xl:sticky xl:top-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide themed-muted mb-3">
-            Menu
-          </h2>
-          <div className="themed-subtle themed-border border rounded-lg px-3 py-2 font-medium">
-            Metas e Conquistas
-          </div>
-        </aside>
-
+      <div>
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           <form
             onSubmit={handleCreateDream}

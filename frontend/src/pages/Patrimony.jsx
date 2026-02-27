@@ -12,9 +12,15 @@ export default function Patrimony() {
   const [accounts, setAccounts] = useState([]);
   const [dreams, setDreams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [savingAccount, setSavingAccount] = useState(false);
   const [updatingValueId, setUpdatingValueId] = useState(null);
   const [updatingValueInput, setUpdatingValueInput] = useState("");
   const [savingValueId, setSavingValueId] = useState(null);
+  const [accountForm, setAccountForm] = useState({
+    name: "",
+    objectiveDreamId: "",
+    totalValue: "",
+  });
   const [showValues, setShowValues] = useState(() => {
     const stored = localStorage.getItem(PATRIMONY_SHOW_VALUES_KEY);
     if (stored === null) return true;
@@ -109,6 +115,53 @@ export default function Patrimony() {
         }
       },
     });
+  }
+
+  function resetAccountForm() {
+    setAccountForm({
+      name: "",
+      objectiveDreamId: "",
+      totalValue: "",
+    });
+  }
+
+  async function handleCreateAccount(e) {
+    e.preventDefault();
+
+    const name = String(accountForm.name || "").trim();
+    const objectiveDreamId = Number(accountForm.objectiveDreamId);
+    const totalValue = Number(accountForm.totalValue);
+
+    if (!name) {
+      notify.error("Informe o nome da conta");
+      return;
+    }
+
+    if (!objectiveDreamId) {
+      notify.error("Selecione um objetivo");
+      return;
+    }
+
+    if (!Number.isFinite(totalValue) || totalValue < 0) {
+      notify.error("Informe um valor total válido");
+      return;
+    }
+
+    setSavingAccount(true);
+    try {
+      const created = await bankAccountsService.create({
+        name,
+        objective_dream_id: objectiveDreamId,
+        total_value: totalValue,
+      });
+      setAccounts((prev) => [created, ...prev]);
+      notify.success("Conta criada");
+      resetAccountForm();
+    } catch (err) {
+      notify.error(getApiErrorMessage(err, "Erro ao criar conta"));
+    } finally {
+      setSavingAccount(false);
+    }
   }
 
   function startUpdateValue(account) {
@@ -210,6 +263,76 @@ export default function Patrimony() {
             Visualize os painéis do patrimônio.
           </p>
         </Link>
+      </div>
+
+      <div className="themed-card themed-border border rounded-xl p-5 mt-6">
+        <h2 className="text-xl font-semibold mb-4">Nova Conta Bancária</h2>
+
+        <form
+          onSubmit={handleCreateAccount}
+          className="grid grid-cols-1 md:grid-cols-4 gap-3"
+        >
+          <input
+            type="text"
+            className="themed-input rounded px-3 py-2"
+            placeholder="Nome da conta"
+            autoComplete="off"
+            value={accountForm.name}
+            onChange={(e) =>
+              setAccountForm((prev) => ({ ...prev, name: e.target.value }))
+            }
+          />
+
+          <select
+            className="themed-input rounded px-3 py-2"
+            value={accountForm.objectiveDreamId}
+            onChange={(e) =>
+              setAccountForm((prev) => ({
+                ...prev,
+                objectiveDreamId: e.target.value,
+              }))
+            }
+          >
+            <option value="">Selecione um objetivo</option>
+            {dreams.map((dream) => (
+              <option key={dream.id} value={dream.id}>
+                {dream.title}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            className="themed-input rounded px-3 py-2"
+            placeholder="Valor total"
+            value={accountForm.totalValue}
+            onChange={(e) =>
+              setAccountForm((prev) => ({
+                ...prev,
+                totalValue: e.target.value,
+              }))
+            }
+          />
+
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={savingAccount}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {savingAccount ? "Salvando..." : "Cadastrar"}
+            </button>
+            <button
+              type="button"
+              onClick={resetAccountForm}
+              className="themed-card themed-border border px-4 py-2 rounded hover:opacity-90"
+            >
+              Limpar
+            </button>
+          </div>
+        </form>
       </div>
 
       <div className="themed-card themed-border border rounded-xl p-5 mt-6">

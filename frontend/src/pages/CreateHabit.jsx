@@ -18,6 +18,7 @@ export default function CreateHabit() {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [frequencyType, setFrequencyType] = useState("daily");
   const [weekdays, setWeekdays] = useState([]);
   const [monthDay, setMonthDay] = useState("");
@@ -58,6 +59,7 @@ export default function CreateHabit() {
     try {
       const payload = {
         title,
+        description: description.trim() || null,
         frequency_type: frequencyType,
       };
 
@@ -111,6 +113,21 @@ export default function CreateHabit() {
             required
             placeholder="Ex.: Beber água"
           />
+        </div>
+
+        <div>
+          <label className="block mb-1 font-medium">Descrição</label>
+          <textarea
+            className="w-full themed-input p-2 rounded"
+            rows={3}
+            maxLength={1000}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Detalhes opcionais do hábito"
+          />
+          <p className="text-xs themed-muted mt-1 text-right">
+            {description.length}/1000
+          </p>
         </div>
 
         {/* Frequência */}

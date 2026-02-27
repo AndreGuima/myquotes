@@ -4,12 +4,17 @@ import pytest
 def test_create_habit(client):
     response = client.post(
         "/habits/",
-        json={"title": "Praticar inglês", "start_time": "07:00"},
+        json={
+            "title": "Praticar inglês",
+            "description": "Ler um artigo e revisar vocabulário",
+            "start_time": "07:00",
+        },
     )
 
     assert response.status_code == 200
     data = response.json()
     assert data["title"] == "Praticar inglês"
+    assert data["description"] == "Ler um artigo e revisar vocabulário"
     assert data["is_active"] is True
 
 
@@ -75,6 +80,48 @@ def test_update_habit_title(client):
 
     assert update_response.status_code == 200
     assert update_response.json()["title"] == "Estudar Python"
+
+
+def test_update_habit_description(client):
+    response = client.post(
+        "/habits/",
+        json={"title": "Meditar"},
+    )
+    habit_id = response.json()["id"]
+
+    update_response = client.patch(
+        f"/habits/{habit_id}/",
+        json={"description": "Fazer 10 minutos após acordar"},
+    )
+
+    assert update_response.status_code == 200
+    assert update_response.json()["description"] == "Fazer 10 minutos após acordar"
+
+
+def test_create_habit_strips_blank_description_to_null(client):
+    response = client.post(
+        "/habits/",
+        json={"title": "Meditar", "description": "   "},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["description"] is None
+
+
+def test_update_habit_strips_blank_description_to_null(client):
+    created = client.post(
+        "/habits/",
+        json={"title": "Leitura", "description": "Texto inicial"},
+    )
+    habit_id = created.json()["id"]
+
+    response = client.patch(
+        f"/habits/{habit_id}/",
+        json={"description": "   "},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["description"] is None
 
 
 def test_weekly_habit_requires_weekdays(client):
@@ -173,6 +220,33 @@ def test_daily_habit_rejects_month_day(client):
             "frequency_type": "daily",
             "month_day": 5,
         },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_habit_rejects_description_over_1000_chars(client):
+    response = client.post(
+        "/habits/",
+        json={
+            "title": "Leitura",
+            "description": "a" * 1001,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_habit_rejects_description_over_1000_chars(client):
+    created = client.post(
+        "/habits/",
+        json={"title": "Leitura"},
+    )
+    habit_id = created.json()["id"]
+
+    response = client.patch(
+        f"/habits/{habit_id}/",
+        json={"description": "a" * 1001},
     )
 
     assert response.status_code == 422
