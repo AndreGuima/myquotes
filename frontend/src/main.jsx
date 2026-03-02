@@ -39,6 +39,8 @@ import Expenses from "./pages/Expenses.jsx";
 import ExpensesDashboards from "./pages/ExpensesDashboards.jsx";
 import Investments from "./pages/Investments.jsx";
 import InvestmentsDashboards from "./pages/InvestmentsDashboards.jsx";
+import InvestmentIncomes from "./pages/InvestmentIncomes.jsx";
+import InvestmentIncomesDashboards from "./pages/InvestmentIncomesDashboards.jsx";
 import PatrimonyDashboards from "./pages/PatrimonyDashboards.jsx";
 
 initializeTheme();
@@ -107,6 +109,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                 element={<ExpensesDashboards />}
               />
               <Route path="/finances/investments" element={<Investments />} />
+              <Route
+                path="/finances/investments/incomes"
+                element={<InvestmentIncomes />}
+              />
+              <Route
+                path="/finances/investments/incomes/dashboards"
+                element={<InvestmentIncomesDashboards />}
+              />
               <Route
                 path="/finances/investments/dashboards"
                 element={<InvestmentsDashboards />}
