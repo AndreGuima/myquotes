@@ -22,6 +22,60 @@ function toDateLabel(dateKey) {
   return new Date(`${dateKey}T00:00:00`).toLocaleDateString("pt-BR");
 }
 
+function toTimestamp(value) {
+  const ts = new Date(value || "").getTime();
+  return Number.isFinite(ts) ? ts : 0;
+}
+
+const PERIOD_OPTIONS = [
+  { label: "1M", days: 30 },
+  { label: "6M", days: 183 },
+  { label: "1A", days: 365 },
+  { label: "5A", days: 1825 },
+  { label: "Máx", days: 3650 },
+];
+
+function computeAxisValues(minValue, maxValue, tickCount) {
+  if (!Number.isFinite(minValue) || !Number.isFinite(maxValue)) {
+    return {
+      yMin: 0,
+      yMax: 1,
+      yValues: Array.from({ length: tickCount }, (_, idx) => idx),
+    };
+  }
+
+  if (minValue === maxValue) {
+    const delta = Math.max(Math.abs(minValue) * 0.02, 1);
+    minValue -= delta;
+    maxValue += delta;
+  }
+
+  const range = maxValue - minValue;
+  const padding = Math.max(range * 0.2, Math.abs(maxValue) * 0.005, 1);
+  const rawMin = minValue - padding;
+  const rawMax = maxValue + padding;
+
+  const rawStep = (rawMax - rawMin) / (tickCount - 1);
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+  const normalized = rawStep / magnitude;
+
+  let niceNormalized = 1;
+  if (normalized <= 1) niceNormalized = 1;
+  else if (normalized <= 2) niceNormalized = 2;
+  else if (normalized <= 5) niceNormalized = 5;
+  else niceNormalized = 10;
+
+  const step = niceNormalized * magnitude;
+  const yMin = Math.floor(rawMin / step) * step;
+  const yMax = Math.ceil(rawMax / step) * step;
+  const yValues = Array.from({ length: tickCount }, (_, idx) => {
+    const ratio = idx / (tickCount - 1);
+    return yMax - (yMax - yMin) * ratio;
+  });
+
+  return { yMin, yMax, yValues };
+}
+
 function buildSeriesFromSnapshots(snapshots) {
   const latestByDate = new Map();
 
@@ -39,7 +93,7 @@ function buildSeriesFromSnapshots(snapshots) {
   });
 
   return [...latestByDate.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
+    .sort((a, b) => toTimestamp(a[0]) - toTimestamp(b[0]))
     .map(([dateKey, snapshot]) => ({
       dateKey,
       total: Number(snapshot.total_value || 0),
@@ -54,12 +108,11 @@ function PatrimonyLineChart({ series }) {
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
-  const yMax = Math.max(1, ...series.map((point) => point.total));
   const yTicks = 5;
-  const yValues = Array.from({ length: yTicks }, (_, idx) => {
-    const ratio = idx / (yTicks - 1);
-    return yMax * (1 - ratio);
-  });
+  const totals = series.map((point) => point.total);
+  const minValue = Math.min(...totals);
+  const maxValue = Math.max(...totals);
+  const { yMin, yMax, yValues } = computeAxisValues(minValue, maxValue, yTicks);
 
   const xForIndex = (index) =>
     margin.left +
@@ -67,7 +120,7 @@ function PatrimonyLineChart({ series }) {
       ? innerWidth / 2
       : (innerWidth * index) / (series.length - 1));
   const yForValue = (value) =>
-    margin.top + innerHeight - (Math.max(0, value) / yMax) * innerHeight;
+    margin.top + innerHeight - ((value - yMin) / (yMax - yMin)) * innerHeight;
 
   const path = series
     .map(
@@ -157,12 +210,14 @@ function PatrimonyLineChart({ series }) {
 
 export default function PatrimonyDashboards() {
   const [snapshots, setSnapshots] = useState([]);
+  const [periodDays, setPeriodDays] = useState(365);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
+      setLoading(true);
       try {
-        const snapshotsData = await bankAccountsService.snapshots(365);
+        const snapshotsData = await bankAccountsService.snapshots(periodDays);
         setSnapshots(Array.isArray(snapshotsData) ? snapshotsData : []);
       } catch (err) {
         notify.error(getApiErrorMessage(err, "Erro ao carregar dashboards"));
@@ -172,7 +227,7 @@ export default function PatrimonyDashboards() {
     }
 
     loadData();
-  }, []);
+  }, [periodDays]);
 
   const series = useMemo(
     () => buildSeriesFromSnapshots(snapshots),
@@ -216,6 +271,25 @@ export default function PatrimonyDashboards() {
         <p className="themed-muted text-sm mb-4">
           Evolução do patrimônio com base nos snapshots salvos nas alterações.
         </p>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {PERIOD_OPTIONS.map((option) => {
+            const isActive = option.days === periodDays;
+            return (
+              <button
+                key={option.label}
+                type="button"
+                onClick={() => setPeriodDays(option.days)}
+                className={`px-3 py-1.5 rounded-lg border text-sm transition ${
+                  isActive
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "themed-card themed-border border hover:opacity-90"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
 
         {loading ? (
           <p className="themed-muted">Carregando dados...</p>

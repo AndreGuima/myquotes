@@ -91,12 +91,17 @@ function toDateLabel(date) {
   return new Date(`${date}T00:00:00`).toLocaleDateString("pt-BR");
 }
 
+function toTimestamp(value) {
+  const ts = new Date(value || "").getTime();
+  return Number.isFinite(ts) ? ts : 0;
+}
+
 function sortByDate(items) {
   return [...items].sort((a, b) => {
     if (!a.targetDate && !b.targetDate) return 0;
     if (!a.targetDate) return 1;
     if (!b.targetDate) return -1;
-    return a.targetDate.localeCompare(b.targetDate);
+    return toTimestamp(a.targetDate) - toTimestamp(b.targetDate);
   });
 }
 
@@ -634,8 +639,9 @@ export default function Dreams() {
                 const linkedHabits = dream.linkedHabitIds
                   .map((id) => habitsById.get(id))
                   .filter(Boolean);
-                const completedMilestones =
-                  dream.milestones.filter(isMilestoneCompleted).length;
+                const completedMilestones = (dream.milestones || []).filter(
+                  isMilestoneCompleted,
+                ).length;
 
                 const isEditing = editingDreamId === dream.id;
 

@@ -8,6 +8,7 @@ from models.bank_account import BankAccount
 from models.credit_card import CreditCard
 from models.expense import Expense
 from models.expense_category import ExpenseCategory
+from models.patrimony_snapshot import PatrimonySnapshot
 from models.user import User
 from schemas.expense import (
     ExpenseCreate,
@@ -16,6 +17,7 @@ from schemas.expense import (
     ExpenseSummaryRead,
     ExpenseUpdate,
 )
+from services.dream_financial_progress import sync_dream_milestone_financial_progress
 from sqlalchemy import case, func
 from sqlalchemy.orm import Query as SAQuery
 from sqlalchemy.orm import Session, joinedload
@@ -71,6 +73,40 @@ def _validate_account_belongs_to_user(
     )
     if not account:
         raise HTTPException(status_code=400, detail="Conta bancária inválida")
+
+
+def _get_user_account_or_400(
+    db: Session, user_id: int, account_id: int | None
+) -> BankAccount:
+    if account_id is None:
+        raise HTTPException(status_code=400, detail="Conta bancária inválida")
+    account = (
+        db.query(BankAccount)
+        .filter(BankAccount.id == account_id, BankAccount.user_id == user_id)
+        .first()
+    )
+    if not account:
+        raise HTTPException(status_code=400, detail="Conta bancária inválida")
+    return account
+
+
+def _apply_account_delta(account: BankAccount, delta: Decimal) -> None:
+    if delta == Decimal("0"):
+        return
+
+    next_total = _to_money_decimal(account.total_value + delta)
+    if next_total < Decimal("0"):
+        raise HTTPException(status_code=400, detail="Saldo insuficiente na conta")
+    account.total_value = next_total
+
+
+def _capture_patrimony_snapshot(db: Session, user_id: int) -> None:
+    total = (
+        db.query(func.coalesce(func.sum(BankAccount.total_value), 0))
+        .filter(BankAccount.user_id == user_id)
+        .scalar()
+    )
+    db.add(PatrimonySnapshot(user_id=user_id, total_value=total))
 
 
 def _validate_card_belongs_to_user(db: Session, user_id: int, card_id: int) -> None:
@@ -264,9 +300,13 @@ def create_expense(
     user: User = Depends(get_current_user),
 ):
     _validate_category_belongs_to_user(db, user.id, payload.expense_category_id)
+    touched_dream_ids: set[int] = set()
 
     if payload.payment_method == "debit":
-        _validate_account_belongs_to_user(db, user.id, payload.bank_account_id)
+        account = _get_user_account_or_400(db, user.id, payload.bank_account_id)
+        _apply_account_delta(account, -_to_money_decimal(payload.value))
+        if account.objective_dream_id is not None:
+            touched_dream_ids.add(account.objective_dream_id)
 
     if payload.payment_method == "credit":
         _validate_card_belongs_to_user(db, user.id, payload.credit_card_id)
@@ -286,6 +326,11 @@ def create_expense(
         raise HTTPException(status_code=400, detail="Descrição é obrigatória")
 
     db.add(expense)
+    db.flush()
+    for dream_id in touched_dream_ids:
+        sync_dream_milestone_financial_progress(db, user.id, dream_id)
+    if touched_dream_ids:
+        _capture_patrimony_snapshot(db, user.id)
     db.commit()
     db.expire_all()
 
@@ -301,6 +346,9 @@ def update_expense(
     user: User = Depends(get_current_user),
 ):
     expense = _get_user_expense_or_404(db, user.id, expense_id)
+    previous_payment_method = expense.payment_method
+    previous_bank_account_id = expense.bank_account_id
+    previous_value = _to_money_decimal(expense.value)
 
     next_payment_method = payload.payment_method or expense.payment_method
     next_expense_category_id = (
@@ -337,6 +385,28 @@ def update_expense(
 
     _validate_category_belongs_to_user(db, user.id, next_expense_category_id)
 
+    next_value = (
+        _to_money_decimal(payload.value)
+        if payload.value is not None
+        else _to_money_decimal(expense.value)
+    )
+    account_deltas: dict[int, Decimal] = {}
+    if previous_payment_method == "debit" and previous_bank_account_id is not None:
+        account_deltas[previous_bank_account_id] = (
+            account_deltas.get(previous_bank_account_id, Decimal("0")) + previous_value
+        )
+    if next_payment_method == "debit" and next_bank_account_id is not None:
+        account_deltas[next_bank_account_id] = (
+            account_deltas.get(next_bank_account_id, Decimal("0")) - next_value
+        )
+
+    touched_dream_ids: set[int] = set()
+    for account_id, delta in account_deltas.items():
+        account = _get_user_account_or_400(db, user.id, account_id)
+        _apply_account_delta(account, delta)
+        if account.objective_dream_id is not None:
+            touched_dream_ids.add(account.objective_dream_id)
+
     if payload.value is not None:
         expense.value = payload.value
     if payload.description is not None:
@@ -352,6 +422,11 @@ def update_expense(
     expense.bank_account_id = next_bank_account_id
     expense.credit_card_id = next_credit_card_id
 
+    db.flush()
+    for dream_id in touched_dream_ids:
+        sync_dream_milestone_financial_progress(db, user.id, dream_id)
+    if touched_dream_ids:
+        _capture_patrimony_snapshot(db, user.id)
     db.commit()
     db.expire_all()
 
@@ -366,6 +441,19 @@ def delete_expense(
     user: User = Depends(get_current_user),
 ):
     expense = _get_user_expense_or_404(db, user.id, expense_id)
+    touched_dream_ids: set[int] = set()
+
+    if expense.payment_method == "debit" and expense.bank_account_id is not None:
+        account = _get_user_account_or_400(db, user.id, expense.bank_account_id)
+        _apply_account_delta(account, _to_money_decimal(expense.value))
+        if account.objective_dream_id is not None:
+            touched_dream_ids.add(account.objective_dream_id)
+
     db.delete(expense)
+    db.flush()
+    for dream_id in touched_dream_ids:
+        sync_dream_milestone_financial_progress(db, user.id, dream_id)
+    if touched_dream_ids:
+        _capture_patrimony_snapshot(db, user.id)
     db.commit()
     return None

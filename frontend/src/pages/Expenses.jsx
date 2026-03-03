@@ -28,6 +28,11 @@ function toDateTimeLocalValue(date) {
     .slice(0, 16);
 }
 
+function toTimestamp(value) {
+  const ts = new Date(value || "").getTime();
+  return Number.isFinite(ts) ? ts : 0;
+}
+
 function normalizeDescription(value) {
   return String(value || "")
     .trim()
@@ -177,7 +182,7 @@ export default function Expenses() {
     function getSortableValue(expense, key) {
       switch (key) {
         case "launch_date":
-          return expense.launch_date || "";
+          return toTimestamp(expense.launch_date);
         case "description":
           return expense.description || "";
         case "category":
@@ -191,7 +196,7 @@ export default function Expenses() {
         case "value":
           return Number(expense.value || 0);
         case "created_at":
-          return expense.created_at || "";
+          return toTimestamp(expense.created_at);
         case "actions":
           return Number(expense.id || 0);
         default:

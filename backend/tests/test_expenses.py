@@ -44,6 +44,13 @@ def _create_category(client: TestClient, name: str = "Alimentacao") -> int:
     return create_res.json()["id"]
 
 
+def _get_account_total(client: TestClient, account_id: int) -> str:
+    list_res = client.get("/bank-accounts")
+    assert list_res.status_code == 200
+    account = next(item for item in list_res.json() if item["id"] == account_id)
+    return account["total_value"]
+
+
 def test_expenses_crud_debit_and_credit(client: TestClient):
     dream_id = _create_dream(client)
     account_id = _create_account(client, dream_id)
@@ -71,6 +78,7 @@ def test_expenses_crud_debit_and_credit(client: TestClient):
     assert debit_created["credit_card_id"] is None
     assert debit_created["expense_category_id"] == category_food_id
     assert debit_created["expense_category_name"] == "Alimentacao"
+    assert _get_account_total(client, account_id) == "920.10"
 
     create_credit_res = client.post(
         "/expenses",
@@ -90,6 +98,7 @@ def test_expenses_crud_debit_and_credit(client: TestClient):
     assert credit_created["credit_card_id"] == card_id
     assert credit_created["bank_account_id"] is None
     assert credit_created["expense_category_id"] == category_health_id
+    assert _get_account_total(client, account_id) == "920.10"
 
     list_res = client.get("/expenses")
     assert list_res.status_code == 200
@@ -109,6 +118,21 @@ def test_expenses_crud_debit_and_credit(client: TestClient):
     assert updated["description"] == "Mercado Mensal"
     assert updated["expense_category_name"] == "Supermercado"
     assert updated["value"] == "99.00"
+    assert _get_account_total(client, account_id) == "901.00"
+
+    update_to_credit_res = client.patch(
+        f"/expenses/{debit_created['id']}",
+        json={
+            "payment_method": "credit",
+            "credit_card_id": card_id,
+        },
+    )
+    assert update_to_credit_res.status_code == 200
+    update_to_credit = update_to_credit_res.json()
+    assert update_to_credit["payment_method"] == "credit"
+    assert update_to_credit["bank_account_id"] is None
+    assert update_to_credit["credit_card_id"] == card_id
+    assert _get_account_total(client, account_id) == "1000.00"
 
     delete_res = client.delete(f"/expenses/{credit_created['id']}")
     assert delete_res.status_code == 204
@@ -135,6 +159,81 @@ def test_expenses_validation_for_payment_source(client: TestClient):
         },
     )
     assert create_res.status_code == 400
+
+
+def test_delete_debit_expense_restores_account_balance(client: TestClient):
+    dream_id = _create_dream(client)
+    account_id = _create_account(client, dream_id)
+    category_id = _create_category(client, "Moradia")
+
+    create_res = client.post(
+        "/expenses",
+        json={
+            "value": "150.00",
+            "description": "Aluguel",
+            "expense_category_id": category_id,
+            "payment_method": "debit",
+            "bank_account_id": account_id,
+            "credit_card_id": None,
+            "launch_date": "2026-02-20",
+        },
+    )
+    assert create_res.status_code == 201
+    expense_id = create_res.json()["id"]
+    assert _get_account_total(client, account_id) == "850.00"
+
+    delete_res = client.delete(f"/expenses/{expense_id}")
+    assert delete_res.status_code == 204
+    assert _get_account_total(client, account_id) == "1000.00"
+
+
+def test_update_debit_expense_moves_balance_between_accounts(client: TestClient):
+    dream_id = _create_dream(client)
+    account_a_id = _create_account(client, dream_id)
+    create_account_b_res = client.post(
+        "/bank-accounts",
+        json={
+            "name": "Conta Secundaria",
+            "objective_dream_id": dream_id,
+            "total_value": "500.00",
+        },
+    )
+    assert create_account_b_res.status_code == 201
+    account_b_id = create_account_b_res.json()["id"]
+    category_id = _create_category(client, "Transporte")
+
+    create_res = client.post(
+        "/expenses",
+        json={
+            "value": "200.00",
+            "description": "Viagem",
+            "expense_category_id": category_id,
+            "payment_method": "debit",
+            "bank_account_id": account_a_id,
+            "credit_card_id": None,
+            "launch_date": "2026-02-20",
+        },
+    )
+    assert create_res.status_code == 201
+    expense_id = create_res.json()["id"]
+
+    assert _get_account_total(client, account_a_id) == "800.00"
+    assert _get_account_total(client, account_b_id) == "500.00"
+
+    move_res = client.patch(
+        f"/expenses/{expense_id}",
+        json={
+            "payment_method": "debit",
+            "bank_account_id": account_b_id,
+        },
+    )
+    assert move_res.status_code == 200
+    moved = move_res.json()
+    assert moved["payment_method"] == "debit"
+    assert moved["bank_account_id"] == account_b_id
+
+    assert _get_account_total(client, account_a_id) == "1000.00"
+    assert _get_account_total(client, account_b_id) == "300.00"
 
 
 def test_list_expenses_filters(client: TestClient):
