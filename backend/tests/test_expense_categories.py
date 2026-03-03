@@ -105,7 +105,7 @@ def test_cannot_delete_category_in_use(client: TestClient):
     expense_res = client.post(
         "/expenses",
         json={
-            "value": "1200.00",
+            "value": "200.00",
             "description": "Aluguel",
             "expense_category_id": category_id,
             "payment_method": "debit",
