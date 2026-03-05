@@ -76,15 +76,16 @@ def _validate_account_belongs_to_user(
 
 
 def _get_user_account_or_400(
-    db: Session, user_id: int, account_id: int | None
+    db: Session, user_id: int, account_id: int | None, *, for_update: bool = False
 ) -> BankAccount:
     if account_id is None:
         raise HTTPException(status_code=400, detail="Conta bancária inválida")
-    account = (
-        db.query(BankAccount)
-        .filter(BankAccount.id == account_id, BankAccount.user_id == user_id)
-        .first()
+    query = db.query(BankAccount).filter(
+        BankAccount.id == account_id, BankAccount.user_id == user_id
     )
+    if for_update:
+        query = query.with_for_update()
+    account = query.first()
     if not account:
         raise HTTPException(status_code=400, detail="Conta bancária inválida")
     return account
@@ -94,7 +95,7 @@ def _apply_account_delta(account: BankAccount, delta: Decimal) -> None:
     if delta == Decimal("0"):
         return
 
-    next_total = _to_money_decimal(account.total_value + delta)
+    next_total = _to_money_decimal((account.total_value or Decimal("0")) + delta)
     if next_total < Decimal("0"):
         raise HTTPException(status_code=400, detail="Saldo insuficiente na conta")
     account.total_value = next_total
@@ -303,7 +304,9 @@ def create_expense(
     touched_dream_ids: set[int] = set()
 
     if payload.payment_method == "debit":
-        account = _get_user_account_or_400(db, user.id, payload.bank_account_id)
+        account = _get_user_account_or_400(
+            db, user.id, payload.bank_account_id, for_update=True
+        )
         _apply_account_delta(account, -_to_money_decimal(payload.value))
         if account.objective_dream_id is not None:
             touched_dream_ids.add(account.objective_dream_id)
@@ -402,7 +405,7 @@ def update_expense(
 
     touched_dream_ids: set[int] = set()
     for account_id, delta in account_deltas.items():
-        account = _get_user_account_or_400(db, user.id, account_id)
+        account = _get_user_account_or_400(db, user.id, account_id, for_update=True)
         _apply_account_delta(account, delta)
         if account.objective_dream_id is not None:
             touched_dream_ids.add(account.objective_dream_id)
@@ -444,7 +447,9 @@ def delete_expense(
     touched_dream_ids: set[int] = set()
 
     if expense.payment_method == "debit" and expense.bank_account_id is not None:
-        account = _get_user_account_or_400(db, user.id, expense.bank_account_id)
+        account = _get_user_account_or_400(
+            db, user.id, expense.bank_account_id, for_update=True
+        )
         _apply_account_delta(account, _to_money_decimal(expense.value))
         if account.objective_dream_id is not None:
             touched_dream_ids.add(account.objective_dream_id)

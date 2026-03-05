@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { confirm, notify } from "../core/toast";
+import { getApiErrorMessage } from "../core/apiError";
+import bankAccountsService from "../services/bankAccountsService";
 import investmentIncomesService from "../services/investmentIncomesService";
 import investmentsService from "../services/investmentsService";
 
 const INCOME_TYPE_OPTIONS = [
   { value: "dividend", label: "Dividendo" },
-  { value: "provento", label: "Provento" },
   { value: "jcp", label: "JCP" },
   { value: "rendimento", label: "Rendimento" },
 ];
@@ -22,16 +23,16 @@ function getInitialForm() {
   return {
     incomeType: "dividend",
     ticker: "",
+    accountId: "",
     receivedAt: new Date().toISOString().slice(0, 10),
     amount: "",
-    notes: "",
   };
 }
 
 function getIncomeTypeLabel(value) {
   return (
     INCOME_TYPE_OPTIONS.find((option) => option.value === value)?.label ||
-    "Provento"
+    "Dividendo"
   );
 }
 
@@ -66,8 +67,16 @@ function parseLocaleAmount(value) {
   return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
 
+function getErrorMessage(error, fallback) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return getApiErrorMessage(error, fallback);
+}
+
 export default function InvestmentIncomes() {
   const [items, setItems] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [availableTickers, setAvailableTickers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -78,12 +87,14 @@ export default function InvestmentIncomes() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [incomesData, investmentsData] = await Promise.all([
+        const [incomesData, investmentsData, accountsData] = await Promise.all([
           investmentIncomesService.list(),
           investmentsService.list(),
+          bankAccountsService.list(),
         ]);
 
         setItems(Array.isArray(incomesData) ? incomesData : []);
+        setAccounts(Array.isArray(accountsData) ? accountsData : []);
         const tickers = Array.isArray(investmentsData)
           ? [
               ...new Set(
@@ -100,8 +111,8 @@ export default function InvestmentIncomes() {
             )
           : [];
         setAvailableTickers(tickers);
-      } catch {
-        notify.error("Erro ao carregar proventos");
+      } catch (err) {
+        notify.error(getApiErrorMessage(err, "Erro ao carregar dividendos"));
       } finally {
         setLoading(false);
       }
@@ -128,6 +139,34 @@ export default function InvestmentIncomes() {
     }
     return [form.ticker, ...availableTickers];
   }, [availableTickers, form.ticker]);
+  const accountOptions = useMemo(() => {
+    const sorted = [...accounts].sort((a, b) =>
+      String(a.name || "").localeCompare(String(b.name || ""), "pt-BR", {
+        sensitivity: "base",
+      }),
+    );
+    if (
+      !form.accountId ||
+      sorted.some((item) => String(item.id) === form.accountId)
+    ) {
+      return sorted;
+    }
+
+    return [
+      {
+        id: form.accountId,
+        name: `Conta #${form.accountId}`,
+      },
+      ...sorted,
+    ];
+  }, [accounts, form.accountId]);
+  const accountNameById = useMemo(() => {
+    const map = new Map();
+    accounts.forEach((account) => {
+      map.set(String(account.id), String(account.name || ""));
+    });
+    return map;
+  }, [accounts]);
 
   function resetForm() {
     setForm(getInitialForm());
@@ -139,9 +178,9 @@ export default function InvestmentIncomes() {
     setForm({
       incomeType: String(item.income_type || "dividend"),
       ticker: String(item.ticker || ""),
+      accountId: item.bank_account_id ? String(item.bank_account_id) : "",
       receivedAt: String(item.received_at || "").slice(0, 10),
       amount: String(item.amount || ""),
-      notes: String(item.notes || ""),
     });
   }
 
@@ -149,6 +188,7 @@ export default function InvestmentIncomes() {
     e.preventDefault();
 
     const ticker = form.ticker.trim().toUpperCase();
+    const bankAccountId = Number(form.accountId);
     const amount = parseLocaleAmount(form.amount);
     const receivedAt = String(form.receivedAt || "").trim();
     const receivedDate = new Date(`${receivedAt}T00:00:00`);
@@ -179,13 +219,17 @@ export default function InvestmentIncomes() {
       notify.error("Informe um valor válido");
       return;
     }
+    if (!Number.isFinite(bankAccountId) || bankAccountId <= 0) {
+      notify.error("Selecione a conta de recebimento");
+      return;
+    }
 
     const payload = {
       income_type: form.incomeType,
       ticker,
+      bank_account_id: bankAccountId,
       received_at: receivedAt,
       amount,
-      notes: form.notes,
     };
 
     setSaving(true);
@@ -205,8 +249,8 @@ export default function InvestmentIncomes() {
         notify.success("Lançamento cadastrado");
       }
       resetForm();
-    } catch {
-      notify.error("Erro ao salvar lançamento");
+    } catch (err) {
+      notify.error(getErrorMessage(err, "Erro ao salvar lançamento"));
     } finally {
       setSaving(false);
     }
@@ -221,12 +265,17 @@ export default function InvestmentIncomes() {
       onConfirm: async () => {
         setRemovingId(id);
         try {
+          const target = items.find((item) => item.id === id);
+          if (!target) {
+            notify.error("Lançamento não encontrado");
+            return;
+          }
           await investmentIncomesService.remove(id);
           setItems((prev) => prev.filter((item) => item.id !== id));
           if (editingId === id) resetForm();
           notify.success("Lançamento removido");
-        } catch {
-          notify.error("Erro ao remover lançamento");
+        } catch (err) {
+          notify.error(getErrorMessage(err, "Erro ao remover lançamento"));
         } finally {
           setRemovingId(null);
         }
@@ -238,27 +287,19 @@ export default function InvestmentIncomes() {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6 gap-3">
         <h1 className="text-3xl font-bold">Proventos e Dividendos</h1>
-        <div className="flex items-center gap-2">
-          <Link
-            to="/finances/investments/incomes/dashboards"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded transition"
-          >
-            Dashboards
-          </Link>
-          <Link
-            to="/finances/investments"
-            className="themed-card themed-border border px-3 py-2 rounded hover:opacity-90 transition"
-          >
-            Voltar para Investimentos
-          </Link>
-        </div>
+        <Link
+          to="/finances/investments"
+          className="themed-card themed-border border px-3 py-2 rounded hover:opacity-90 transition"
+        >
+          Voltar para Investimentos
+        </Link>
       </div>
 
       <p className="themed-muted mb-6">
-        Registre os proventos recebidos para acompanhar renda da carteira.
+        Registre os dividendos recebidos e escolha a conta para crédito.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="themed-card themed-border border rounded-xl p-5">
           <h2 className="font-semibold mb-1">Total Recebido</h2>
           <p className="text-2xl font-bold">{formatCurrency(totalAmount)}</p>
@@ -267,6 +308,16 @@ export default function InvestmentIncomes() {
           <h2 className="font-semibold mb-1">Lançamentos</h2>
           <p className="text-2xl font-bold">{items.length}</p>
         </div>
+        <Link
+          to="/finances/investments/incomes/dashboards"
+          className="themed-card themed-border border rounded-xl p-5 hover:shadow-md transition block"
+        >
+          <h2 className="font-semibold mb-1">Dashboards</h2>
+          <p className="text-2xl font-bold">Abrir</p>
+          <p className="themed-muted text-sm mt-1">
+            Visualize os painéis de proventos
+          </p>
+        </Link>
       </div>
 
       <form
@@ -319,6 +370,29 @@ export default function InvestmentIncomes() {
           </label>
 
           <label className="flex flex-col text-sm">
+            <span className="mb-1 themed-muted">Conta de recebimento</span>
+            <select
+              value={form.accountId}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, accountId: e.target.value }))
+              }
+              disabled={accountOptions.length === 0}
+              className="themed-input themed-border border rounded px-3 py-2"
+            >
+              <option value="">
+                {accountOptions.length === 0
+                  ? "Cadastre uma conta primeiro"
+                  : "Selecione a conta"}
+              </option>
+              {accountOptions.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col text-sm">
             <span className="mb-1 themed-muted">Data de recebimento</span>
             <input
               type="date"
@@ -340,18 +414,6 @@ export default function InvestmentIncomes() {
                 setForm((prev) => ({ ...prev, amount: e.target.value }))
               }
               placeholder="150,25"
-              className="themed-input themed-border border rounded px-3 py-2"
-            />
-          </label>
-
-          <label className="flex flex-col text-sm md:col-span-2 lg:col-span-1">
-            <span className="mb-1 themed-muted">Observação</span>
-            <input
-              value={form.notes}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, notes: e.target.value }))
-              }
-              placeholder="Opcional"
               className="themed-input themed-border border rounded px-3 py-2"
             />
           </label>
@@ -393,8 +455,8 @@ export default function InvestmentIncomes() {
                   <th className="py-2 pr-3">Data</th>
                   <th className="py-2 pr-3">Tipo</th>
                   <th className="py-2 pr-3">Ticker</th>
+                  <th className="py-2 pr-3">Conta</th>
                   <th className="py-2 pr-3">Valor</th>
-                  <th className="py-2 pr-3">Observação</th>
                   <th className="py-2 text-right">Ações</th>
                 </tr>
               </thead>
@@ -417,10 +479,12 @@ export default function InvestmentIncomes() {
                       {getIncomeTypeLabel(item.income_type)}
                     </td>
                     <td className="py-2 pr-3 font-medium">{item.ticker}</td>
-                    <td className="py-2 pr-3">{formatCurrency(item.amount)}</td>
-                    <td className="py-2 pr-3 themed-muted">
-                      {item.notes || "-"}
+                    <td className="py-2 pr-3">
+                      {item.bank_account_name ||
+                        accountNameById.get(String(item.bank_account_id)) ||
+                        "-"}
                     </td>
+                    <td className="py-2 pr-3">{formatCurrency(item.amount)}</td>
                     <td className="py-2 text-right">
                       <div className="inline-flex items-center gap-2">
                         <button
