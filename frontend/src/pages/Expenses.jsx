@@ -362,16 +362,16 @@ export default function Expenses() {
       return;
     }
     if (!form.launchDate) {
-      notify.error("Informe a data do lancamento");
+      notify.error("Informe a data do lançamento");
       return;
     }
 
     if (paymentMethod === "debit" && !form.accountId) {
-      notify.error("Selecione a conta para pagamento em debito");
+      notify.error("Selecione a conta para pagamento em débito");
       return;
     }
     if (paymentMethod === "credit" && !form.cardId) {
-      notify.error("Selecione o cartao para pagamento em credito");
+      notify.error("Selecione o cartão para pagamento em crédito");
       return;
     }
 
@@ -621,7 +621,7 @@ export default function Expenses() {
           <h2 className="font-semibold mb-1">Dashboards</h2>
           <p className="text-2xl font-bold">Abrir</p>
           <p className="themed-muted text-sm mt-1">
-            Visualize os paineis de despesas
+            Visualize os painéis de despesas
           </p>
         </Link>
       </div>

@@ -40,11 +40,26 @@ function monthTimestamp(key) {
 export default function InvestmentIncomesDashboards() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [periodFilters, setPeriodFilters] = useState({
+    fromDate: "",
+    toDate: "",
+  });
+
+  const invalidPeriod =
+    periodFilters.fromDate &&
+    periodFilters.toDate &&
+    periodFilters.fromDate > periodFilters.toDate;
 
   useEffect(() => {
+    if (invalidPeriod) return;
+
     async function loadData() {
+      setLoading(true);
       try {
-        const data = await investmentIncomesService.list();
+        const data = await investmentIncomesService.list({
+          fromDate: periodFilters.fromDate,
+          toDate: periodFilters.toDate,
+        });
         setItems(Array.isArray(data) ? data : []);
       } catch {
         notify.error("Erro ao carregar dashboard de proventos");
@@ -54,16 +69,21 @@ export default function InvestmentIncomesDashboards() {
     }
 
     loadData();
-  }, []);
+  }, [invalidPeriod, periodFilters.fromDate, periodFilters.toDate]);
+
+  const visibleItems = useMemo(
+    () => (invalidPeriod ? [] : items),
+    [invalidPeriod, items],
+  );
 
   const totalAmount = useMemo(
-    () => items.reduce((acc, item) => acc + Number(item.amount || 0), 0),
-    [items],
+    () => visibleItems.reduce((acc, item) => acc + Number(item.amount || 0), 0),
+    [visibleItems],
   );
 
   const monthlySeries = useMemo(() => {
     const grouped = new Map();
-    items.forEach((item) => {
+    visibleItems.forEach((item) => {
       const key = monthKey(item.received_at);
       if (!key) return;
       grouped.set(key, (grouped.get(key) || 0) + Number(item.amount || 0));
@@ -72,7 +92,7 @@ export default function InvestmentIncomesDashboards() {
     return [...grouped.entries()]
       .sort((a, b) => monthTimestamp(a[0]) - monthTimestamp(b[0]))
       .map(([key, total]) => ({ key, label: monthLabel(key), total }));
-  }, [items]);
+  }, [visibleItems]);
 
   const typeSummary = useMemo(() => {
     const labels = {
@@ -82,7 +102,7 @@ export default function InvestmentIncomesDashboards() {
       rendimento: "Rendimento",
     };
 
-    const grouped = items.reduce((acc, item) => {
+    const grouped = visibleItems.reduce((acc, item) => {
       const type = String(item.income_type || "provento");
       if (!acc[type]) {
         acc[type] = {
@@ -98,15 +118,15 @@ export default function InvestmentIncomesDashboards() {
     }, {});
 
     return Object.values(grouped).sort((a, b) => b.total - a.total);
-  }, [items]);
+  }, [visibleItems]);
 
   const lastIncomeAt = useMemo(() => {
-    if (!items.length) return null;
-    const latest = [...items].sort(
+    if (!visibleItems.length) return null;
+    const latest = [...visibleItems].sort(
       (a, b) => toTimestamp(b.received_at) - toTimestamp(a.received_at),
     )[0];
     return latest?.received_at || null;
-  }, [items]);
+  }, [visibleItems]);
 
   const maxMonthly = Math.max(1, ...monthlySeries.map((item) => item.total));
 
@@ -126,6 +146,55 @@ export default function InvestmentIncomesDashboards() {
         <p className="themed-muted">Carregando dashboard...</p>
       ) : (
         <>
+          <div className="themed-card themed-border border rounded-xl p-5 mb-4">
+            <h2 className="font-semibold mb-3">Filtro por período</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <label className="text-sm">
+                <span className="block themed-muted mb-1">De</span>
+                <input
+                  type="date"
+                  className="themed-input rounded px-3 py-2 w-full"
+                  value={periodFilters.fromDate}
+                  onChange={(e) =>
+                    setPeriodFilters((prev) => ({
+                      ...prev,
+                      fromDate: e.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="text-sm">
+                <span className="block themed-muted mb-1">Até</span>
+                <input
+                  type="date"
+                  className="themed-input rounded px-3 py-2 w-full"
+                  value={periodFilters.toDate}
+                  onChange={(e) =>
+                    setPeriodFilters((prev) => ({
+                      ...prev,
+                      toDate: e.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <button
+                type="button"
+                className="themed-border border rounded px-3 py-2 self-end hover:opacity-90 transition"
+                onClick={() => setPeriodFilters({ fromDate: "", toDate: "" })}
+              >
+                Limpar período
+              </button>
+            </div>
+            {invalidPeriod ? (
+              <p className="text-sm text-red-500 mt-3">
+                O período é inválido: a data inicial deve ser menor ou igual a
+                data final.
+              </p>
+            ) : null}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="themed-card themed-border border rounded-xl p-5">
               <h2 className="font-semibold mb-1">Total Recebido</h2>
@@ -135,7 +204,7 @@ export default function InvestmentIncomesDashboards() {
             </div>
             <div className="themed-card themed-border border rounded-xl p-5">
               <h2 className="font-semibold mb-1">Lançamentos</h2>
-              <p className="text-2xl font-bold">{items.length}</p>
+              <p className="text-2xl font-bold">{visibleItems.length}</p>
             </div>
             <div className="themed-card themed-border border rounded-xl p-5">
               <h2 className="font-semibold mb-1">Último Recebimento</h2>

@@ -35,15 +35,15 @@ export default function InvestmentSummary({
       </div>
 
       <div className="themed-card themed-border border rounded-xl p-5">
-        <h2 className="font-semibold mb-1">Proventos e Dividendos</h2>
+        <h2 className="font-semibold mb-1">Dividendos</h2>
         <p className="themed-muted text-sm mt-1 mb-4">
           Cadastre os recebimentos da carteira.
         </p>
         <Link
           to="/finances/investments/incomes"
-          className="inline-flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded"
+          className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
         >
-          Abrir proventos
+          Abrir dividendos
         </Link>
       </div>
 

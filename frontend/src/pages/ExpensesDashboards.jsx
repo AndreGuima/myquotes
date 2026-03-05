@@ -38,64 +38,68 @@ function describeArc(cx, cy, radius, startAngle, endAngle) {
 }
 
 export default function ExpensesDashboards() {
-  const [expenses, setExpenses] = useState([]);
+  const [summary, setSummary] = useState({
+    total: 0,
+    average: 0,
+    count: 0,
+    credit_total: 0,
+    debit_total: 0,
+    by_category: [],
+  });
+  const [periodFilters, setPeriodFilters] = useState({
+    fromDate: "",
+    toDate: "",
+  });
+
+  const invalidPeriod =
+    periodFilters.fromDate &&
+    periodFilters.toDate &&
+    periodFilters.fromDate > periodFilters.toDate;
 
   useEffect(() => {
-    async function loadExpenses() {
+    if (invalidPeriod) return;
+
+    async function loadSummary() {
       try {
-        const data = await expensesService.list();
-        setExpenses(Array.isArray(data) ? data : []);
+        const data = await expensesService.summary({
+          fromDate: periodFilters.fromDate,
+          toDate: periodFilters.toDate,
+        });
+        setSummary({
+          total: Number(data?.total || 0),
+          average: Number(data?.average || 0),
+          count: Number(data?.count || 0),
+          credit_total: Number(data?.credit_total || 0),
+          debit_total: Number(data?.debit_total || 0),
+          by_category: Array.isArray(data?.by_category) ? data.by_category : [],
+        });
       } catch (err) {
         notify.error(getApiErrorMessage(err, "Erro ao carregar dashboards"));
       }
     }
 
-    loadExpenses();
-  }, []);
-
-  const totalExpenses = useMemo(
-    () => expenses.reduce((acc, item) => acc + Number(item.value || 0), 0),
-    [expenses],
-  );
-
-  const averageExpense = useMemo(() => {
-    if (expenses.length === 0) return 0;
-    return totalExpenses / expenses.length;
-  }, [expenses, totalExpenses]);
-
-  const paymentSplit = useMemo(() => {
-    return expenses.reduce(
-      (acc, item) => {
-        if (item.payment_method === "credit") {
-          acc.credit += Number(item.value || 0);
-        } else {
-          acc.debit += Number(item.value || 0);
-        }
-        return acc;
-      },
-      { credit: 0, debit: 0 },
-    );
-  }, [expenses]);
+    loadSummary();
+  }, [invalidPeriod, periodFilters.fromDate, periodFilters.toDate]);
 
   const categoriesSummary = useMemo(() => {
-    const grouped = expenses.reduce((acc, item) => {
-      const categoryId = item.expense_category_id;
-      const categoryName = item.expense_category_name || "Sem categoria";
-      if (!acc[categoryId]) {
-        acc[categoryId] = {
-          id: categoryId,
-          name: categoryName,
-          total: 0,
-          count: 0,
-        };
-      }
-      acc[categoryId].total += Number(item.value || 0);
-      acc[categoryId].count += 1;
-      return acc;
-    }, {});
+    const items = invalidPeriod ? [] : summary.by_category;
+    return items
+      .map((item) => ({
+        id: item.category_id,
+        name: item.category_name || "Sem categoria",
+        total: Number(item.total || 0),
+        count: Number(item.count || 0),
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [invalidPeriod, summary.by_category]);
 
-    return Object.values(grouped).sort((a, b) => b.total - a.total);
-  }, [expenses]);
+  const totalExpenses = invalidPeriod ? 0 : Number(summary.total || 0);
+  const averageExpense = invalidPeriod ? 0 : Number(summary.average || 0);
+  const launchCount = invalidPeriod ? 0 : Number(summary.count || 0);
+  const paymentSplit = {
+    debit: invalidPeriod ? 0 : Number(summary.debit_total || 0),
+    credit: invalidPeriod ? 0 : Number(summary.credit_total || 0),
+  };
 
   const pieSlices = useMemo(() => {
     if (totalExpenses <= 0 || categoriesSummary.length === 0) return [];
@@ -129,8 +133,58 @@ export default function ExpensesDashboards() {
       </div>
 
       <p className="themed-muted mb-6">
-        Indicadores consolidados dos lancamentos de despesas.
+        Indicadores consolidados dos lançamentos de despesas.
       </p>
+
+      <div className="themed-card themed-border border rounded-xl p-5 mb-4">
+        <h2 className="font-semibold mb-3">Filtro por período</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <label className="text-sm">
+            <span className="block themed-muted mb-1">De</span>
+            <input
+              type="date"
+              className="themed-input rounded px-3 py-2 w-full"
+              value={periodFilters.fromDate}
+              onChange={(e) =>
+                setPeriodFilters((prev) => ({
+                  ...prev,
+                  fromDate: e.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <label className="text-sm">
+            <span className="block themed-muted mb-1">Até</span>
+            <input
+              type="date"
+              className="themed-input rounded px-3 py-2 w-full"
+              value={periodFilters.toDate}
+              onChange={(e) =>
+                setPeriodFilters((prev) => ({
+                  ...prev,
+                  toDate: e.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <button
+            type="button"
+            className="themed-border border rounded px-3 py-2 self-end hover:opacity-90 transition"
+            onClick={() => setPeriodFilters({ fromDate: "", toDate: "" })}
+          >
+            Limpar período
+          </button>
+        </div>
+
+        {invalidPeriod ? (
+          <p className="text-sm text-red-500 mt-3">
+            O período é inválido: a data inicial deve ser menor ou igual a data
+            final.
+          </p>
+        ) : null}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="themed-card themed-border border rounded-xl p-5">
@@ -144,8 +198,8 @@ export default function ExpensesDashboards() {
         </div>
 
         <div className="themed-card themed-border border rounded-xl p-5">
-          <h2 className="font-semibold mb-1">Qtd. Lancamentos</h2>
-          <p className="text-2xl font-bold">{expenses.length}</p>
+          <h2 className="font-semibold mb-1">Qtd. Lançamentos</h2>
+          <p className="text-2xl font-bold">{launchCount}</p>
         </div>
       </div>
 
