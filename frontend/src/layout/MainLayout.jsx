@@ -53,6 +53,10 @@ export default function MainLayout() {
             Leituras
           </NavLink>
 
+          <NavLink to="/dreams" className={navClass}>
+            Metas e Conquistas
+          </NavLink>
+
           <NavLink to="/preferences" className={navClass}>
             Preferências
           </NavLink>
