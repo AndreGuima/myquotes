@@ -54,11 +54,28 @@ class ExpenseRead(BaseModel):
     bank_account_name: str | None = None
     credit_card_id: int | None = None
     credit_card_name: str | None = None
+    invoice_payment_expense_id: int | None = None
     launch_date: date
+    invoice_paid_at: datetime | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PayCreditInvoiceRequest(BaseModel):
+    credit_card_id: int
+    bank_account_id: int
+    expense_ids: list[int] = Field(min_length=1)
+    launch_date: date
+    description: str | None = Field(default=None, min_length=1, max_length=255)
+    expense_category_id: int | None = None
+
+
+class PayCreditInvoiceResponse(BaseModel):
+    payment_expense: ExpenseRead
+    paid_expense_ids: list[int]
+    total_paid: Decimal
 
 
 class ExpenseSummaryCategoryRead(BaseModel):

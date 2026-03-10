@@ -608,11 +608,16 @@ export default function Expenses() {
           </p>
         </div>
 
-        <div className="themed-card themed-border border rounded-xl p-5">
-          <h2 className="font-semibold mb-1">Lançamentos</h2>
-          <p className="text-2xl font-bold">{expenses.length}</p>
-          <p className="themed-muted text-sm mt-1">Quantidade de despesas</p>
-        </div>
+        <Link
+          to="/finances/expenses/pay-invoice"
+          className="themed-card themed-border border rounded-xl p-5 hover:shadow-md transition block"
+        >
+          <h2 className="font-semibold mb-1">Pagar Fatura</h2>
+          <p className="text-2xl font-bold">Pagar Fatura</p>
+          <p className="themed-muted text-sm mt-1">
+            Selecione gastos no credito da fatura
+          </p>
+        </Link>
 
         <Link
           to="/finances/expenses/dashboards"

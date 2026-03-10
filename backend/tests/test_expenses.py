@@ -412,3 +412,121 @@ def test_expenses_summary_endpoint(client: TestClient):
     assert len(body["by_category"]) == 2
     assert body["by_category"][0]["category_name"] == "Alimentacao"
     assert body["by_category"][0]["total"] == "80.00"
+
+
+def test_pay_credit_invoice_creates_debit_expense_and_marks_items_paid(
+    client: TestClient,
+):
+    dream_id = _create_dream(client)
+    account_id = _create_account(client, dream_id)
+    card_id = _create_card(client)
+    category_food_id = _create_category(client, "Alimentacao")
+
+    credit_a = client.post(
+        "/expenses",
+        json={
+            "value": "100.00",
+            "description": "Mercado credito",
+            "expense_category_id": category_food_id,
+            "payment_method": "credit",
+            "bank_account_id": None,
+            "credit_card_id": card_id,
+            "launch_date": "2026-03-01",
+        },
+    )
+    assert credit_a.status_code == 201
+    credit_b = client.post(
+        "/expenses",
+        json={
+            "value": "50.00",
+            "description": "Farmacia credito",
+            "expense_category_id": category_food_id,
+            "payment_method": "credit",
+            "bank_account_id": None,
+            "credit_card_id": card_id,
+            "launch_date": "2026-03-03",
+        },
+    )
+    assert credit_b.status_code == 201
+
+    pay_res = client.post(
+        "/expenses/pay-credit-invoice",
+        json={
+            "credit_card_id": card_id,
+            "bank_account_id": account_id,
+            "expense_ids": [credit_a.json()["id"], credit_b.json()["id"]],
+            "launch_date": "2026-03-10",
+        },
+    )
+    assert pay_res.status_code == 200
+    body = pay_res.json()
+    assert body["total_paid"] == "150.00"
+    assert sorted(body["paid_expense_ids"]) == sorted(
+        [credit_a.json()["id"], credit_b.json()["id"]]
+    )
+    assert body["payment_expense"]["payment_method"] == "debit"
+    assert body["payment_expense"]["bank_account_id"] == account_id
+    assert body["payment_expense"]["value"] == "150.00"
+
+    listed_res = client.get("/expenses")
+    assert listed_res.status_code == 200
+    listed = listed_res.json()
+    paid_items = {
+        item["id"]: item
+        for item in listed
+        if item["id"] in [credit_a.json()["id"], credit_b.json()["id"]]
+    }
+    assert paid_items[credit_a.json()["id"]]["invoice_paid_at"] is not None
+    assert paid_items[credit_b.json()["id"]]["invoice_paid_at"] is not None
+    assert (
+        paid_items[credit_a.json()["id"]]["invoice_payment_expense_id"]
+        == body["payment_expense"]["id"]
+    )
+    assert _get_account_total(client, account_id) == "850.00"
+
+
+def test_pay_credit_invoice_rejects_already_paid_item(client: TestClient):
+    dream_id = _create_dream(client)
+    account_id = _create_account(client, dream_id)
+    card_id = _create_card(client)
+    category_id = _create_category(client, "Saude")
+
+    credit = client.post(
+        "/expenses",
+        json={
+            "value": "80.00",
+            "description": "Consulta",
+            "expense_category_id": category_id,
+            "payment_method": "credit",
+            "bank_account_id": None,
+            "credit_card_id": card_id,
+            "launch_date": "2026-03-01",
+        },
+    )
+    assert credit.status_code == 201
+    expense_id = credit.json()["id"]
+
+    first_pay = client.post(
+        "/expenses/pay-credit-invoice",
+        json={
+            "credit_card_id": card_id,
+            "bank_account_id": account_id,
+            "expense_ids": [expense_id],
+            "launch_date": "2026-03-05",
+        },
+    )
+    assert first_pay.status_code == 200
+
+    second_pay = client.post(
+        "/expenses/pay-credit-invoice",
+        json={
+            "credit_card_id": card_id,
+            "bank_account_id": account_id,
+            "expense_ids": [expense_id],
+            "launch_date": "2026-03-06",
+        },
+    )
+    assert second_pay.status_code == 400
+    assert (
+        second_pay.json()["detail"] == "Existe despesa já vinculada a uma fatura paga"
+    )
