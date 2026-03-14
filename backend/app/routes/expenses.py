@@ -8,7 +8,6 @@ from models.bank_account import BankAccount
 from models.credit_card import CreditCard
 from models.expense import Expense
 from models.expense_category import ExpenseCategory
-from models.patrimony_snapshot import PatrimonySnapshot
 from models.user import User
 from schemas.expense import (
     ExpenseCreate,
@@ -20,6 +19,7 @@ from schemas.expense import (
     PayCreditInvoiceResponse,
 )
 from services.dream_financial_progress import sync_dream_milestone_financial_progress
+from services.patrimony_snapshot_service import capture_patrimony_snapshot
 from sqlalchemy import case, func
 from sqlalchemy.orm import Query as SAQuery
 from sqlalchemy.orm import Session, joinedload
@@ -103,15 +103,6 @@ def _apply_account_delta(account: BankAccount, delta: Decimal) -> None:
     if next_total < Decimal("0"):
         raise HTTPException(status_code=400, detail="Saldo insuficiente na conta")
     account.total_value = next_total
-
-
-def _capture_patrimony_snapshot(db: Session, user_id: int) -> None:
-    total = (
-        db.query(func.coalesce(func.sum(BankAccount.total_value), 0))
-        .filter(BankAccount.user_id == user_id)
-        .scalar()
-    )
-    db.add(PatrimonySnapshot(user_id=user_id, total_value=total))
 
 
 def _validate_card_belongs_to_user(db: Session, user_id: int, card_id: int) -> None:
@@ -369,7 +360,7 @@ def create_expense(
     for dream_id in touched_dream_ids:
         sync_dream_milestone_financial_progress(db, user.id, dream_id)
     if touched_dream_ids:
-        _capture_patrimony_snapshot(db, user.id)
+        capture_patrimony_snapshot(db, user.id)
     db.commit()
     db.expire_all()
 
@@ -465,7 +456,7 @@ def update_expense(
     for dream_id in touched_dream_ids:
         sync_dream_milestone_financial_progress(db, user.id, dream_id)
     if touched_dream_ids:
-        _capture_patrimony_snapshot(db, user.id)
+        capture_patrimony_snapshot(db, user.id)
     db.commit()
     db.expire_all()
 
@@ -495,7 +486,7 @@ def delete_expense(
     for dream_id in touched_dream_ids:
         sync_dream_milestone_financial_progress(db, user.id, dream_id)
     if touched_dream_ids:
-        _capture_patrimony_snapshot(db, user.id)
+        capture_patrimony_snapshot(db, user.id)
     db.commit()
     return None
 
@@ -599,7 +590,7 @@ def pay_credit_invoice(
     for dream_id in touched_dream_ids:
         sync_dream_milestone_financial_progress(db, user.id, dream_id)
     if touched_dream_ids:
-        _capture_patrimony_snapshot(db, user.id)
+        capture_patrimony_snapshot(db, user.id)
 
     db.commit()
     db.expire_all()

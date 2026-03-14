@@ -29,8 +29,17 @@ class BankAccountRead(BaseModel):
 
 
 class PatrimonySnapshotRead(BaseModel):
+    class AccountSnapshotRead(BaseModel):
+        bank_account_id: int | None = None
+        account_name: str
+        total_value: Decimal
+
+        model_config = ConfigDict(from_attributes=True)
+
     id: int
     total_value: Decimal
+    has_breakdown: bool = False
     snapshot_at: datetime
+    accounts: list[AccountSnapshotRead] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)

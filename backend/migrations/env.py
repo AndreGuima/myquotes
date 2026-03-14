@@ -59,6 +59,7 @@ from models.expense import Expense
 from models.expense_category import ExpenseCategory
 from models.investment_income import InvestmentIncome
 from models.patrimony_snapshot import PatrimonySnapshot
+from models.patrimony_snapshot_account import PatrimonySnapshotAccount
 from models.quote import Quote
 from models.reading_list_book import ReadingListBook
 from models.reading_list_log import ReadingListLog

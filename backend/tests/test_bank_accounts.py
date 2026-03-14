@@ -114,6 +114,65 @@ def test_patrimony_snapshots_are_created_and_listed(client: TestClient):
     assert len(snapshots) >= 2
     assert all("snapshot_at" in snapshot for snapshot in snapshots)
     assert snapshots[-1]["total_value"] == "250.00"
+    assert snapshots[-1]["has_breakdown"] is True
+    assert snapshots[-1]["accounts"] == [
+        {
+            "bank_account_id": account_id,
+            "account_name": "Conta Snapshot",
+            "total_value": "250.00",
+        }
+    ]
+
+
+def test_patrimony_snapshots_include_multiple_accounts_breakdown(client: TestClient):
+    dream_res = client.post(
+        "/dreams",
+        json={
+            "title": "Reserva",
+            "milestones": [],
+        },
+    )
+    assert dream_res.status_code == 201
+    dream_id = dream_res.json()["id"]
+
+    first_res = client.post(
+        "/bank-accounts",
+        json={
+            "name": "Conta Corrente",
+            "objective_dream_id": dream_id,
+            "total_value": "100.00",
+        },
+    )
+    assert first_res.status_code == 201
+
+    second_res = client.post(
+        "/bank-accounts",
+        json={
+            "name": "Reserva",
+            "objective_dream_id": dream_id,
+            "total_value": "50.00",
+        },
+    )
+    assert second_res.status_code == 201
+
+    snapshots_res = client.get("/bank-accounts/patrimony-snapshots")
+    assert snapshots_res.status_code == 200
+    latest = snapshots_res.json()[-1]
+
+    assert latest["total_value"] == "150.00"
+    assert latest["has_breakdown"] is True
+    assert latest["accounts"] == [
+        {
+            "bank_account_id": first_res.json()["id"],
+            "account_name": "Conta Corrente",
+            "total_value": "100.00",
+        },
+        {
+            "bank_account_id": second_res.json()["id"],
+            "account_name": "Reserva",
+            "total_value": "50.00",
+        },
+    ]
 
 
 def test_patrimony_snapshot_after_delete_has_zero_total(client: TestClient):
