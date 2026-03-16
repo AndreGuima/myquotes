@@ -2,19 +2,26 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 PaymentMethod = Literal["debit", "credit"]
 
 
 class ExpenseCreate(BaseModel):
-    value: Decimal = Field(ge=0, decimal_places=2)
+    value: Decimal = Field(decimal_places=2)
     description: str = Field(min_length=1, max_length=255)
     expense_category_id: int
     payment_method: PaymentMethod
     bank_account_id: int | None = None
     credit_card_id: int | None = None
     launch_date: date
+
+    @field_validator("value")
+    @classmethod
+    def validate_non_zero_value(cls, value: Decimal) -> Decimal:
+        if value == 0:
+            raise ValueError("value must be different from zero")
+        return value
 
     @model_validator(mode="after")
     def validate_payment_reference(self):
@@ -34,13 +41,20 @@ class ExpenseCreate(BaseModel):
 
 
 class ExpenseUpdate(BaseModel):
-    value: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    value: Decimal | None = Field(default=None, decimal_places=2)
     description: str | None = Field(default=None, min_length=1, max_length=255)
     expense_category_id: int | None = None
     payment_method: PaymentMethod | None = None
     bank_account_id: int | None = None
     credit_card_id: int | None = None
     launch_date: date | None = None
+
+    @field_validator("value")
+    @classmethod
+    def validate_non_zero_value(cls, value: Decimal | None) -> Decimal | None:
+        if value == 0:
+            raise ValueError("value must be different from zero")
+        return value
 
 
 class ExpenseRead(BaseModel):

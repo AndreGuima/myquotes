@@ -16,6 +16,7 @@ const PIE_COLORS = [
   "#f97316",
   "#84cc16",
 ];
+const EXCLUDED_PIE_CATEGORY = "Pagamento de Fatura";
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -81,21 +82,35 @@ export default function ExpensesDashboards() {
       .sort((a, b) => b.total - a.total);
   }, [invalidPeriod, summary.by_category]);
 
+  const pieCategoriesSummary = useMemo(
+    () =>
+      categoriesSummary.filter(
+        (item) =>
+          item.name?.trim().toLowerCase() !==
+          EXCLUDED_PIE_CATEGORY.toLowerCase(),
+      ),
+    [categoriesSummary],
+  );
+
   const totalExpenses = invalidPeriod ? 0 : Number(summary.total || 0);
   const averageExpense = invalidPeriod ? 0 : Number(summary.average || 0);
   const launchCount = invalidPeriod ? 0 : Number(summary.count || 0);
+  const pieTotalExpenses = useMemo(
+    () => pieCategoriesSummary.reduce((acc, item) => acc + item.total, 0),
+    [pieCategoriesSummary],
+  );
   const paymentSplit = {
     debit: invalidPeriod ? 0 : Number(summary.debit_total || 0),
     credit: invalidPeriod ? 0 : Number(summary.credit_total || 0),
   };
 
   const pieSlices = useMemo(() => {
-    if (totalExpenses <= 0 || categoriesSummary.length === 0) return [];
+    if (pieTotalExpenses <= 0 || pieCategoriesSummary.length === 0) return [];
 
     let startAngle = 0;
-    return categoriesSummary.map((item, index) => {
-      const percentage = (item.total / totalExpenses) * 100;
-      const angle = (item.total / totalExpenses) * 360;
+    return pieCategoriesSummary.map((item, index) => {
+      const percentage = (item.total / pieTotalExpenses) * 100;
+      const angle = (item.total / pieTotalExpenses) * 360;
       const endAngle = startAngle + angle;
       const slice = {
         id: item.id,
@@ -108,7 +123,7 @@ export default function ExpensesDashboards() {
       startAngle = endAngle;
       return slice;
     });
-  }, [categoriesSummary, totalExpenses]);
+  }, [pieCategoriesSummary, pieTotalExpenses]);
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -211,12 +226,12 @@ export default function ExpensesDashboards() {
 
       <div className="themed-card themed-border border rounded-xl p-5 mt-4">
         <h2 className="font-semibold mb-3">Distribuição por Categoria</h2>
-        {categoriesSummary.length === 0 ? (
+        {pieCategoriesSummary.length === 0 ? (
           <p className="themed-muted text-sm">Sem dados de categoria ainda.</p>
         ) : (
           <PieDonutChart
             slices={pieSlices}
-            total={totalExpenses}
+            total={pieTotalExpenses}
             hoveredId={hoveredCategory}
             setHoveredId={setHoveredCategory}
             ariaLabel="Gráfico de pizza de despesas por categoria"

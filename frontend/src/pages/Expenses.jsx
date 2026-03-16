@@ -349,8 +349,8 @@ export default function Expenses() {
     const categoryId = Number(form.categoryId);
     const paymentMethod = form.paymentMethod;
 
-    if (!Number.isFinite(value) || value <= 0) {
-      notify.error("Informe um valor valido");
+    if (!Number.isFinite(value) || value === 0) {
+      notify.error("Informe um valor diferente de zero");
       return;
     }
     if (!description) {
@@ -643,7 +643,6 @@ export default function Expenses() {
           <input
             type="number"
             step="0.01"
-            min="0"
             className="themed-input rounded px-3 py-2"
             placeholder="Valor"
             value={form.value}
