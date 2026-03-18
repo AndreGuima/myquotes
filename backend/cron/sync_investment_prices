@@ -1,0 +1,4 @@
+SHELL=/bin/sh
+PATH=/usr/local/bin:/usr/bin:/bin
+
+5 * * * * root cd /app && /usr/local/bin/python -m jobs.sync_investment_prices >> /var/log/cron.log 2>&1

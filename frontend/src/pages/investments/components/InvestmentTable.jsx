@@ -43,6 +43,7 @@ export default function InvestmentTable({
   onPrevPage,
   onNextPage,
   onGoToPage,
+  formatDateTime,
 }) {
   return (
     <div className="themed-card themed-border border rounded-xl overflow-hidden">
@@ -141,6 +142,11 @@ export default function InvestmentTable({
                 </td>
                 <td className="py-3 px-4 text-right">
                   {formatCurrency(item.currentPriceNumber)}
+                  <div className="themed-muted text-xs mt-1">
+                    {item.price_updated_at
+                      ? formatDateTime(item.price_updated_at)
+                      : "Aguardando sync"}
+                  </div>
                 </td>
                 <td className="py-3 px-4 text-right">
                   {formatCurrency(item.invested)}

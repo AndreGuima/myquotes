@@ -8,6 +8,7 @@ import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
 
 const EXPENSES_PAGE_SIZE = 10;
+const EXCLUDED_TOP_CATEGORY = "Pagamento de Fatura";
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -122,9 +123,15 @@ export default function Expenses() {
   }, [expenses]);
 
   const topCategory = useMemo(() => {
-    if (expenses.length === 0) return "-";
+    const eligibleExpenses = expenses.filter(
+      (item) =>
+        item.expense_category_name?.trim().toLowerCase() !==
+        EXCLUDED_TOP_CATEGORY.toLowerCase(),
+    );
 
-    const totalsByCategory = expenses.reduce((acc, item) => {
+    if (eligibleExpenses.length === 0) return "-";
+
+    const totalsByCategory = eligibleExpenses.reduce((acc, item) => {
       const key = item.expense_category_name || "Sem categoria";
       acc[key] = (acc[key] || 0) + Number(item.value || 0);
       return acc;

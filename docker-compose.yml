@@ -35,12 +35,14 @@ services:
       - myquotes-network
 
   cron:
+    environment:
+      TZ: America/Sao_Paulo
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: myquotes-cron
     restart: always
-    command: sh -c "printenv > /etc/environment && cron -f"
+    command: sh -c "/app/wait-for-db.sh && printenv > /etc/environment && cron -f"
     depends_on:
       - db
     env_file:

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import investmentsService from "../services/investmentsService";
+import { getApiErrorMessage } from "../core/apiError";
 import { confirm, notify } from "../core/toast";
 import { normalizeInvestmentSector } from "../constants/investmentSectors";
 import InvestmentSummary from "./investments/components/InvestmentSummary";
@@ -8,11 +9,22 @@ import InvestmentForm from "./investments/components/InvestmentForm";
 import InvestmentFilters from "./investments/components/InvestmentFilters";
 import InvestmentTable from "./investments/components/InvestmentTable";
 
+const LEGACY_INVESTMENTS_STORAGE_KEY = "myquotes_investments_v1";
+const LEGACY_INVESTMENTS_IMPORTED_KEY = "myquotes_investments_v1_imported";
+const LEGACY_INVESTMENTS_BACKUP_KEY = "myquotes_investments_v1_backup";
+
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("pt-BR");
 }
 
 function getInitialForm() {
@@ -23,13 +35,23 @@ function getInitialForm() {
     name: "",
     quantity: "",
     averagePrice: "",
-    currentPrice: "",
   };
 }
 
 function getAssetTypeLabel(type) {
   if (type === "fii") return "FII";
   return "Ação";
+}
+
+function loadLegacyInvestments() {
+  try {
+    const raw = localStorage.getItem(LEGACY_INVESTMENTS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 const SORT_MAP = {
@@ -50,6 +72,7 @@ export default function Investments() {
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [removingId, setRemovingId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [page, setPage] = useState(1);
@@ -92,7 +115,54 @@ export default function Investments() {
     async function loadData() {
       try {
         const data = await investmentsService.list();
-        setInvestments(Array.isArray(data) ? data : []);
+        const apiItems = Array.isArray(data) ? data : [];
+
+        if (apiItems.length === 0) {
+          const alreadyImported =
+            localStorage.getItem(LEGACY_INVESTMENTS_IMPORTED_KEY) === "1";
+          const legacyItems = alreadyImported ? [] : loadLegacyInvestments();
+
+          if (legacyItems.length > 0) {
+            let importedCount = 0;
+
+            for (const legacyItem of legacyItems) {
+              try {
+                await investmentsService.create({
+                  asset_type: legacyItem.asset_type || "stock",
+                  sector: normalizeInvestmentSector(
+                    legacyItem.asset_type || "stock",
+                    legacyItem.sector,
+                  ),
+                  ticker: String(legacyItem.ticker || "")
+                    .trim()
+                    .toUpperCase(),
+                  name: String(legacyItem.name || "").trim(),
+                  quantity: Number(legacyItem.quantity || 0),
+                  average_price: Number(legacyItem.average_price || 0),
+                });
+                importedCount += 1;
+              } catch {
+                // Mantem a importacao resiliente: falhas isoladas nao bloqueiam os demais itens.
+              }
+            }
+
+            if (importedCount > 0) {
+              localStorage.setItem(
+                LEGACY_INVESTMENTS_BACKUP_KEY,
+                JSON.stringify(legacyItems),
+              );
+              localStorage.setItem(LEGACY_INVESTMENTS_IMPORTED_KEY, "1");
+              const refreshed = await investmentsService.list();
+              setInvestments(Array.isArray(refreshed) ? refreshed : []);
+              notify.success(
+                `${importedCount} investimento(s) importado(s) do armazenamento anterior`,
+              );
+              return;
+            }
+          }
+        }
+
+        setInvestments(apiItems);
       } catch {
         notify.error("Erro ao carregar investimentos");
       } finally {
@@ -220,7 +290,6 @@ export default function Investments() {
       name: String(item.name || ""),
       quantity: String(item.quantity || ""),
       averagePrice: String(item.average_price || ""),
-      currentPrice: String(item.current_price || ""),
     });
   }
 
@@ -229,7 +298,6 @@ export default function Investments() {
 
     const quantity = Number(form.quantity);
     const averagePrice = Number(form.averagePrice);
-    const currentPrice = Number(form.currentPrice);
     const ticker = form.ticker.trim().toUpperCase();
 
     if (!ticker) {
@@ -247,11 +315,6 @@ export default function Investments() {
       return;
     }
 
-    if (!Number.isFinite(currentPrice) || currentPrice < 0) {
-      notify.error("Informe um preço atual válido");
-      return;
-    }
-
     const payload = {
       asset_type: form.assetType,
       sector: normalizeInvestmentSector(form.assetType, form.sector),
@@ -259,7 +322,6 @@ export default function Investments() {
       name: form.name,
       quantity,
       average_price: averagePrice,
-      current_price: currentPrice,
     };
 
     setSaving(true);
@@ -281,6 +343,24 @@ export default function Investments() {
       notify.error("Erro ao salvar investimento");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSyncPrices() {
+    setSyncing(true);
+    try {
+      const result = await investmentsService.syncPrices();
+      const data = await investmentsService.list();
+      setInvestments(Array.isArray(data) ? data : []);
+      if ((result?.synced_investments ?? 0) > 0) {
+        notify.success("Cotações atualizadas");
+      } else {
+        notify.info("Nenhuma cotação foi atualizada agora");
+      }
+    } catch (err) {
+      notify.error(getApiErrorMessage(err, "Erro ao atualizar cotações"));
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -327,6 +407,8 @@ export default function Investments() {
         totalCurrent={totalCurrent}
         profitability={profitability}
         formatCurrency={formatCurrency}
+        syncing={syncing}
+        onSyncPrices={handleSyncPrices}
       />
 
       <InvestmentForm
@@ -356,6 +438,7 @@ export default function Investments() {
         onPrevPage={() => setPage((prev) => Math.max(1, prev - 1))}
         onNextPage={() => setPage((prev) => Math.min(totalPages, prev + 1))}
         onGoToPage={setPage}
+        formatDateTime={formatDateTime}
       />
     </div>
   );

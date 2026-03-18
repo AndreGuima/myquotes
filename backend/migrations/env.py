@@ -57,7 +57,9 @@ from models.credit_card import CreditCard
 from models.dream import Dream, DreamHabitLink, DreamMilestone
 from models.expense import Expense
 from models.expense_category import ExpenseCategory
+from models.investment import Investment
 from models.investment_income import InvestmentIncome
+from models.investment_price_history import InvestmentPriceHistory
 from models.patrimony_snapshot import PatrimonySnapshot
 from models.patrimony_snapshot_account import PatrimonySnapshotAccount
 from models.quote import Quote

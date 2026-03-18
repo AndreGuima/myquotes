@@ -17,6 +17,7 @@ from routes.expense_categories import router as expense_categories_router
 from routes.expenses import router as expenses_router
 from routes.habits import router as habits_router
 from routes.investment_incomes import router as investment_incomes_router
+from routes.investments import router as investments_router
 from routes.preferences import router as preferences_router
 from routes.quotes import router as quotes_router
 from routes.reading_list import router as reading_list_router
@@ -36,19 +37,19 @@ logger = logging.getLogger("app.startup")
 # ==========================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Inicializando MyQuotes API")
+    logger.info("app_starting")
 
     try:
         # 👤 Cria admin padrão
         create_default_admin()
-        logger.info("Verificação/criação de admin padrão concluída")
+        logger.info("startup_admin_checked")
 
     except SQLAlchemyError:
-        logger.exception("Erro ao inicializar o banco de dados")
+        logger.exception("startup_database_initialization_failed")
 
     yield  # App rodando
 
-    logger.info("Encerrando MyQuotes API")
+    logger.info("app_stopping")
 
 
 # ==========================================
@@ -99,6 +100,7 @@ app.include_router(bank_accounts_router)
 app.include_router(credit_cards_router)
 app.include_router(expense_categories_router)
 app.include_router(expenses_router)
+app.include_router(investments_router)
 app.include_router(investment_incomes_router)
 app.include_router(
     habits_router,
