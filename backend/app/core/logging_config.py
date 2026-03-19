@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -9,6 +10,33 @@ from typing import Literal
 # =========================================================
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+LogFormat = Literal["text", "json"]
+
+RESERVED_ATTRS = {
+    "args",
+    "asctime",
+    "created",
+    "exc_info",
+    "exc_text",
+    "filename",
+    "funcName",
+    "levelname",
+    "levelno",
+    "lineno",
+    "module",
+    "msecs",
+    "message",
+    "msg",
+    "name",
+    "pathname",
+    "process",
+    "processName",
+    "relativeCreated",
+    "stack_info",
+    "thread",
+    "threadName",
+    "taskName",
+}
 
 
 def get_log_level() -> LogLevel:
@@ -27,18 +55,57 @@ def get_log_level() -> LogLevel:
     return "DEBUG"
 
 
+def get_log_format() -> LogFormat:
+    value = os.getenv("LOG_FORMAT", "").strip().lower()
+    if value == "json":
+        return "json"
+
+    env = os.getenv("ENV", "development").lower()
+    if env in ("prod", "production", "staging"):
+        return "json"
+
+    return "text"
+
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        payload = {
+            "timestamp": self.formatTime(record, "%Y-%m-%dT%H:%M:%S%z"),
+            "level": record.levelname,
+            "logger": record.name,
+            "event": record.getMessage(),
+        }
+
+        extras = {
+            key: value
+            for key, value in record.__dict__.items()
+            if key not in RESERVED_ATTRS and not key.startswith("_")
+        }
+        if extras:
+            payload.update(extras)
+
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+
+        return json.dumps(payload, ensure_ascii=False, default=str)
+
+
 def setup_logging() -> None:
     """
     Inicializa a configuração global de logging.
     Deve ser chamada UMA vez no startup da aplicação.
     """
     log_level = get_log_level()
+    log_format = get_log_format()
 
     dictConfig(
         {
             "version": 1,
             "disable_existing_loggers": False,
             "formatters": {
+                "json": {
+                    "()": "core.logging_config.JsonFormatter",
+                },
                 "default": {
                     "format": (
                         "%(asctime)s | "
@@ -63,7 +130,11 @@ def setup_logging() -> None:
                 "console": {
                     "class": "logging.StreamHandler",
                     "level": log_level,
-                    "formatter": "verbose" if log_level == "DEBUG" else "default",
+                    "formatter": (
+                        "json"
+                        if log_format == "json"
+                        else ("verbose" if log_level == "DEBUG" else "default")
+                    ),
                     "stream": sys.stdout,
                 }
             },

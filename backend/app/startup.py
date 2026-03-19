@@ -18,7 +18,7 @@ def create_default_admin():
         existing_admin = db.query(User).filter(User.username == "admin").first()
 
         if existing_admin:
-            logger.warning("Admin padrão já existe, pulando criação")
+            logger.warning("default_admin_already_exists")
             return
 
         admin = User(
@@ -31,11 +31,11 @@ def create_default_admin():
         db.add(admin)
         db.commit()
 
-        logger.info("Admin padrão criado com sucesso")
+        logger.info("default_admin_created")
 
     except Exception:
         db.rollback()
-        logger.exception("Erro ao criar admin padrão")
+        logger.exception("default_admin_creation_failed")
 
     finally:
         db.close()

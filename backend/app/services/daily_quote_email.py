@@ -43,8 +43,15 @@ DEFAULT_QUOTE_TIME = time(8, 0)
 def send_daily_quote_emails():
     db: Session = SessionLocal()
     now = datetime.now()
+    processed_users = 0
+    sent_emails = 0
+    skipped_users = 0
+    failed_users = 0
 
-    logger.info("Cron de quote diária iniciado", extra={"timestamp": now.isoformat()})
+    logger.info(
+        "daily_quote_job_started",
+        extra={"timestamp": now.isoformat()},
+    )
 
     try:
         users = (
@@ -56,26 +63,49 @@ def send_daily_quote_emails():
             .all()
         )
 
-        logger.info("Usuários elegíveis encontrados", extra={"count": len(users)})
+        logger.info(
+            "daily_quote_users_loaded",
+            extra={"eligible_users": len(users)},
+        )
 
         template = TEMPLATE_ENV.get_template("emails/daily_quote.html")
 
         for user in users:
+            processed_users += 1
             try:
-                _process_user(
+                sent = _process_user(
                     db=db,
                     user=user,
                     now=now,
                     template=template,
                 )
+                if sent:
+                    sent_emails += 1
+                else:
+                    skipped_users += 1
             except Exception:
                 db.rollback()
+                failed_users += 1
                 logger.exception(
-                    "Erro ao processar usuário no cron de quote diária",
+                    "daily_quote_user_failed",
                     extra={"user_id": user.id, "email": user.email},
                 )
 
-        logger.info("Execução do cron de quote diária finalizada")
+        logger.info(
+            "daily_quote_job_finished",
+            extra={
+                "processed_users": processed_users,
+                "sent_emails": sent_emails,
+                "skipped_users": skipped_users,
+                "failed_users": failed_users,
+            },
+        )
+        return {
+            "processed_users": processed_users,
+            "sent_emails": sent_emails,
+            "skipped_users": skipped_users,
+            "failed_users": failed_users,
+        }
 
     finally:
         db.close()
@@ -97,10 +127,10 @@ def _process_user(
 
     if not prefs.get("receive_daily_quote", True):
         logger.debug(
-            "Usuário desativou quote diária",
+            "daily_quote_user_opted_out",
             extra={"user_id": user.id, "email": user.email},
         )
-        return
+        return False
 
     # ⏰ Horário configurado
     time_str = prefs.get("daily_quote_time")
@@ -114,7 +144,7 @@ def _process_user(
 
     if now < scheduled:
         logger.debug(
-            "Ainda não é o horário de envio",
+            "daily_quote_not_due_yet",
             extra={
                 "user_id": user.id,
                 "email": user.email,
@@ -122,26 +152,26 @@ def _process_user(
                 "scheduled": user_time.isoformat(),
             },
         )
-        return
+        return False
 
     # 🔒 Lock diário
     lock = try_acquire_daily_email_lock(db, user.id)
     if not lock:
         logger.info(
-            "Envio já realizado hoje (lock existente)",
+            "daily_quote_already_sent_today",
             extra={"user_id": user.id, "email": user.email},
         )
-        return
+        return False
 
     # 📜 Quote do dia
     quote = get_quote_of_the_day_for_user(db, user.id)
     if not quote:
         logger.warning(
-            "Nenhuma quote disponível para o usuário",
+            "daily_quote_missing_quote",
             extra={"user_id": user.id, "email": user.email},
         )
         db.rollback()
-        return
+        return False
 
     html = template.render(
         text=quote.text,
@@ -159,6 +189,7 @@ def _process_user(
     db.commit()
 
     logger.info(
-        "Email de quote diária enviado com sucesso",
+        "daily_quote_email_sent",
         extra={"user_id": user.id, "email": user.email},
     )
+    return True

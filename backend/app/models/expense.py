@@ -33,7 +33,11 @@ class Expense(Base):
     credit_card_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("credit_cards.id", ondelete="SET NULL"), nullable=True
     )
+    invoice_payment_expense_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("expenses.id", ondelete="SET NULL"), nullable=True
+    )
     launch_date: Mapped[date] = mapped_column(Date, nullable=False)
+    invoice_paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime, server_default=func.current_timestamp()
     )

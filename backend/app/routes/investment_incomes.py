@@ -6,7 +6,6 @@ from database import get_db
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from models.bank_account import BankAccount
 from models.investment_income import InvestmentIncome
-from models.patrimony_snapshot import PatrimonySnapshot
 from models.user import User
 from schemas.investment_income import (
     InvestmentIncomeCreate,
@@ -14,7 +13,7 @@ from schemas.investment_income import (
     InvestmentIncomeUpdate,
 )
 from services.dream_financial_progress import sync_dream_milestone_financial_progress
-from sqlalchemy import func
+from services.patrimony_snapshot_service import capture_patrimony_snapshot
 from sqlalchemy.orm import Session, joinedload
 
 router = APIRouter(prefix="/investment-incomes", tags=["Investment Incomes"])
@@ -80,15 +79,6 @@ def _apply_account_delta(account: BankAccount, delta: Decimal) -> None:
     account.total_value = next_total
 
 
-def _capture_patrimony_snapshot(db: Session, user_id: int) -> None:
-    total = (
-        db.query(func.coalesce(func.sum(BankAccount.total_value), 0))
-        .filter(BankAccount.user_id == user_id)
-        .scalar()
-    )
-    db.add(PatrimonySnapshot(user_id=user_id, total_value=total))
-
-
 @router.get("", response_model=list[InvestmentIncomeRead])
 def list_investment_incomes(
     from_date: date | None = Query(default=None, alias="from"),
@@ -145,7 +135,7 @@ def create_investment_income(
 
     db.add(item)
     db.flush()
-    _capture_patrimony_snapshot(db, user.id)
+    capture_patrimony_snapshot(db, user.id)
     if account.objective_dream_id is not None:
         sync_dream_milestone_financial_progress(db, user.id, account.objective_dream_id)
     db.commit()
@@ -218,7 +208,7 @@ def update_investment_income(
 
     db.flush()
     if has_balance_change:
-        _capture_patrimony_snapshot(db, user.id)
+        capture_patrimony_snapshot(db, user.id)
     for dream_id in touched_dream_ids:
         sync_dream_milestone_financial_progress(db, user.id, dream_id)
     db.commit()
@@ -247,7 +237,7 @@ def delete_investment_income(
 
     db.delete(item)
     db.flush()
-    _capture_patrimony_snapshot(db, user.id)
+    capture_patrimony_snapshot(db, user.id)
     for dream_id in touched_dream_ids:
         sync_dream_milestone_financial_progress(db, user.id, dream_id)
     db.commit()

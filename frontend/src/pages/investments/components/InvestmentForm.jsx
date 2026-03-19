@@ -102,20 +102,12 @@ export default function InvestmentForm({
             setForm((prev) => ({ ...prev, averagePrice: e.target.value }))
           }
         />
-
-        <input
-          type="number"
-          step="0.0001"
-          min="0"
-          className="themed-input rounded px-3 py-2"
-          placeholder="Preço atual"
-          value={form.currentPrice}
-          onChange={(e) =>
-            setForm((prev) => ({ ...prev, currentPrice: e.target.value }))
-          }
-        />
       </div>
 
+      <p className="themed-muted text-sm mt-3">
+        O preço atual é sincronizado automaticamente via BRAPI e salvo no
+        histórico.
+      </p>
       <div className="flex gap-2 mt-4">
         <button
           type="submit"

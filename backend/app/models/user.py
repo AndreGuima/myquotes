@@ -51,6 +51,9 @@ class User(Base):
     investment_incomes: Mapped[List["InvestmentIncome"]] = relationship(
         "InvestmentIncome", back_populates="user", cascade="all, delete-orphan"
     )
+    investments: Mapped[List["Investment"]] = relationship(
+        "Investment", back_populates="user", cascade="all, delete-orphan"
+    )
     expense_categories: Mapped[List["ExpenseCategory"]] = relationship(
         "ExpenseCategory", back_populates="user", cascade="all, delete-orphan"
     )
@@ -64,7 +67,11 @@ from models.credit_card import CreditCard  # noqa: E402,F401
 from models.dream import Dream  # noqa: E402,F401
 from models.expense import Expense  # noqa: E402,F401
 from models.expense_category import ExpenseCategory  # noqa: E402,F401
+from models.investment import Investment  # noqa: E402,F401
 from models.investment_income import InvestmentIncome  # noqa: E402,F401
 from models.patrimony_snapshot import PatrimonySnapshot  # noqa: E402,F401
+from models.patrimony_snapshot_account import (  # noqa: E402,F401
+    PatrimonySnapshotAccount,
+)
 from models.quote import Quote  # noqa: E402,F401
 from models.reading_list_book import ReadingListBook  # noqa: E402,F401

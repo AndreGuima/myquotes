@@ -39,6 +39,10 @@ const expensesService = {
   remove(id) {
     return api.delete(`/expenses/${id}`);
   },
+
+  payCreditInvoice(payload) {
+    return api.post("/expenses/pay-credit-invoice", payload);
+  },
 };
 
 export default expensesService;

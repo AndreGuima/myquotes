@@ -8,6 +8,7 @@ import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
 
 const EXPENSES_PAGE_SIZE = 10;
+const EXCLUDED_TOP_CATEGORY = "Pagamento de Fatura";
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -122,9 +123,15 @@ export default function Expenses() {
   }, [expenses]);
 
   const topCategory = useMemo(() => {
-    if (expenses.length === 0) return "-";
+    const eligibleExpenses = expenses.filter(
+      (item) =>
+        item.expense_category_name?.trim().toLowerCase() !==
+        EXCLUDED_TOP_CATEGORY.toLowerCase(),
+    );
 
-    const totalsByCategory = expenses.reduce((acc, item) => {
+    if (eligibleExpenses.length === 0) return "-";
+
+    const totalsByCategory = eligibleExpenses.reduce((acc, item) => {
       const key = item.expense_category_name || "Sem categoria";
       acc[key] = (acc[key] || 0) + Number(item.value || 0);
       return acc;
@@ -349,8 +356,8 @@ export default function Expenses() {
     const categoryId = Number(form.categoryId);
     const paymentMethod = form.paymentMethod;
 
-    if (!Number.isFinite(value) || value <= 0) {
-      notify.error("Informe um valor valido");
+    if (!Number.isFinite(value) || value === 0) {
+      notify.error("Informe um valor diferente de zero");
       return;
     }
     if (!description) {
@@ -608,11 +615,16 @@ export default function Expenses() {
           </p>
         </div>
 
-        <div className="themed-card themed-border border rounded-xl p-5">
-          <h2 className="font-semibold mb-1">Lançamentos</h2>
-          <p className="text-2xl font-bold">{expenses.length}</p>
-          <p className="themed-muted text-sm mt-1">Quantidade de despesas</p>
-        </div>
+        <Link
+          to="/finances/expenses/pay-invoice"
+          className="themed-card themed-border border rounded-xl p-5 hover:shadow-md transition block"
+        >
+          <h2 className="font-semibold mb-1">Pagar Fatura</h2>
+          <p className="text-2xl font-bold">Pagar Fatura</p>
+          <p className="themed-muted text-sm mt-1">
+            Selecione gastos no credito da fatura
+          </p>
+        </Link>
 
         <Link
           to="/finances/expenses/dashboards"
@@ -638,7 +650,6 @@ export default function Expenses() {
           <input
             type="number"
             step="0.01"
-            min="0"
             className="themed-input rounded px-3 py-2"
             placeholder="Valor"
             value={form.value}

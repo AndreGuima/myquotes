@@ -1,5 +1,5 @@
 """
-Job: Envio diário da frase do dia por email
+Job: Sincroniza cotações de investimentos no banco.
 """
 
 import logging
@@ -8,12 +8,12 @@ from datetime import datetime, timezone
 
 from core.logging_config import setup_logging
 from database import SessionLocal
-from services.daily_quote_email import send_daily_quote_emails
+from services.investment_price_sync import sync_investment_prices
 from services.job_run_service import create_job_run, finish_job_run
 
 setup_logging()
-logger = logging.getLogger("app.cron.send_daily_quote")
-JOB_NAME = "send_daily_quote"
+logger = logging.getLogger("app.cron.sync_investment_prices")
+JOB_NAME = "sync_investment_prices"
 
 
 def main():
@@ -22,24 +22,34 @@ def main():
     perf_started_at = time.perf_counter()
     job_run = None
     try:
-        job_run = create_job_run(db, job_name=JOB_NAME)
+        job_run = create_job_run(
+            db,
+            job_name=JOB_NAME,
+        )
         db.commit()
-        stats = send_daily_quote_emails()
+        synced_investments, synced_tickers, captured_at = sync_investment_prices(db)
+        duration_ms = int((time.perf_counter() - perf_started_at) * 1000)
         finish_job_run(
             db,
             job_run,
             status="success",
             started_at=started_at,
-            meta_json=stats,
+            meta_json={
+                "synced_investments": synced_investments,
+                "synced_tickers": synced_tickers,
+                "captured_at": captured_at.isoformat(),
+            },
         )
         db.commit()
         logger.info(
-            "daily_quote_job_success",
+            "sync_prices_success",
             extra={
                 "job_name": JOB_NAME,
                 "status": "success",
-                "duration_ms": int((time.perf_counter() - perf_started_at) * 1000),
-                **stats,
+                "synced_investments": synced_investments,
+                "synced_tickers": synced_tickers,
+                "duration_ms": duration_ms,
+                "captured_at": captured_at.isoformat(),
             },
         )
     except Exception:
@@ -58,7 +68,7 @@ def main():
                 db.rollback()
 
         logger.exception(
-            "daily_quote_job_failed",
+            "sync_prices_failed",
             extra={
                 "job_name": JOB_NAME,
                 "status": "failed",

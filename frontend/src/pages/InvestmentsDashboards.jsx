@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import investmentsService from "../services/investmentsService";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
+import PieDonutChart from "../components/charts/PieDonutChart";
+import { describeArc } from "../utils/charts/pieMath";
 
 const PIE_COLORS = [
   "#0ea5e9",
@@ -14,28 +16,6 @@ const PIE_COLORS = [
   "#f97316",
   "#84cc16",
 ];
-
-function formatCurrency(value) {
-  return Number(value || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
-function polarToCartesian(cx, cy, radius, angleInDegrees) {
-  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
-  return {
-    x: cx + radius * Math.cos(angleInRadians),
-    y: cy + radius * Math.sin(angleInRadians),
-  };
-}
-
-function describeArc(cx, cy, radius, startAngle, endAngle) {
-  const start = polarToCartesian(cx, cy, radius, endAngle);
-  const end = polarToCartesian(cx, cy, radius, startAngle);
-  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y} Z`;
-}
 
 function buildSectorSummaryByType(investments, assetType) {
   const filtered = (investments || []).filter(
@@ -73,6 +53,8 @@ function buildPieSlices(summary) {
     const angle = (item.total / total) * 360;
     const endAngle = startAngle + angle;
     const slice = {
+      id: item.sector,
+      label: item.sector,
       ...item,
       percentage,
       color: PIE_COLORS[index % PIE_COLORS.length],
@@ -87,73 +69,19 @@ function buildPieSlices(summary) {
 
 function PieBySectorCard({ title, summary }) {
   const { total, slices } = useMemo(() => buildPieSlices(summary), [summary]);
+  const [hoveredSector, setHoveredSector] = useState(null);
 
   return (
     <div className="themed-card themed-border border rounded-xl p-5">
       <h2 className="font-semibold mb-3">{title}</h2>
-      {slices.length === 0 ? (
-        <p className="themed-muted text-sm">
-          Sem dados suficientes para montar o gráfico.
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-          <div className="w-full max-w-[260px] mx-auto">
-            <svg
-              viewBox="0 0 220 220"
-              role="img"
-              aria-label={`Gráfico de pizza de ${title} por setor`}
-              className="w-full h-auto drop-shadow-sm"
-            >
-              <circle cx="110" cy="110" r="98" fill="rgba(255,255,255,0.04)" />
-              {slices.map((slice) => (
-                <path key={slice.sector} d={slice.path} fill={slice.color} />
-              ))}
-              <circle cx="110" cy="110" r="48" fill="var(--card-bg)" />
-              <text
-                x="110"
-                y="104"
-                textAnchor="middle"
-                className="fill-current text-[10px] font-medium themed-muted"
-              >
-                Total
-              </text>
-              <text
-                x="110"
-                y="120"
-                textAnchor="middle"
-                className="fill-current text-[11px] font-semibold"
-              >
-                {formatCurrency(total)}
-              </text>
-            </svg>
-          </div>
-
-          <div className="space-y-2">
-            {slices.map((slice) => (
-              <div
-                key={slice.sector}
-                className="flex items-center justify-between text-sm themed-card themed-border border rounded-lg px-3 py-2"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="inline-block w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: slice.color }}
-                  />
-                  <span className="truncate">{slice.sector}</span>
-                </div>
-                <div className="text-right ml-3">
-                  <div className="font-medium">
-                    {formatCurrency(slice.total)}
-                  </div>
-                  <div className="themed-muted text-xs">
-                    {slice.percentage.toFixed(1)}% • {slice.count} ativos
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <PieDonutChart
+        slices={slices}
+        total={total}
+        hoveredId={hoveredSector}
+        setHoveredId={setHoveredSector}
+        ariaLabel={`Gráfico de pizza de ${title} por setor`}
+        countSuffix="ativos"
+      />
     </div>
   );
 }

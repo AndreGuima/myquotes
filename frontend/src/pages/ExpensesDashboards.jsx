@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import expensesService from "../services/expensesService";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
+import PieDonutChart from "../components/charts/PieDonutChart";
+import { describeArc } from "../utils/charts/pieMath";
 
 const PIE_COLORS = [
   "#0ea5e9",
@@ -14,27 +16,13 @@ const PIE_COLORS = [
   "#f97316",
   "#84cc16",
 ];
+const EXCLUDED_PIE_CATEGORY = "Pagamento de Fatura";
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
-}
-
-function polarToCartesian(cx, cy, radius, angleInDegrees) {
-  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
-  return {
-    x: cx + radius * Math.cos(angleInRadians),
-    y: cy + radius * Math.sin(angleInRadians),
-  };
-}
-
-function describeArc(cx, cy, radius, startAngle, endAngle) {
-  const start = polarToCartesian(cx, cy, radius, endAngle);
-  const end = polarToCartesian(cx, cy, radius, startAngle);
-  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y} Z`;
 }
 
 export default function ExpensesDashboards() {
@@ -50,6 +38,7 @@ export default function ExpensesDashboards() {
     fromDate: "",
     toDate: "",
   });
+  const [hoveredCategory, setHoveredCategory] = useState(null);
 
   const invalidPeriod =
     periodFilters.fromDate &&
@@ -93,23 +82,39 @@ export default function ExpensesDashboards() {
       .sort((a, b) => b.total - a.total);
   }, [invalidPeriod, summary.by_category]);
 
+  const pieCategoriesSummary = useMemo(
+    () =>
+      categoriesSummary.filter(
+        (item) =>
+          item.name?.trim().toLowerCase() !==
+          EXCLUDED_PIE_CATEGORY.toLowerCase(),
+      ),
+    [categoriesSummary],
+  );
+
   const totalExpenses = invalidPeriod ? 0 : Number(summary.total || 0);
   const averageExpense = invalidPeriod ? 0 : Number(summary.average || 0);
   const launchCount = invalidPeriod ? 0 : Number(summary.count || 0);
+  const pieTotalExpenses = useMemo(
+    () => pieCategoriesSummary.reduce((acc, item) => acc + item.total, 0),
+    [pieCategoriesSummary],
+  );
   const paymentSplit = {
     debit: invalidPeriod ? 0 : Number(summary.debit_total || 0),
     credit: invalidPeriod ? 0 : Number(summary.credit_total || 0),
   };
 
   const pieSlices = useMemo(() => {
-    if (totalExpenses <= 0 || categoriesSummary.length === 0) return [];
+    if (pieTotalExpenses <= 0 || pieCategoriesSummary.length === 0) return [];
 
     let startAngle = 0;
-    return categoriesSummary.map((item, index) => {
-      const percentage = (item.total / totalExpenses) * 100;
-      const angle = (item.total / totalExpenses) * 360;
+    return pieCategoriesSummary.map((item, index) => {
+      const percentage = (item.total / pieTotalExpenses) * 100;
+      const angle = (item.total / pieTotalExpenses) * 360;
       const endAngle = startAngle + angle;
       const slice = {
+        id: item.id,
+        label: item.name,
         ...item,
         percentage,
         color: PIE_COLORS[index % PIE_COLORS.length],
@@ -118,7 +123,7 @@ export default function ExpensesDashboards() {
       startAngle = endAngle;
       return slice;
     });
-  }, [categoriesSummary, totalExpenses]);
+  }, [pieCategoriesSummary, pieTotalExpenses]);
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -221,71 +226,17 @@ export default function ExpensesDashboards() {
 
       <div className="themed-card themed-border border rounded-xl p-5 mt-4">
         <h2 className="font-semibold mb-3">Distribuição por Categoria</h2>
-        {categoriesSummary.length === 0 ? (
+        {pieCategoriesSummary.length === 0 ? (
           <p className="themed-muted text-sm">Sem dados de categoria ainda.</p>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-            <div className="w-full max-w-[260px] mx-auto">
-              <svg
-                viewBox="0 0 220 220"
-                role="img"
-                aria-label="Gráfico de pizza de despesas por categoria"
-                className="w-full h-auto drop-shadow-sm"
-              >
-                <circle
-                  cx="110"
-                  cy="110"
-                  r="98"
-                  fill="rgba(255,255,255,0.04)"
-                />
-                {pieSlices.map((slice) => (
-                  <path key={slice.id} d={slice.path} fill={slice.color} />
-                ))}
-                <circle cx="110" cy="110" r="48" fill="var(--card-bg)" />
-                <text
-                  x="110"
-                  y="104"
-                  textAnchor="middle"
-                  className="fill-current text-[10px] font-medium themed-muted"
-                >
-                  Total
-                </text>
-                <text
-                  x="110"
-                  y="120"
-                  textAnchor="middle"
-                  className="fill-current text-[11px] font-semibold"
-                >
-                  {formatCurrency(totalExpenses)}
-                </text>
-              </svg>
-            </div>
-
-            <div className="space-y-2">
-              {pieSlices.map((slice) => (
-                <div
-                  key={slice.id}
-                  className="flex items-center justify-between text-sm themed-card themed-border border rounded-lg px-3 py-2"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="inline-block w-3 h-3 rounded-full shrink-0"
-                      style={{ backgroundColor: slice.color }}
-                    />
-                    <span className="truncate">{slice.name}</span>
-                  </div>
-                  <div className="text-right ml-3">
-                    <div className="font-medium">
-                      {formatCurrency(slice.total)}
-                    </div>
-                    <div className="themed-muted text-xs">
-                      {slice.percentage.toFixed(1)}% • {slice.count} lanç.
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <PieDonutChart
+            slices={pieSlices}
+            total={pieTotalExpenses}
+            hoveredId={hoveredCategory}
+            setHoveredId={setHoveredCategory}
+            ariaLabel="Gráfico de pizza de despesas por categoria"
+            countSuffix="lanç."
+          />
         )}
       </div>
     </div>

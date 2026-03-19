@@ -38,9 +38,13 @@ RUN chmod +x /app/wait-for-db.sh
 # Cron via cron.d
 # -------------------------
 COPY cron/daily_quote /etc/cron.d/daily_quote
+COPY cron/sync_investment_prices /etc/cron.d/sync_investment_prices
 RUN chmod 0644 /etc/cron.d/daily_quote \
+    && chmod 0644 /etc/cron.d/sync_investment_prices \
     && chown root:root /etc/cron.d/daily_quote \
+    && chown root:root /etc/cron.d/sync_investment_prices \
     && sed -i -e '$a\' /etc/cron.d/daily_quote \
+    && sed -i -e '$a\' /etc/cron.d/sync_investment_prices \
     && touch /var/log/cron.log
 
 # -------------------------
@@ -55,5 +59,4 @@ EXPOSE 8000
 # Start
 # -------------------------
 CMD ["sh", "-c", "/app/wait-for-db.sh && alembic upgrade head && su appuser -c \"uvicorn main:app --host 0.0.0.0 --port 8000\""]
-
 

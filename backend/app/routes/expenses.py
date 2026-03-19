@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from core.dependencies import get_current_user
@@ -8,7 +8,6 @@ from models.bank_account import BankAccount
 from models.credit_card import CreditCard
 from models.expense import Expense
 from models.expense_category import ExpenseCategory
-from models.patrimony_snapshot import PatrimonySnapshot
 from models.user import User
 from schemas.expense import (
     ExpenseCreate,
@@ -16,8 +15,11 @@ from schemas.expense import (
     ExpenseSummaryCategoryRead,
     ExpenseSummaryRead,
     ExpenseUpdate,
+    PayCreditInvoiceRequest,
+    PayCreditInvoiceResponse,
 )
 from services.dream_financial_progress import sync_dream_milestone_financial_progress
+from services.patrimony_snapshot_service import capture_patrimony_snapshot
 from sqlalchemy import case, func
 from sqlalchemy.orm import Query as SAQuery
 from sqlalchemy.orm import Session, joinedload
@@ -37,7 +39,9 @@ def _to_response(expense: Expense) -> ExpenseRead:
         bank_account_name=expense.bank_account.name if expense.bank_account else None,
         credit_card_id=expense.credit_card_id,
         credit_card_name=expense.credit_card.name if expense.credit_card else None,
+        invoice_payment_expense_id=expense.invoice_payment_expense_id,
         launch_date=expense.launch_date,
+        invoice_paid_at=expense.invoice_paid_at,
         created_at=expense.created_at,
         updated_at=expense.updated_at,
     )
@@ -101,15 +105,6 @@ def _apply_account_delta(account: BankAccount, delta: Decimal) -> None:
     account.total_value = next_total
 
 
-def _capture_patrimony_snapshot(db: Session, user_id: int) -> None:
-    total = (
-        db.query(func.coalesce(func.sum(BankAccount.total_value), 0))
-        .filter(BankAccount.user_id == user_id)
-        .scalar()
-    )
-    db.add(PatrimonySnapshot(user_id=user_id, total_value=total))
-
-
 def _validate_card_belongs_to_user(db: Session, user_id: int, card_id: int) -> None:
     card = (
         db.query(CreditCard)
@@ -118,6 +113,17 @@ def _validate_card_belongs_to_user(db: Session, user_id: int, card_id: int) -> N
     )
     if not card:
         raise HTTPException(status_code=400, detail="Cartão inválido")
+
+
+def _get_user_card_or_400(db: Session, user_id: int, card_id: int) -> CreditCard:
+    card = (
+        db.query(CreditCard)
+        .filter(CreditCard.id == card_id, CreditCard.user_id == user_id)
+        .first()
+    )
+    if not card:
+        raise HTTPException(status_code=400, detail="Cartão inválido")
+    return card
 
 
 def _validate_category_belongs_to_user(
@@ -132,6 +138,27 @@ def _validate_category_belongs_to_user(
     )
     if not category:
         raise HTTPException(status_code=400, detail="Categoria inválida")
+
+
+def _get_or_create_invoice_payment_category(
+    db: Session,
+    user_id: int,
+) -> ExpenseCategory:
+    category = (
+        db.query(ExpenseCategory)
+        .filter(
+            ExpenseCategory.user_id == user_id,
+            ExpenseCategory.name == "Pagamento de Fatura",
+        )
+        .first()
+    )
+    if category:
+        return category
+
+    category = ExpenseCategory(user_id=user_id, name="Pagamento de Fatura")
+    db.add(category)
+    db.flush()
+    return category
 
 
 def _apply_expense_filters(
@@ -333,7 +360,7 @@ def create_expense(
     for dream_id in touched_dream_ids:
         sync_dream_milestone_financial_progress(db, user.id, dream_id)
     if touched_dream_ids:
-        _capture_patrimony_snapshot(db, user.id)
+        capture_patrimony_snapshot(db, user.id)
     db.commit()
     db.expire_all()
 
@@ -429,7 +456,7 @@ def update_expense(
     for dream_id in touched_dream_ids:
         sync_dream_milestone_financial_progress(db, user.id, dream_id)
     if touched_dream_ids:
-        _capture_patrimony_snapshot(db, user.id)
+        capture_patrimony_snapshot(db, user.id)
     db.commit()
     db.expire_all()
 
@@ -459,6 +486,118 @@ def delete_expense(
     for dream_id in touched_dream_ids:
         sync_dream_milestone_financial_progress(db, user.id, dream_id)
     if touched_dream_ids:
-        _capture_patrimony_snapshot(db, user.id)
+        capture_patrimony_snapshot(db, user.id)
     db.commit()
     return None
+
+
+@router.post("/pay-credit-invoice", response_model=PayCreditInvoiceResponse)
+def pay_credit_invoice(
+    payload: PayCreditInvoiceRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    unique_expense_ids = list(dict.fromkeys(payload.expense_ids))
+    if len(unique_expense_ids) == 0:
+        raise HTTPException(
+            status_code=400, detail="Informe ao menos uma despesa para pagar"
+        )
+
+    card = _get_user_card_or_400(db, user.id, payload.credit_card_id)
+    account = _get_user_account_or_400(
+        db, user.id, payload.bank_account_id, for_update=True
+    )
+
+    expenses = (
+        db.query(Expense)
+        .options(
+            joinedload(Expense.bank_account),
+            joinedload(Expense.credit_card),
+            joinedload(Expense.expense_category),
+        )
+        .filter(
+            Expense.user_id == user.id,
+            Expense.id.in_(unique_expense_ids),
+        )
+        .with_for_update()
+        .all()
+    )
+    if len(expenses) != len(unique_expense_ids):
+        raise HTTPException(status_code=400, detail="Despesa inválida na seleção")
+
+    for expense in expenses:
+        if expense.payment_method != "credit":
+            raise HTTPException(
+                status_code=400,
+                detail="Apenas despesas no crédito podem ser pagas na fatura",
+            )
+        if expense.credit_card_id != payload.credit_card_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Todas as despesas devem pertencer ao cartão selecionado",
+            )
+        if expense.invoice_paid_at is not None:
+            raise HTTPException(
+                status_code=400,
+                detail="Existe despesa já vinculada a uma fatura paga",
+            )
+
+    total_paid = _to_money_decimal(
+        sum(_to_money_decimal(exp.value) for exp in expenses)
+    )
+    if total_paid <= Decimal("0"):
+        raise HTTPException(status_code=400, detail="Valor total da fatura inválido")
+
+    _apply_account_delta(account, -total_paid)
+
+    if payload.expense_category_id is not None:
+        _validate_category_belongs_to_user(db, user.id, payload.expense_category_id)
+        payment_category_id = payload.expense_category_id
+    else:
+        payment_category = _get_or_create_invoice_payment_category(db, user.id)
+        payment_category_id = payment_category.id
+
+    payment_description = (
+        payload.description.strip()
+        if payload.description is not None
+        else f"Pagamento de fatura - {card.name}"
+    )
+    if not payment_description:
+        raise HTTPException(status_code=400, detail="Descrição é obrigatória")
+
+    payment_expense = Expense(
+        user_id=user.id,
+        value=total_paid,
+        description=payment_description,
+        expense_category_id=payment_category_id,
+        payment_method="debit",
+        bank_account_id=payload.bank_account_id,
+        credit_card_id=None,
+        launch_date=payload.launch_date,
+    )
+    db.add(payment_expense)
+    db.flush()
+
+    now = datetime.utcnow()
+    for expense in expenses:
+        expense.invoice_paid_at = now
+        expense.invoice_payment_expense_id = payment_expense.id
+
+    touched_dream_ids: set[int] = set()
+    if account.objective_dream_id is not None:
+        touched_dream_ids.add(account.objective_dream_id)
+
+    for dream_id in touched_dream_ids:
+        sync_dream_milestone_financial_progress(db, user.id, dream_id)
+    if touched_dream_ids:
+        capture_patrimony_snapshot(db, user.id)
+
+    db.commit()
+    db.expire_all()
+
+    created = _get_user_expense_or_404(db, user.id, payment_expense.id)
+    return PayCreditInvoiceResponse(
+        payment_expense=_to_response(created),
+        paid_expense_ids=sorted(unique_expense_ids),
+        total_paid=total_paid,
+    )

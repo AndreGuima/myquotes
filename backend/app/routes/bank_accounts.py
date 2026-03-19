@@ -14,8 +14,8 @@ from schemas.bank_account import (
     PatrimonySnapshotRead,
 )
 from services.dream_financial_progress import sync_dream_milestone_financial_progress
-from sqlalchemy import func
-from sqlalchemy.orm import Session, joinedload
+from services.patrimony_snapshot_service import capture_patrimony_snapshot
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 router = APIRouter(prefix="/bank-accounts", tags=["Bank Accounts"])
 
@@ -44,15 +44,6 @@ def _validate_dream_belongs_to_user(db: Session, user_id: int, dream_id: int) ->
     if not dream:
         raise HTTPException(status_code=400, detail="Objetivo inválido")
     return dream
-
-
-def _capture_patrimony_snapshot(db: Session, user_id: int) -> None:
-    total = (
-        db.query(func.coalesce(func.sum(BankAccount.total_value), 0))
-        .filter(BankAccount.user_id == user_id)
-        .scalar()
-    )
-    db.add(PatrimonySnapshot(user_id=user_id, total_value=total))
 
 
 def _get_user_account_or_404(db: Session, user_id: int, account_id: int) -> BankAccount:
@@ -103,7 +94,7 @@ def create_account(
     db.add(account)
     db.flush()
     sync_dream_milestone_financial_progress(db, user.id, account.objective_dream_id)
-    _capture_patrimony_snapshot(db, user.id)
+    capture_patrimony_snapshot(db, user.id)
     db.commit()
 
     account = _get_user_account_or_404(db, user.id, account.id)
@@ -137,7 +128,7 @@ def update_account(
     sync_dream_milestone_financial_progress(db, user.id, account.objective_dream_id)
     if previous_dream_id != account.objective_dream_id:
         sync_dream_milestone_financial_progress(db, user.id, previous_dream_id)
-    _capture_patrimony_snapshot(db, user.id)
+    capture_patrimony_snapshot(db, user.id)
     db.commit()
 
     account = _get_user_account_or_404(db, user.id, account.id)
@@ -155,7 +146,7 @@ def delete_account(
     db.delete(account)
     db.flush()
     sync_dream_milestone_financial_progress(db, user.id, dream_id)
-    _capture_patrimony_snapshot(db, user.id)
+    capture_patrimony_snapshot(db, user.id)
     db.commit()
     return None
 
@@ -175,6 +166,7 @@ def list_patrimony_snapshots(
     from_dt = datetime.now() - timedelta(days=days - 1)
     snapshots = (
         db.query(PatrimonySnapshot)
+        .options(selectinload(PatrimonySnapshot.accounts))
         .filter(
             PatrimonySnapshot.user_id == user.id,
             PatrimonySnapshot.snapshot_at >= from_dt,

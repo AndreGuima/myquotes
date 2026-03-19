@@ -42,6 +42,13 @@ class Settings(BaseSettings):
     SMTP_SSL: bool = False
 
     # =========================
+    # Investments / BRAPI
+    # =========================
+    BRAPI_BASE_URL: str = "https://brapi.dev"
+    BRAPI_TOKEN: str | None = None
+    BRAPI_MAX_QUOTES_PER_REQUEST: int = 1
+
+    # =========================
     # 🔒 Password policy
     # =========================
     PASSWORD_MIN_LENGTH: int = 8

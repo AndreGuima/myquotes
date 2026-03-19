@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { notify } from "../core/toast";
 import investmentIncomesService from "../services/investmentIncomesService";
+import investmentsService from "../services/investmentsService";
+import PieDonutChart from "../components/charts/PieDonutChart";
+import { describeArc } from "../utils/charts/pieMath";
+
+const PIE_COLORS = ["#0ea5e9", "#22c55e", "#f59e0b"];
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -37,8 +42,52 @@ function monthTimestamp(key) {
   return Number.isFinite(ts) ? ts : 0;
 }
 
+function buildPieSlices(summary) {
+  const total = summary.reduce((acc, item) => acc + Number(item.total || 0), 0);
+  if (total <= 0 || summary.length === 0) return { total, slices: [] };
+
+  let startAngle = 0;
+  const slices = summary.map((item, index) => {
+    const percentage = (item.total / total) * 100;
+    const angle = (item.total / total) * 360;
+    const endAngle = startAngle + angle;
+    const slice = {
+      id: item.type,
+      label: item.label,
+      ...item,
+      percentage,
+      color: PIE_COLORS[index % PIE_COLORS.length],
+      path: describeArc(110, 110, 95, startAngle, endAngle),
+    };
+    startAngle = endAngle;
+    return slice;
+  });
+
+  return { total, slices };
+}
+
+function AssetTypePieCard({ summary }) {
+  const { total, slices } = useMemo(() => buildPieSlices(summary), [summary]);
+  const [hoveredType, setHoveredType] = useState(null);
+
+  return (
+    <div className="themed-card themed-border border rounded-xl p-5">
+      <h2 className="font-semibold mb-3">Proventos por Tipo de Ativo</h2>
+      <PieDonutChart
+        slices={slices}
+        total={total}
+        hoveredId={hoveredType}
+        setHoveredId={setHoveredType}
+        ariaLabel="Gráfico de pizza de proventos por tipo de ativo"
+        countSuffix="lançamentos"
+      />
+    </div>
+  );
+}
+
 export default function InvestmentIncomesDashboards() {
   const [items, setItems] = useState([]);
+  const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [periodFilters, setPeriodFilters] = useState({
     fromDate: "",
@@ -56,11 +105,15 @@ export default function InvestmentIncomesDashboards() {
     async function loadData() {
       setLoading(true);
       try {
-        const data = await investmentIncomesService.list({
-          fromDate: periodFilters.fromDate,
-          toDate: periodFilters.toDate,
-        });
-        setItems(Array.isArray(data) ? data : []);
+        const [incomesData, investmentsData] = await Promise.all([
+          investmentIncomesService.list({
+            fromDate: periodFilters.fromDate,
+            toDate: periodFilters.toDate,
+          }),
+          investmentsService.list(),
+        ]);
+        setItems(Array.isArray(incomesData) ? incomesData : []);
+        setInvestments(Array.isArray(investmentsData) ? investmentsData : []);
       } catch {
         notify.error("Erro ao carregar dashboard de proventos");
       } finally {
@@ -119,6 +172,56 @@ export default function InvestmentIncomesDashboards() {
 
     return Object.values(grouped).sort((a, b) => b.total - a.total);
   }, [visibleItems]);
+
+  const assetTypeSummary = useMemo(() => {
+    const investmentTypeByTicker = new Map();
+
+    investments.forEach((item) => {
+      const ticker = String(item.ticker || "")
+        .trim()
+        .toUpperCase();
+      const assetType = String(item.asset_type || "")
+        .trim()
+        .toLowerCase();
+
+      if (!ticker || !assetType || investmentTypeByTicker.has(ticker)) return;
+      investmentTypeByTicker.set(ticker, assetType);
+    });
+
+    const grouped = visibleItems.reduce((acc, item) => {
+      const ticker = String(item.ticker || "")
+        .trim()
+        .toUpperCase();
+      const assetType = investmentTypeByTicker.get(ticker);
+
+      const normalizedType =
+        assetType === "stock" || assetType === "acao" || assetType === "acoes"
+          ? "stock"
+          : assetType === "fii" || assetType === "fiis"
+            ? "fii"
+            : "unknown";
+
+      if (!acc[normalizedType]) {
+        acc[normalizedType] = {
+          type: normalizedType,
+          label:
+            normalizedType === "stock"
+              ? "Ações"
+              : normalizedType === "fii"
+                ? "FIIs"
+                : "Sem vínculo",
+          total: 0,
+          count: 0,
+        };
+      }
+
+      acc[normalizedType].total += Number(item.amount || 0);
+      acc[normalizedType].count += 1;
+      return acc;
+    }, {});
+
+    return Object.values(grouped).sort((a, b) => b.total - a.total);
+  }, [investments, visibleItems]);
 
   const lastIncomeAt = useMemo(() => {
     if (!visibleItems.length) return null;
@@ -216,6 +319,10 @@ export default function InvestmentIncomesDashboards() {
                   : "-"}
               </p>
             </div>
+          </div>
+
+          <div className="mb-4">
+            <AssetTypePieCard summary={assetTypeSummary} />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
