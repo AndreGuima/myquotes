@@ -34,7 +34,24 @@ class BankAccount(Base):
         "Dream",
         back_populates="bank_accounts",
     )
+    transactions: Mapped[list["BankAccountTransaction"]] = relationship(
+        "BankAccountTransaction",
+        back_populates="account",
+        cascade="all, delete-orphan",
+    )
+    outgoing_transfers: Mapped[list["BankAccountTransfer"]] = relationship(
+        "BankAccountTransfer",
+        back_populates="from_account",
+        foreign_keys="BankAccountTransfer.from_account_id",
+    )
+    incoming_transfers: Mapped[list["BankAccountTransfer"]] = relationship(
+        "BankAccountTransfer",
+        back_populates="to_account",
+        foreign_keys="BankAccountTransfer.to_account_id",
+    )
 
 
+from models.bank_account_transaction import BankAccountTransaction  # noqa: E402,F401
+from models.bank_account_transfer import BankAccountTransfer  # noqa: E402,F401
 from models.dream import Dream  # noqa: E402,F401
 from models.user import User  # noqa: E402,F401

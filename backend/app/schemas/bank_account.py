@@ -28,6 +28,36 @@ class BankAccountRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class BankAccountTransfer(BaseModel):
+    from_account_id: int
+    to_account_id: int
+    amount: Decimal = Field(gt=0, decimal_places=2)
+
+
+class BankAccountTransferRead(BaseModel):
+    transferred_amount: Decimal
+    from_account: BankAccountRead
+    to_account: BankAccountRead
+
+
+class BankAccountTransactionRead(BaseModel):
+    id: int
+    transfer_id: int | None = None
+    amount: Decimal
+    transaction_type: str
+    description: str | None = None
+    created_at: datetime | None = None
+    balance_after: Decimal
+
+
+class BankAccountStatementRead(BaseModel):
+    account: BankAccountRead
+    items: list[BankAccountTransactionRead]
+    limit: int
+    offset: int
+    total: int
+
+
 class PatrimonySnapshotRead(BaseModel):
     class AccountSnapshotRead(BaseModel):
         bank_account_id: int | None = None

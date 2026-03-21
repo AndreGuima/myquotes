@@ -15,6 +15,10 @@ const bankAccountsService = {
     return api.post("/bank-accounts", payload);
   },
 
+  transfer(payload) {
+    return api.post("/bank-accounts/transfer", payload);
+  },
+
   update(id, payload) {
     return api.patch(`/bank-accounts/${id}`, payload);
   },

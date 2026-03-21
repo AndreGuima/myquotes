@@ -35,6 +35,7 @@ import DreamDetails from "./pages/DreamDetails.jsx";
 import Finances from "./pages/Finances.jsx";
 import DayManagement from "./pages/DayManagement.jsx";
 import Patrimony from "./pages/Patrimony.jsx";
+import BankAccountTransfers from "./pages/BankAccountTransfers.jsx";
 import Expenses from "./pages/Expenses.jsx";
 import ExpensesDashboards from "./pages/ExpensesDashboards.jsx";
 import PayCreditCardInvoice from "./pages/PayCreditCardInvoice.jsx";
@@ -100,6 +101,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               <Route path="/dreams/:id" element={<DreamDetails />} />
               <Route path="/finances" element={<Finances />} />
               <Route path="/finances/patrimony" element={<Patrimony />} />
+              <Route
+                path="/finances/transfers"
+                element={<BankAccountTransfers />}
+              />
               <Route
                 path="/finances/patrimony/dashboards"
                 element={<PatrimonyDashboards />}

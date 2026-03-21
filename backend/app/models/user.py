@@ -42,6 +42,20 @@ class User(Base):
     bank_accounts: Mapped[List["BankAccount"]] = relationship(
         "BankAccount", back_populates="user", cascade="all, delete-orphan"
     )
+    bank_account_transactions: Mapped[List["BankAccountTransaction"]] = relationship(
+        "BankAccountTransaction",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    bank_account_transfers: Mapped[List["BankAccountTransfer"]] = relationship(
+        "BankAccountTransfer",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    idempotency_keys: Mapped[List["IdempotencyKey"]] = relationship(
+        "IdempotencyKey",
+        cascade="all, delete-orphan",
+    )
     credit_cards: Mapped[List["CreditCard"]] = relationship(
         "CreditCard", back_populates="user", cascade="all, delete-orphan"
     )
@@ -63,10 +77,13 @@ class User(Base):
 
 
 from models.bank_account import BankAccount  # noqa: E402,F401
+from models.bank_account_transaction import BankAccountTransaction  # noqa: E402,F401
+from models.bank_account_transfer import BankAccountTransfer  # noqa: E402,F401
 from models.credit_card import CreditCard  # noqa: E402,F401
 from models.dream import Dream  # noqa: E402,F401
 from models.expense import Expense  # noqa: E402,F401
 from models.expense_category import ExpenseCategory  # noqa: E402,F401
+from models.idempotency_key import IdempotencyKey  # noqa: E402,F401
 from models.investment import Investment  # noqa: E402,F401
 from models.investment_income import InvestmentIncome  # noqa: E402,F401
 from models.patrimony_snapshot import PatrimonySnapshot  # noqa: E402,F401
