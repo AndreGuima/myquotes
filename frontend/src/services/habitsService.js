@@ -2,23 +2,23 @@ import api from "./api";
 
 const habitsService = {
   async list(params = {}) {
-    return api.get("/habits/", { params });
+    return api.get("/habits", { params });
   },
 
   async create(payload) {
-    return api.post("/habits/", payload);
+    return api.post("/habits", payload);
   },
 
   async update(id, payload) {
-    return api.patch(`/habits/${id}/`, payload);
+    return api.patch(`/habits/${id}`, payload);
   },
 
   async toggle(habitId) {
-    return api.post(`/habits/${habitId}/toggle/`);
+    return api.post(`/habits/${habitId}/toggle`);
   },
 
   async stats(habitId) {
-    return api.get(`/habits/${habitId}/stats/`);
+    return api.get(`/habits/${habitId}/stats`);
   },
 
   async history(habitId, params = {}) {

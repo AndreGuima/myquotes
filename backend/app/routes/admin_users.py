@@ -14,6 +14,21 @@ def list_users(db: Session = Depends(get_db)):
     return db.query(User).all()
 
 
+@router.post(
+    "/{user_id}/restore",
+    dependencies=[Depends(admin_required)],
+)
+def restore_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, "Usuário não encontrado")
+
+    user.is_active = True
+    db.commit()
+    db.refresh(user)
+    return {"detail": "Usuário restaurado com sucesso"}
+
+
 @router.put(
     "/{user_id}", response_model=UserRead, dependencies=[Depends(admin_required)]
 )
@@ -47,6 +62,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(404, "Usuário não encontrado")
 
-    db.delete(user)
+    user.is_active = False
     db.commit()
-    return {"detail": "Usuário apagado com sucesso"}
+    db.refresh(user)
+    return {"detail": "Usuário desativado com sucesso"}

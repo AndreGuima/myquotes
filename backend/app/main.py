@@ -21,7 +21,6 @@ from routes.investments import router as investments_router
 from routes.preferences import router as preferences_router
 from routes.quotes import router as quotes_router
 from routes.reading_list import router as reading_list_router
-from routes.users import router as users_router
 from sqlalchemy.exc import SQLAlchemyError
 from startup import create_default_admin
 
@@ -87,7 +86,6 @@ app.add_middleware(
 # ==========================================
 # 🔗 Registro de rotas
 # ==========================================
-app.include_router(users_router)
 app.include_router(quotes_router)
 app.include_router(auth_router)
 app.include_router(admin_users_router)

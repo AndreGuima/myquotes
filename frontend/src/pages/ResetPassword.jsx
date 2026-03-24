@@ -92,9 +92,9 @@ export default function ResetPassword() {
   // ⏳ Validando token
   if (checking) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-        <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm text-center">
-          <p className="text-gray-600">Validando token…</p>
+      <div className="flex min-h-screen items-center justify-center bg-[var(--app-bg)] p-4 text-[var(--app-text)]">
+        <div className="w-full max-w-sm rounded-2xl border themed-border themed-card p-6 text-center shadow-lg">
+          <p className="themed-muted">Validando token…</p>
         </div>
       </div>
     );
@@ -103,8 +103,8 @@ export default function ResetPassword() {
   // ❌ Token inválido
   if (error && !done && !password) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-        <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm text-center">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--app-bg)] p-4 text-[var(--app-text)]">
+        <div className="w-full max-w-sm rounded-2xl border themed-border themed-card p-6 text-center shadow-lg">
           <p className="text-red-600 font-medium">{error}</p>
         </div>
       </div>
@@ -114,12 +114,12 @@ export default function ResetPassword() {
   // ✅ Sucesso
   if (done) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-        <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm text-center">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--app-bg)] p-4 text-[var(--app-text)]">
+        <div className="w-full max-w-sm rounded-2xl border themed-border themed-card p-6 text-center shadow-lg">
           <h2 className="text-xl font-semibold mb-2">
             Senha redefinida com sucesso
           </h2>
-          <p className="text-gray-600">Redirecionando para o login…</p>
+          <p className="themed-muted">Redirecionando para o login…</p>
         </div>
       </div>
     );
@@ -134,12 +134,12 @@ export default function ResetPassword() {
 
   // 📝 Formulário
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--app-bg)] p-4 text-[var(--app-text)]">
+      <div className="w-full max-w-sm rounded-2xl border themed-border themed-card p-8 shadow-lg">
         <h1 className="text-2xl font-bold mb-4 text-center">Nova senha</h1>
 
         {error && (
-          <div className="bg-red-100 text-red-700 px-3 py-2 rounded mb-4">
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">
             {error}
           </div>
         )}
@@ -155,7 +155,7 @@ export default function ResetPassword() {
           />
 
           {(passwordFocused || password) && (
-            <ul className="bg-gray-50 border rounded p-3 space-y-1">
+            <ul className="themed-subtle themed-border space-y-1 rounded-lg border p-3">
               <Rule ok={passwordChecks.minLength}>Mínimo de 8 caracteres</Rule>
               <Rule ok={passwordChecks.upper}>Uma letra maiúscula</Rule>
               <Rule ok={passwordChecks.lower}>Uma letra minúscula</Rule>
@@ -179,7 +179,7 @@ export default function ResetPassword() {
           <button
             type="submit"
             disabled={isDisabled}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-blue-600 py-2.5 text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? "Salvando..." : "Redefinir senha"}
           </button>

@@ -2,7 +2,7 @@ import api from "./api";
 
 const usersService = {
   async getAll() {
-    return api.get("/admin/users");
+    return api.get("/admin/users/");
   },
 
   async update(id, data) {

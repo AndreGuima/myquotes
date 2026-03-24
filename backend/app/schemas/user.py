@@ -66,6 +66,8 @@ class UserRead(BaseModel):
     email: EmailStr
     role: RoleEnum
     created_at: Optional[datetime]
+    is_active: bool = True
+    is_verified: bool = False
 
     # equivale ao antigo orm_mode=True
     model_config = ConfigDict(from_attributes=True)
