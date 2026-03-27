@@ -54,7 +54,12 @@ def _get_user_income_or_404(
 
 
 def _get_user_account_or_400(
-    db: Session, user_id: int, account_id: int | None, *, for_update: bool = False
+    db: Session,
+    user_id: int,
+    account_id: int | None,
+    *,
+    for_update: bool = False,
+    require_investment_income_enabled: bool = False,
 ) -> BankAccount:
     if account_id is None:
         raise HTTPException(status_code=400, detail="Conta bancária inválida")
@@ -67,6 +72,11 @@ def _get_user_account_or_400(
     account = query.first()
     if not account:
         raise HTTPException(status_code=400, detail="Conta bancária inválida")
+    if require_investment_income_enabled and not bool(account.allow_investment_income):
+        raise HTTPException(
+            status_code=400,
+            detail="Conta não habilitada para recebimento de proventos",
+        )
     return account
 
 
@@ -119,7 +129,11 @@ def create_investment_income(
 
     with transaction_scope(db):
         account = _get_user_account_or_400(
-            db, user.id, payload.bank_account_id, for_update=True
+            db,
+            user.id,
+            payload.bank_account_id,
+            for_update=True,
+            require_investment_income_enabled=True,
         )
         apply_account_delta(
             db,
@@ -193,6 +207,10 @@ def update_investment_income(
 
         previous_account_id = item.bank_account_id
         previous_amount = to_money_decimal(item.amount)
+        changing_account = (
+            payload.bank_account_id is not None
+            and payload.bank_account_id != previous_account_id
+        )
         account_deltas: dict[int, Decimal] = {}
         if previous_account_id is not None:
             account_deltas[previous_account_id] = (
@@ -209,6 +227,15 @@ def update_investment_income(
             if delta == Decimal("0"):
                 continue
             account = _get_user_account_or_400(db, user.id, account_id, for_update=True)
+            if (
+                account_id == next_account_id
+                and changing_account
+                and not bool(account.allow_investment_income)
+            ):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Conta não habilitada para recebimento de proventos",
+                )
             apply_account_delta(
                 db,
                 user_id=user.id,

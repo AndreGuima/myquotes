@@ -38,6 +38,7 @@ def _to_response(account: BankAccount) -> BankAccountRead:
         objective_dream_id=account.objective_dream_id,
         objective_dream_title=account.objective_dream.title,
         total_value=account.total_value,
+        allow_investment_income=bool(account.allow_investment_income),
         created_at=account.created_at,
         updated_at=account.updated_at,
     )
@@ -75,16 +76,23 @@ def _get_user_account_or_404(
 
 @router.get("", response_model=list[BankAccountRead])
 def list_accounts(
+    allow_investment_income: bool | None = Query(default=None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    accounts = (
+    query = (
         db.query(BankAccount)
         .options(joinedload(BankAccount.objective_dream))
         .filter(BankAccount.user_id == user.id)
-        .order_by(BankAccount.created_at.desc(), BankAccount.id.desc())
-        .all()
     )
+    if allow_investment_income is not None:
+        query = query.filter(
+            BankAccount.allow_investment_income.is_(allow_investment_income)
+        )
+
+    accounts = query.order_by(
+        BankAccount.created_at.desc(), BankAccount.id.desc()
+    ).all()
     return [_to_response(account) for account in accounts]
 
 
@@ -165,6 +173,7 @@ def create_account(
             name=payload.name.strip(),
             objective_dream_id=dream.id,
             total_value=to_money_decimal("0.00"),
+            allow_investment_income=bool(payload.allow_investment_income),
         )
 
         if not account.name:
@@ -320,6 +329,8 @@ def update_account(
                 transaction_type=TransactionType.MANUAL_ADJUSTMENT,
                 description="Ajuste manual de saldo",
             )
+        if payload.allow_investment_income is not None:
+            account.allow_investment_income = bool(payload.allow_investment_income)
 
         db.flush()
         sync_dream_milestone_financial_progress(db, user.id, account.objective_dream_id)

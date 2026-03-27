@@ -20,6 +20,7 @@ export default function Patrimony() {
     name: "",
     objectiveDreamId: "",
     totalValue: "",
+    allowInvestmentIncome: false,
   });
   const [showValues, setShowValues] = useState(() => {
     const stored = localStorage.getItem(PATRIMONY_SHOW_VALUES_KEY);
@@ -122,6 +123,7 @@ export default function Patrimony() {
       name: "",
       objectiveDreamId: "",
       totalValue: "",
+      allowInvestmentIncome: false,
     });
   }
 
@@ -153,6 +155,7 @@ export default function Patrimony() {
         name,
         objective_dream_id: objectiveDreamId,
         total_value: totalValue,
+        allow_investment_income: Boolean(accountForm.allowInvestmentIncome),
       });
       setAccounts((prev) => [created, ...prev]);
       notify.success("Conta criada");
@@ -196,6 +199,22 @@ export default function Patrimony() {
       notify.error(getApiErrorMessage(err, "Erro ao atualizar valor"));
     } finally {
       setSavingValueId(null);
+    }
+  }
+
+  async function handleToggleInvestmentIncome(account) {
+    try {
+      const updated = await bankAccountsService.update(account.id, {
+        allow_investment_income: !account.allow_investment_income,
+      });
+      setAccounts((prev) =>
+        prev.map((item) => (item.id === account.id ? updated : item)),
+      );
+      notify.success("Configuração de proventos atualizada");
+    } catch (err) {
+      notify.error(
+        getApiErrorMessage(err, "Erro ao atualizar configuração de proventos"),
+      );
     }
   }
 
@@ -270,7 +289,7 @@ export default function Patrimony() {
 
         <form
           onSubmit={handleCreateAccount}
-          className="grid grid-cols-1 md:grid-cols-4 gap-3"
+          className="grid grid-cols-1 md:grid-cols-5 gap-3"
         >
           <input
             type="text"
@@ -315,6 +334,20 @@ export default function Patrimony() {
               }))
             }
           />
+
+          <label className="themed-input rounded px-3 py-2 flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={Boolean(accountForm.allowInvestmentIncome)}
+              onChange={(e) =>
+                setAccountForm((prev) => ({
+                  ...prev,
+                  allowInvestmentIncome: e.target.checked,
+                }))
+              }
+            />
+            Habilitar para proventos
+          </label>
 
           <div className="flex gap-2">
             <button
@@ -423,6 +456,12 @@ export default function Patrimony() {
                   <p className="themed-muted text-sm mt-1">
                     Objetivo: {account.objective_dream_title}
                   </p>
+                  <p className="themed-muted text-sm mt-1">
+                    Proventos:{" "}
+                    {account.allow_investment_income
+                      ? "Habilitado"
+                      : "Desabilitado"}
+                  </p>
                   <p className="text-xl font-bold mt-2">
                     {showValues
                       ? Number(account.total_value).toLocaleString("pt-BR", {
@@ -463,6 +502,15 @@ export default function Patrimony() {
                   )}
 
                   <div className="flex gap-4 text-sm mt-3">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleInvestmentIncome(account)}
+                      className="themed-link hover:underline"
+                    >
+                      {account.allow_investment_income
+                        ? "Desabilitar proventos"
+                        : "Habilitar proventos"}
+                    </button>
                     <button
                       type="button"
                       onClick={() =>

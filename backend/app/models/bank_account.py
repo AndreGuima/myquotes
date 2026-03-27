@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from database import Base
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -20,6 +20,9 @@ class BankAccount(Base):
     )
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     total_value: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    allow_investment_income: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime, server_default=func.current_timestamp()
     )

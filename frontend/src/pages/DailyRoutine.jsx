@@ -361,50 +361,29 @@ export default function DailyRoutine() {
         </Link>
       </header>
 
-      <div className="relative z-10 grid gap-6 px-6 pb-8 pt-4 lg:grid-cols-[120px_1fr]">
-        <div className="relative hidden lg:block">
-          <div className="relative" style={{ height: `${timelineHeight}px` }}>
-            {hours.map((hour) => (
-              <div
-                key={hour}
-                className="absolute left-0 flex items-center gap-3 text-xs themed-muted"
-                style={{
-                  top: `${(hour * 60 - timeBounds.startOfDay) * pxPerMinute}px`,
-                }}
-              >
-                <span className="h-2 w-2 rounded-full bg-[var(--muted-text)]" />
-                <span>{formatHourLabel(hour)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="relative z-10 px-4 pb-8 pt-4 sm:px-6">
+        <div className="space-y-4 lg:hidden">
+          {loading && (
+            <div className="rounded-2xl border border-dashed themed-border themed-card p-5 text-sm themed-muted">
+              Carregando hábitos do dia...
+            </div>
+          )}
 
-        <div className="relative">
-          <div
-            className="relative rounded-[32px] border themed-border themed-subtle p-6 shadow-inner backdrop-blur"
-            style={{ height: `${timelineHeight}px` }}
-          >
-            {loading && (
-              <div className="rounded-2xl border border-dashed themed-border themed-card p-6 text-sm themed-muted">
-                Carregando hábitos do dia...
-              </div>
-            )}
+          {!loading && schedule.length === 0 && (
+            <div className="rounded-2xl border border-dashed themed-border themed-card p-5 text-sm themed-muted">
+              Nenhum hábito com horário definido. Edite seus hábitos para
+              adicionar horários e ver a rotina aqui.
+            </div>
+          )}
 
-            {!loading && schedule.length === 0 && (
-              <div className="rounded-2xl border border-dashed themed-border themed-card p-6 text-sm themed-muted">
-                Nenhum hábito com horário definido. Edite seus hábitos para
-                adicionar horários e ver a rotina aqui.
-              </div>
-            )}
-
-            {layout.map((item) => {
+          {!loading &&
+            layout.map((item) => {
               const canEdit = Number.isInteger(item.id);
 
               return (
                 <article
                   key={item.segmentId}
-                  className={`group absolute left-4 right-4 overflow-hidden rounded-[28px] bg-gradient-to-r ${item.color} text-slate-900 shadow-[0_12px_30px_rgba(0,0,0,0.15)] transition hover:scale-[1.01] ${canEdit ? "cursor-pointer" : ""}`}
-                  style={{ top: `${item.top}px`, height: `${item.height}px` }}
+                  className={`overflow-hidden rounded-[28px] bg-gradient-to-r ${item.color} p-4 text-slate-900 shadow-[0_12px_30px_rgba(0,0,0,0.15)] ${canEdit ? "cursor-pointer" : ""}`}
                   onClick={() => {
                     if (canEdit) navigate(`/habits/${item.id}/edit`);
                   }}
@@ -418,81 +397,199 @@ export default function DailyRoutine() {
                   role={canEdit ? "link" : undefined}
                   tabIndex={canEdit ? 0 : undefined}
                 >
-                  <div className="relative flex h-full flex-col justify-between px-6 py-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.22em] text-black/50">
-                          {item.start}
-                          {item.end ? ` - ${item.end}` : ""}
-                        </p>
-                        {canEdit ? (
-                          <Link
-                            to={`/habits/${item.id}/edit`}
-                            className="text-lg font-semibold hover:underline"
-                          >
-                            {item.title}
-                          </Link>
-                        ) : (
-                          <h3 className="text-lg font-semibold">
-                            {item.title}
-                          </h3>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            handleToggle(item.id);
-                          }}
-                          disabled={toggling === item.id}
-                          className={`h-8 min-w-[78px] rounded-md px-2 text-xs font-semibold transition ${
-                            item.completed
-                              ? "bg-green-600 text-white hover:bg-green-700"
-                              : "bg-white/70 text-black/70 hover:bg-white"
-                          } ${toggling === item.id ? "cursor-not-allowed opacity-60" : ""}`}
-                          aria-label={
-                            item.completed
-                              ? "Desmarcar feito hoje"
-                              : "Marcar feito hoje"
-                          }
-                          title={item.completed ? "Feito hoje" : "Marcar feito"}
+                  <div className="flex flex-col gap-4">
+                    <div className="space-y-2">
+                      <p className="text-xs uppercase tracking-[0.22em] text-black/50">
+                        {item.start}
+                        {item.end ? ` - ${item.end}` : ""}
+                      </p>
+                      {canEdit ? (
+                        <Link
+                          to={`/habits/${item.id}/edit`}
+                          className="block text-base font-semibold leading-tight break-words hover:underline"
+                          onClick={(event) => event.stopPropagation()}
                         >
-                          {toggling === item.id
-                            ? "Salvando"
-                            : item.completed
-                              ? "✓ Feito"
-                              : "○ Marcar"}
-                        </button>
-                        <span className="rounded-full bg-white/50 px-3 py-1 text-xs font-semibold text-black/60">
-                          {item.duration}
-                        </span>
-                      </div>
+                          {item.title}
+                        </Link>
+                      ) : (
+                        <h3 className="text-base font-semibold leading-tight break-words">
+                          {item.title}
+                        </h3>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="rounded-full bg-white/50 px-3 py-1 text-xs font-semibold text-black/60">
+                        {item.duration}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          handleToggle(item.id);
+                        }}
+                        disabled={toggling === item.id}
+                        className={`h-9 min-w-[96px] rounded-md px-3 text-xs font-semibold transition ${
+                          item.completed
+                            ? "bg-green-600 text-white hover:bg-green-700"
+                            : "bg-white/70 text-black/70 hover:bg-white"
+                        } ${toggling === item.id ? "cursor-not-allowed opacity-60" : ""}`}
+                        aria-label={
+                          item.completed
+                            ? "Desmarcar feito hoje"
+                            : "Marcar feito hoje"
+                        }
+                        title={item.completed ? "Feito hoje" : "Marcar feito"}
+                      >
+                        {toggling === item.id
+                          ? "Salvando"
+                          : item.completed
+                            ? "✓ Feito"
+                            : "○ Marcar"}
+                      </button>
                     </div>
                   </div>
                 </article>
               );
             })}
+        </div>
+
+        <div className="hidden gap-6 lg:grid lg:grid-cols-[120px_1fr]">
+          <div className="relative hidden lg:block">
+            <div className="relative" style={{ height: `${timelineHeight}px` }}>
+              {hours.map((hour) => (
+                <div
+                  key={hour}
+                  className="absolute left-0 flex items-center gap-3 text-xs themed-muted"
+                  style={{
+                    top: `${(hour * 60 - timeBounds.startOfDay) * pxPerMinute}px`,
+                  }}
+                >
+                  <span className="h-2 w-2 rounded-full bg-[var(--muted-text)]" />
+                  <span>{formatHourLabel(hour)}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {unscheduledHabits.length > 0 && (
-            <div className="mt-6 rounded-2xl border themed-border themed-card px-6 py-4 shadow-sm">
-              <p className="text-xs uppercase tracking-[0.3em] themed-muted">
-                Sem Horário
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {unscheduledHabits.map((habit) => (
-                  <span
-                    key={habit.id ?? habit.title}
-                    className="rounded-full bg-[var(--panel-bg)] px-3 py-1 text-xs font-semibold text-[var(--panel-text)]"
+          <div className="relative">
+            <div
+              className="relative rounded-[32px] border themed-border themed-subtle p-6 shadow-inner backdrop-blur"
+              style={{ height: `${timelineHeight}px` }}
+            >
+              {loading && (
+                <div className="rounded-2xl border border-dashed themed-border themed-card p-6 text-sm themed-muted">
+                  Carregando hábitos do dia...
+                </div>
+              )}
+
+              {!loading && schedule.length === 0 && (
+                <div className="rounded-2xl border border-dashed themed-border themed-card p-6 text-sm themed-muted">
+                  Nenhum hábito com horário definido. Edite seus hábitos para
+                  adicionar horários e ver a rotina aqui.
+                </div>
+              )}
+
+              {layout.map((item) => {
+                const canEdit = Number.isInteger(item.id);
+
+                return (
+                  <article
+                    key={item.segmentId}
+                    className={`group absolute left-4 right-4 overflow-hidden rounded-[28px] bg-gradient-to-r ${item.color} text-slate-900 shadow-[0_12px_30px_rgba(0,0,0,0.15)] transition hover:scale-[1.01] ${canEdit ? "cursor-pointer" : ""}`}
+                    style={{ top: `${item.top}px`, height: `${item.height}px` }}
+                    onClick={() => {
+                      if (canEdit) navigate(`/habits/${item.id}/edit`);
+                    }}
+                    onKeyDown={(event) => {
+                      if (!canEdit) return;
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        navigate(`/habits/${item.id}/edit`);
+                      }
+                    }}
+                    role={canEdit ? "link" : undefined}
+                    tabIndex={canEdit ? 0 : undefined}
                   >
-                    {habit.title ?? "Hábito"}
-                  </span>
-                ))}
-              </div>
+                    <div className="relative flex h-full flex-col justify-between px-6 py-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.22em] text-black/50">
+                            {item.start}
+                            {item.end ? ` - ${item.end}` : ""}
+                          </p>
+                          {canEdit ? (
+                            <Link
+                              to={`/habits/${item.id}/edit`}
+                              className="text-lg font-semibold hover:underline"
+                            >
+                              {item.title}
+                            </Link>
+                          ) : (
+                            <h3 className="text-lg font-semibold">
+                              {item.title}
+                            </h3>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleToggle(item.id);
+                            }}
+                            disabled={toggling === item.id}
+                            className={`h-8 min-w-[78px] rounded-md px-2 text-xs font-semibold transition ${
+                              item.completed
+                                ? "bg-green-600 text-white hover:bg-green-700"
+                                : "bg-white/70 text-black/70 hover:bg-white"
+                            } ${toggling === item.id ? "cursor-not-allowed opacity-60" : ""}`}
+                            aria-label={
+                              item.completed
+                                ? "Desmarcar feito hoje"
+                                : "Marcar feito hoje"
+                            }
+                            title={
+                              item.completed ? "Feito hoje" : "Marcar feito"
+                            }
+                          >
+                            {toggling === item.id
+                              ? "Salvando"
+                              : item.completed
+                                ? "✓ Feito"
+                                : "○ Marcar"}
+                          </button>
+                          <span className="rounded-full bg-white/50 px-3 py-1 text-xs font-semibold text-black/60">
+                            {item.duration}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          )}
+
+            {unscheduledHabits.length > 0 && (
+              <div className="mt-6 rounded-2xl border themed-border themed-card px-6 py-4 shadow-sm">
+                <p className="text-xs uppercase tracking-[0.3em] themed-muted">
+                  Sem Horário
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {unscheduledHabits.map((habit) => (
+                    <span
+                      key={habit.id ?? habit.title}
+                      className="rounded-full bg-[var(--panel-bg)] px-3 py-1 text-xs font-semibold text-[var(--panel-text)]"
+                    >
+                      {habit.title ?? "Hábito"}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

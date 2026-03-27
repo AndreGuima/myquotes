@@ -30,6 +30,7 @@ def test_bank_accounts_crud(client: TestClient):
     assert created["objective_dream_id"] == dream_id
     assert created["objective_dream_title"] == "Comprar casa"
     assert created["total_value"] == "2500.50"
+    assert created["allow_investment_income"] is False
 
     list_res = client.get("/bank-accounts")
     assert list_res.status_code == 200
@@ -39,12 +40,17 @@ def test_bank_accounts_crud(client: TestClient):
 
     update_res = client.patch(
         f"/bank-accounts/{created['id']}",
-        json={"name": "Conta Corrente", "total_value": "3000.00"},
+        json={
+            "name": "Conta Corrente",
+            "total_value": "3000.00",
+            "allow_investment_income": True,
+        },
     )
     assert update_res.status_code == 200
     updated = update_res.json()
     assert updated["name"] == "Conta Corrente"
     assert updated["total_value"] == "3000.00"
+    assert updated["allow_investment_income"] is True
 
     delete_res = client.delete(f"/bank-accounts/{created['id']}")
     assert delete_res.status_code == 204
@@ -80,6 +86,52 @@ def test_cannot_link_bank_account_to_other_user_dream(client: TestClient, db_ses
         },
     )
     assert res.status_code == 400
+
+
+def test_list_bank_accounts_can_filter_allow_investment_income(client: TestClient):
+    dream_res = client.post(
+        "/dreams",
+        json={
+            "title": "Reserva",
+            "milestones": [],
+        },
+    )
+    assert dream_res.status_code == 201
+    dream_id = dream_res.json()["id"]
+
+    first_res = client.post(
+        "/bank-accounts",
+        json={
+            "name": "Conta Dividendos",
+            "objective_dream_id": dream_id,
+            "total_value": "100.00",
+            "allow_investment_income": True,
+        },
+    )
+    assert first_res.status_code == 201
+
+    second_res = client.post(
+        "/bank-accounts",
+        json={
+            "name": "Conta Sem Proventos",
+            "objective_dream_id": dream_id,
+            "total_value": "50.00",
+            "allow_investment_income": False,
+        },
+    )
+    assert second_res.status_code == 201
+
+    filtered_true_res = client.get("/bank-accounts?allow_investment_income=true")
+    assert filtered_true_res.status_code == 200
+    filtered_true = filtered_true_res.json()
+    assert len(filtered_true) == 1
+    assert filtered_true[0]["id"] == first_res.json()["id"]
+
+    filtered_false_res = client.get("/bank-accounts?allow_investment_income=false")
+    assert filtered_false_res.status_code == 200
+    filtered_false = filtered_false_res.json()
+    assert len(filtered_false) == 1
+    assert filtered_false[0]["id"] == second_res.json()["id"]
 
 
 def test_patrimony_snapshots_are_created_and_listed(client: TestClient):
