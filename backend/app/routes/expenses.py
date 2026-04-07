@@ -25,9 +25,9 @@ from services.dream_financial_progress import sync_dream_milestone_financial_pro
 from services.idempotency import begin_idempotent_request, finalize_idempotent_request
 from services.patrimony_snapshot_service import capture_patrimony_snapshot
 from services.transaction_scope import transaction_scope
-from sqlalchemy import case, func
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Query as SAQuery
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, aliased, joinedload
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
 
@@ -250,6 +250,16 @@ def get_expenses_summary(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    paid_expense = aliased(Expense)
+    invoice_payment_ids_subquery = (
+        db.query(paid_expense.invoice_payment_expense_id)
+        .filter(
+            paid_expense.user_id == user.id,
+            paid_expense.invoice_payment_expense_id.isnot(None),
+        )
+        .subquery()
+    )
+
     base_query = _apply_expense_filters(
         query=db.query(Expense),
         db=db,
@@ -259,6 +269,11 @@ def get_expenses_summary(
         from_date=from_date,
         to_date=to_date,
         category_id=category_id,
+    )
+    base_query = base_query.filter(
+        ~Expense.id.in_(
+            select(invoice_payment_ids_subquery.c.invoice_payment_expense_id)
+        )
     )
 
     summary_row = base_query.with_entities(
