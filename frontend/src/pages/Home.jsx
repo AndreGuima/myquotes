@@ -99,6 +99,10 @@ export default function Home() {
   }, []);
 
   const todayHabits = sortHabitsByPriority(habits.filter(isHabitForToday));
+  const homeModuleCardClass =
+    "mb-6 flex flex-col gap-3 rounded-xl border themed-border themed-card p-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:gap-4";
+  const homeModuleButtonClass =
+    "inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto sm:px-4 whitespace-nowrap";
 
   // ============================
   // ⏳ Loading inicial
@@ -148,7 +152,7 @@ export default function Home() {
         </p>
       )}
 
-      <div className="mb-8 border themed-border rounded-xl themed-card p-4 flex items-center justify-between gap-4">
+      <div className={homeModuleCardClass}>
         <div>
           <h2 className="text-xl font-semibold">
             Módulo de Metas e Conquistas
@@ -158,30 +162,24 @@ export default function Home() {
             hábitos para acompanhar suas conquistas.
           </p>
         </div>
-        <Link
-          to="/dreams"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 whitespace-nowrap"
-        >
+        <Link to="/dreams" className={homeModuleButtonClass}>
           Abrir Metas e Conquistas
         </Link>
       </div>
 
-      <div className="mb-8 border themed-border rounded-xl themed-card p-4 flex items-center justify-between gap-4">
+      <div className={homeModuleCardClass}>
         <div>
           <h2 className="text-xl font-semibold">Módulo de Finanças</h2>
           <p className="themed-muted text-sm mt-1">
             Gerencie patrimônio, despesas e investimentos em um só lugar.
           </p>
         </div>
-        <Link
-          to="/finances"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 whitespace-nowrap"
-        >
+        <Link to="/finances" className={homeModuleButtonClass}>
           Abrir Finanças
         </Link>
       </div>
 
-      <div className="mb-8 border themed-border rounded-xl themed-card p-4 flex items-center justify-between gap-4">
+      <div className={homeModuleCardClass}>
         <div>
           <h2 className="text-xl font-semibold">Gerenciamento do Dia</h2>
           <p className="themed-muted text-sm mt-1">
@@ -189,12 +187,9 @@ export default function Home() {
             lugar.
           </p>
         </div>
-        <a
-          href="http://localhost:5173/day-management"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 whitespace-nowrap"
-        >
+        <Link to="/day-management" className={homeModuleButtonClass}>
           Abrir Gerenciamento do Dia
-        </a>
+        </Link>
       </div>
 
       {/* ============================

@@ -1,10 +1,12 @@
 from datetime import date
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
 from core.dependencies import get_current_user
 from database import get_db
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi.responses import JSONResponse
 from models.bank_account import BankAccount
+from models.bank_account_transaction import TransactionType
 from models.investment_income import InvestmentIncome
 from models.user import User
 from schemas.investment_income import (
@@ -12,15 +14,14 @@ from schemas.investment_income import (
     InvestmentIncomeRead,
     InvestmentIncomeUpdate,
 )
+from services.bank_account_ledger import apply_account_delta, to_money_decimal
 from services.dream_financial_progress import sync_dream_milestone_financial_progress
+from services.idempotency import begin_idempotent_request, finalize_idempotent_request
 from services.patrimony_snapshot_service import capture_patrimony_snapshot
+from services.transaction_scope import transaction_scope
 from sqlalchemy.orm import Session, joinedload
 
 router = APIRouter(prefix="/investment-incomes", tags=["Investment Incomes"])
-
-
-def _to_money_decimal(value: object) -> Decimal:
-    return Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def _to_response(item: InvestmentIncome) -> InvestmentIncomeRead:
@@ -53,7 +54,12 @@ def _get_user_income_or_404(
 
 
 def _get_user_account_or_400(
-    db: Session, user_id: int, account_id: int | None, *, for_update: bool = False
+    db: Session,
+    user_id: int,
+    account_id: int | None,
+    *,
+    for_update: bool = False,
+    require_investment_income_enabled: bool = False,
 ) -> BankAccount:
     if account_id is None:
         raise HTTPException(status_code=400, detail="Conta bancária inválida")
@@ -66,17 +72,12 @@ def _get_user_account_or_400(
     account = query.first()
     if not account:
         raise HTTPException(status_code=400, detail="Conta bancária inválida")
+    if require_investment_income_enabled and not bool(account.allow_investment_income):
+        raise HTTPException(
+            status_code=400,
+            detail="Conta não habilitada para recebimento de proventos",
+        )
     return account
-
-
-def _apply_account_delta(account: BankAccount, delta: Decimal) -> None:
-    if delta == Decimal("0"):
-        return
-    current = account.total_value or Decimal("0")
-    next_total = _to_money_decimal(current + delta)
-    if next_total < Decimal("0"):
-        raise HTTPException(status_code=400, detail="Saldo insuficiente na conta")
-    account.total_value = next_total
 
 
 @router.get("", response_model=list[InvestmentIncomeRead])
@@ -112,37 +113,72 @@ def list_investment_incomes(
 )
 def create_investment_income(
     payload: InvestmentIncomeCreate,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    account = _get_user_account_or_400(
-        db, user.id, payload.bank_account_id, for_update=True
-    )
-    _apply_account_delta(account, _to_money_decimal(payload.amount))
-
-    item = InvestmentIncome(
+    record, replay_response = begin_idempotent_request(
+        db,
         user_id=user.id,
-        income_type=payload.income_type,
-        ticker=payload.ticker.strip().upper(),
-        bank_account_id=account.id,
-        received_at=payload.received_at,
-        amount=_to_money_decimal(payload.amount),
-        notes=(payload.notes or "").strip(),
+        route_key="investment_incomes.create",
+        idempotency_key=idempotency_key,
+        payload=payload.model_dump(mode="json"),
     )
+    if replay_response is not None:
+        return replay_response
 
-    if not item.ticker:
-        raise HTTPException(status_code=400, detail="Ticker é obrigatório")
+    with transaction_scope(db):
+        account = _get_user_account_or_400(
+            db,
+            user.id,
+            payload.bank_account_id,
+            for_update=True,
+            require_investment_income_enabled=True,
+        )
+        apply_account_delta(
+            db,
+            user_id=user.id,
+            account=account,
+            delta=to_money_decimal(payload.amount),
+            transaction_type=TransactionType.INVESTMENT_INCOME,
+            description=f"Rendimento {payload.ticker.strip().upper()}",
+        )
 
-    db.add(item)
-    db.flush()
-    capture_patrimony_snapshot(db, user.id)
-    if account.objective_dream_id is not None:
-        sync_dream_milestone_financial_progress(db, user.id, account.objective_dream_id)
-    db.commit()
+        item = InvestmentIncome(
+            user_id=user.id,
+            income_type=payload.income_type,
+            ticker=payload.ticker.strip().upper(),
+            bank_account_id=account.id,
+            received_at=payload.received_at,
+            amount=to_money_decimal(payload.amount),
+            notes=(payload.notes or "").strip(),
+        )
+
+        if not item.ticker:
+            raise HTTPException(status_code=400, detail="Ticker é obrigatório")
+
+        db.add(item)
+        db.flush()
+        capture_patrimony_snapshot(db, user.id)
+        if account.objective_dream_id is not None:
+            sync_dream_milestone_financial_progress(
+                db, user.id, account.objective_dream_id
+            )
     db.expire_all()
 
     created = _get_user_income_or_404(db, user.id, item.id)
-    return _to_response(created)
+    response = _to_response(created)
+    with transaction_scope(db):
+        finalize_idempotent_request(
+            db,
+            record=record,
+            response_body=response.model_dump(mode="json"),
+            status_code=201,
+        )
+    db.commit()
+    if record is not None:
+        return JSONResponse(status_code=201, content=response.model_dump(mode="json"))
+    return response
 
 
 @router.patch("/{income_id}", response_model=InvestmentIncomeRead)
@@ -152,68 +188,89 @@ def update_investment_income(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    item = _get_user_income_or_404(db, user.id, income_id)
+    with transaction_scope(db):
+        item = _get_user_income_or_404(db, user.id, income_id)
 
-    next_account_id = (
-        payload.bank_account_id
-        if payload.bank_account_id is not None
-        else item.bank_account_id
-    )
-    next_amount = (
-        _to_money_decimal(payload.amount)
-        if payload.amount is not None
-        else _to_money_decimal(item.amount)
-    )
-
-    if next_account_id is None:
-        raise HTTPException(status_code=400, detail="Conta bancária inválida")
-
-    previous_account_id = item.bank_account_id
-    previous_amount = _to_money_decimal(item.amount)
-    account_deltas: dict[int, Decimal] = {}
-    if previous_account_id is not None:
-        account_deltas[previous_account_id] = (
-            account_deltas.get(previous_account_id, Decimal("0")) - previous_amount
+        next_account_id = (
+            payload.bank_account_id
+            if payload.bank_account_id is not None
+            else item.bank_account_id
         )
-    account_deltas[next_account_id] = (
-        account_deltas.get(next_account_id, Decimal("0")) + next_amount
-    )
+        next_amount = (
+            to_money_decimal(payload.amount)
+            if payload.amount is not None
+            else to_money_decimal(item.amount)
+        )
 
-    touched_dream_ids: set[int] = set()
-    has_balance_change = False
-    for account_id in sorted(account_deltas):
-        delta = account_deltas[account_id]
-        if delta == Decimal("0"):
-            continue
-        account = _get_user_account_or_400(db, user.id, account_id, for_update=True)
-        _apply_account_delta(account, delta)
-        has_balance_change = True
-        if account.objective_dream_id is not None:
-            touched_dream_ids.add(account.objective_dream_id)
+        if next_account_id is None:
+            raise HTTPException(status_code=400, detail="Conta bancária inválida")
 
-    if payload.income_type is not None:
-        item.income_type = payload.income_type
-    if payload.ticker is not None:
-        clean_ticker = payload.ticker.strip().upper()
-        if not clean_ticker:
-            raise HTTPException(status_code=400, detail="Ticker é obrigatório")
-        item.ticker = clean_ticker
-    if payload.received_at is not None:
-        item.received_at = payload.received_at
-    if payload.amount is not None:
-        item.amount = _to_money_decimal(payload.amount)
-    if payload.notes is not None:
-        item.notes = payload.notes.strip()
-    item.bank_account_id = next_account_id
+        previous_account_id = item.bank_account_id
+        previous_amount = to_money_decimal(item.amount)
+        changing_account = (
+            payload.bank_account_id is not None
+            and payload.bank_account_id != previous_account_id
+        )
+        account_deltas: dict[int, Decimal] = {}
+        if previous_account_id is not None:
+            account_deltas[previous_account_id] = (
+                account_deltas.get(previous_account_id, Decimal("0")) - previous_amount
+            )
+        account_deltas[next_account_id] = (
+            account_deltas.get(next_account_id, Decimal("0")) + next_amount
+        )
 
-    db.flush()
-    if has_balance_change:
-        capture_patrimony_snapshot(db, user.id)
-    for dream_id in touched_dream_ids:
-        sync_dream_milestone_financial_progress(db, user.id, dream_id)
-    db.commit()
+        touched_dream_ids: set[int] = set()
+        has_balance_change = False
+        for account_id in sorted(account_deltas):
+            delta = account_deltas[account_id]
+            if delta == Decimal("0"):
+                continue
+            account = _get_user_account_or_400(db, user.id, account_id, for_update=True)
+            if (
+                account_id == next_account_id
+                and changing_account
+                and not bool(account.allow_investment_income)
+            ):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Conta não habilitada para recebimento de proventos",
+                )
+            apply_account_delta(
+                db,
+                user_id=user.id,
+                account=account,
+                delta=delta,
+                transaction_type=TransactionType.INVESTMENT_INCOME_ADJUSTMENT,
+                description=f"Ajuste do rendimento #{income_id}",
+            )
+            has_balance_change = True
+            if account.objective_dream_id is not None:
+                touched_dream_ids.add(account.objective_dream_id)
+
+        if payload.income_type is not None:
+            item.income_type = payload.income_type
+        if payload.ticker is not None:
+            clean_ticker = payload.ticker.strip().upper()
+            if not clean_ticker:
+                raise HTTPException(status_code=400, detail="Ticker é obrigatório")
+            item.ticker = clean_ticker
+        if payload.received_at is not None:
+            item.received_at = payload.received_at
+        if payload.amount is not None:
+            item.amount = to_money_decimal(payload.amount)
+        if payload.notes is not None:
+            item.notes = payload.notes.strip()
+        item.bank_account_id = next_account_id
+
+        db.flush()
+        if has_balance_change:
+            capture_patrimony_snapshot(db, user.id)
+        for dream_id in touched_dream_ids:
+            sync_dream_milestone_financial_progress(db, user.id, dream_id)
     db.expire_all()
 
+    db.commit()
     updated = _get_user_income_or_404(db, user.id, income_id)
     return _to_response(updated)
 
@@ -224,22 +281,30 @@ def delete_investment_income(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    item = _get_user_income_or_404(db, user.id, income_id)
+    with transaction_scope(db):
+        item = _get_user_income_or_404(db, user.id, income_id)
 
-    touched_dream_ids: set[int] = set()
-    if item.bank_account_id is not None:
-        account = _get_user_account_or_400(
-            db, user.id, item.bank_account_id, for_update=True
-        )
-        _apply_account_delta(account, -_to_money_decimal(item.amount))
-        if account.objective_dream_id is not None:
-            touched_dream_ids.add(account.objective_dream_id)
+        touched_dream_ids: set[int] = set()
+        if item.bank_account_id is not None:
+            account = _get_user_account_or_400(
+                db, user.id, item.bank_account_id, for_update=True
+            )
+            apply_account_delta(
+                db,
+                user_id=user.id,
+                account=account,
+                delta=-to_money_decimal(item.amount),
+                transaction_type=TransactionType.INVESTMENT_INCOME_REVERSAL,
+                description=f"Estorno do rendimento #{income_id}",
+            )
+            if account.objective_dream_id is not None:
+                touched_dream_ids.add(account.objective_dream_id)
 
-    db.delete(item)
-    db.flush()
-    capture_patrimony_snapshot(db, user.id)
-    for dream_id in touched_dream_ids:
-        sync_dream_milestone_financial_progress(db, user.id, dream_id)
-    db.commit()
+        db.delete(item)
+        db.flush()
+        capture_patrimony_snapshot(db, user.id)
+        for dream_id in touched_dream_ids:
+            sync_dream_milestone_financial_progress(db, user.id, dream_id)
     db.expire_all()
+    db.commit()
     return None

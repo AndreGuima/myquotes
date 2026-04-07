@@ -650,16 +650,18 @@ export default function Dreams() {
                     key={dream.id}
                     className="themed-card border themed-border rounded-xl p-5"
                   >
-                    <div className="flex justify-between gap-4">
-                      <div>
-                        <h2 className="text-xl font-semibold">{dream.title}</h2>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start sm:gap-4">
+                      <div className="min-w-0">
+                        <h2 className="text-xl font-semibold break-words">
+                          {dream.title}
+                        </h2>
                         {dream.description && (
                           <p className="themed-muted mt-1">
                             {dream.description}
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-3 h-fit">
+                      <div className="hidden sm:flex flex-wrap gap-x-3 gap-y-1 h-fit shrink-0">
                         {isEditing ? (
                           <button
                             onClick={cancelEdit}
@@ -1011,6 +1013,38 @@ export default function Dreams() {
                     <div className="mt-4 text-sm themed-muted">
                       {dream.milestones.length} marcos cadastrados •{" "}
                       {completedMilestones} concluídos
+                    </div>
+
+                    <div className="mt-4 sm:hidden sticky bottom-2 z-10 border themed-border rounded-lg p-2 themed-subtle shadow-lg">
+                      <div className="grid grid-cols-3 gap-2">
+                        {isEditing ? (
+                          <button
+                            onClick={cancelEdit}
+                            className="text-xs py-2 rounded border themed-border themed-muted hover:underline"
+                          >
+                            cancelar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => startEdit(dream)}
+                            className="text-xs py-2 rounded border themed-border themed-link hover:underline"
+                          >
+                            editar
+                          </button>
+                        )}
+                        <Link
+                          to={`/dreams/${dream.id}`}
+                          className="text-xs py-2 rounded border themed-border themed-link hover:underline text-center"
+                        >
+                          visualizar
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteDream(dream.id)}
+                          className="text-xs py-2 rounded border border-red-300 text-red-600 hover:underline"
+                        >
+                          remover
+                        </button>
+                      </div>
                     </div>
                   </section>
                 );

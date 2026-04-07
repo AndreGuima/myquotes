@@ -151,6 +151,58 @@ def client(engine, db_sessionmaker, monkeypatch):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(scope="function")
+def admin_client(engine, db_sessionmaker, monkeypatch):
+    monkeypatch.setattr(app_db, "engine", engine)
+    monkeypatch.setattr(app_db, "SessionLocal", db_sessionmaker)
+
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    def override_get_db():
+        db = db_sessionmaker()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    test_db = db_sessionmaker()
+    fake_admin = User(
+        id=1,
+        username="admin",
+        email="admin@example.com",
+        password_hash="hashed",
+        role="admin",
+        is_active=True,
+        is_verified=True,
+    )
+    test_db.add(fake_admin)
+    test_db.commit()
+    test_db.close()
+
+    from core.dependencies import get_current_user
+
+    fake_current_user = SimpleNamespace(
+        id=1,
+        username="admin",
+        email="admin@example.com",
+        role="admin",
+        is_active=True,
+        is_verified=True,
+    )
+
+    def override_current_user():
+        return fake_current_user
+
+    app.dependency_overrides[get_current_user] = override_current_user
+
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
 @pytest.fixture
 def db_session(engine, db_sessionmaker):
     """

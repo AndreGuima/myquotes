@@ -13,13 +13,21 @@ def _create_dream(client: TestClient) -> int:
     return res.json()["id"]
 
 
-def _create_account(client: TestClient, dream_id: int, name: str, total: str) -> int:
+def _create_account(
+    client: TestClient,
+    dream_id: int,
+    name: str,
+    total: str,
+    *,
+    allow_investment_income: bool = True,
+) -> int:
     res = client.post(
         "/bank-accounts",
         json={
             "name": name,
             "objective_dream_id": dream_id,
             "total_value": total,
+            "allow_investment_income": allow_investment_income,
         },
     )
     assert res.status_code == 201
@@ -97,3 +105,28 @@ def test_investment_income_requires_valid_account(client: TestClient):
         },
     )
     assert res.status_code == 400
+
+
+def test_investment_income_requires_account_enabled_for_provents(client: TestClient):
+    dream_id = _create_dream(client)
+    account_id = _create_account(
+        client,
+        dream_id,
+        "Conta Não Habilitada",
+        "1000.00",
+        allow_investment_income=False,
+    )
+
+    res = client.post(
+        "/investment-incomes",
+        json={
+            "income_type": "dividend",
+            "ticker": "ITSA4",
+            "bank_account_id": account_id,
+            "received_at": "2026-03-01",
+            "amount": "10.00",
+            "notes": "",
+        },
+    )
+    assert res.status_code == 400
+    assert res.json()["detail"] == "Conta não habilitada para recebimento de proventos"

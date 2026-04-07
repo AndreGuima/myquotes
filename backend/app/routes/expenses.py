@@ -1,10 +1,12 @@
 from datetime import date, datetime, timedelta
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
 from core.dependencies import get_current_user
 from database import get_db
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi.responses import JSONResponse
 from models.bank_account import BankAccount
+from models.bank_account_transaction import TransactionType
 from models.credit_card import CreditCard
 from models.expense import Expense
 from models.expense_category import ExpenseCategory
@@ -18,11 +20,14 @@ from schemas.expense import (
     PayCreditInvoiceRequest,
     PayCreditInvoiceResponse,
 )
+from services.bank_account_ledger import apply_account_delta, to_money_decimal
 from services.dream_financial_progress import sync_dream_milestone_financial_progress
+from services.idempotency import begin_idempotent_request, finalize_idempotent_request
 from services.patrimony_snapshot_service import capture_patrimony_snapshot
-from sqlalchemy import case, func
+from services.transaction_scope import transaction_scope
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Query as SAQuery
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, aliased, joinedload
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
 
@@ -45,10 +50,6 @@ def _to_response(expense: Expense) -> ExpenseRead:
         created_at=expense.created_at,
         updated_at=expense.updated_at,
     )
-
-
-def _to_money_decimal(value: object) -> Decimal:
-    return Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def _get_user_expense_or_404(db: Session, user_id: int, expense_id: int) -> Expense:
@@ -93,16 +94,6 @@ def _get_user_account_or_400(
     if not account:
         raise HTTPException(status_code=400, detail="Conta bancária inválida")
     return account
-
-
-def _apply_account_delta(account: BankAccount, delta: Decimal) -> None:
-    if delta == Decimal("0"):
-        return
-
-    next_total = _to_money_decimal((account.total_value or Decimal("0")) + delta)
-    if next_total < Decimal("0"):
-        raise HTTPException(status_code=400, detail="Saldo insuficiente na conta")
-    account.total_value = next_total
 
 
 def _validate_card_belongs_to_user(db: Session, user_id: int, card_id: int) -> None:
@@ -259,6 +250,16 @@ def get_expenses_summary(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    paid_expense = aliased(Expense)
+    invoice_payment_ids_subquery = (
+        db.query(paid_expense.invoice_payment_expense_id)
+        .filter(
+            paid_expense.user_id == user.id,
+            paid_expense.invoice_payment_expense_id.isnot(None),
+        )
+        .subquery()
+    )
+
     base_query = _apply_expense_filters(
         query=db.query(Expense),
         db=db,
@@ -268,6 +269,11 @@ def get_expenses_summary(
         from_date=from_date,
         to_date=to_date,
         category_id=category_id,
+    )
+    base_query = base_query.filter(
+        ~Expense.id.in_(
+            select(invoice_payment_ids_subquery.c.invoice_payment_expense_id)
+        )
     )
 
     summary_row = base_query.with_entities(
@@ -305,18 +311,18 @@ def get_expenses_summary(
         ExpenseSummaryCategoryRead(
             category_id=row[0],
             category_name=row[1],
-            total=_to_money_decimal(row[2]),
+            total=to_money_decimal(row[2]),
             count=row[3],
         )
         for row in by_category_rows
     ]
 
     return ExpenseSummaryRead(
-        total=_to_money_decimal(summary_row[0]),
-        average=_to_money_decimal(summary_row[1]),
+        total=to_money_decimal(summary_row[0]),
+        average=to_money_decimal(summary_row[1]),
         count=summary_row[2],
-        credit_total=_to_money_decimal(summary_row[3]),
-        debit_total=_to_money_decimal(summary_row[4]),
+        credit_total=to_money_decimal(summary_row[3]),
+        debit_total=to_money_decimal(summary_row[4]),
         by_category=by_category,
     )
 
@@ -324,48 +330,77 @@ def get_expenses_summary(
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=ExpenseRead)
 def create_expense(
     payload: ExpenseCreate,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    _validate_category_belongs_to_user(db, user.id, payload.expense_category_id)
-    touched_dream_ids: set[int] = set()
-
-    if payload.payment_method == "debit":
-        account = _get_user_account_or_400(
-            db, user.id, payload.bank_account_id, for_update=True
-        )
-        _apply_account_delta(account, -_to_money_decimal(payload.value))
-        if account.objective_dream_id is not None:
-            touched_dream_ids.add(account.objective_dream_id)
-
-    if payload.payment_method == "credit":
-        _validate_card_belongs_to_user(db, user.id, payload.credit_card_id)
-
-    expense = Expense(
+    record, replay_response = begin_idempotent_request(
+        db,
         user_id=user.id,
-        value=payload.value,
-        description=payload.description.strip(),
-        expense_category_id=payload.expense_category_id,
-        payment_method=payload.payment_method,
-        bank_account_id=payload.bank_account_id,
-        credit_card_id=payload.credit_card_id,
-        launch_date=payload.launch_date,
+        route_key="expenses.create",
+        idempotency_key=idempotency_key,
+        payload=payload.model_dump(mode="json"),
     )
+    if replay_response is not None:
+        return replay_response
 
-    if not expense.description:
-        raise HTTPException(status_code=400, detail="Descrição é obrigatória")
+    with transaction_scope(db):
+        _validate_category_belongs_to_user(db, user.id, payload.expense_category_id)
+        touched_dream_ids: set[int] = set()
 
-    db.add(expense)
-    db.flush()
-    for dream_id in touched_dream_ids:
-        sync_dream_milestone_financial_progress(db, user.id, dream_id)
-    if touched_dream_ids:
-        capture_patrimony_snapshot(db, user.id)
-    db.commit()
+        if payload.payment_method == "debit":
+            account = _get_user_account_or_400(
+                db, user.id, payload.bank_account_id, for_update=True
+            )
+            apply_account_delta(
+                db,
+                user_id=user.id,
+                account=account,
+                delta=-to_money_decimal(payload.value),
+                transaction_type=TransactionType.EXPENSE,
+                description=f"Despesa: {payload.description.strip()}",
+            )
+            if account.objective_dream_id is not None:
+                touched_dream_ids.add(account.objective_dream_id)
+
+        if payload.payment_method == "credit":
+            _validate_card_belongs_to_user(db, user.id, payload.credit_card_id)
+
+        expense = Expense(
+            user_id=user.id,
+            value=payload.value,
+            description=payload.description.strip(),
+            expense_category_id=payload.expense_category_id,
+            payment_method=payload.payment_method,
+            bank_account_id=payload.bank_account_id,
+            credit_card_id=payload.credit_card_id,
+            launch_date=payload.launch_date,
+        )
+
+        if not expense.description:
+            raise HTTPException(status_code=400, detail="Descrição é obrigatória")
+
+        db.add(expense)
+        db.flush()
+        for dream_id in touched_dream_ids:
+            sync_dream_milestone_financial_progress(db, user.id, dream_id)
+        if touched_dream_ids:
+            capture_patrimony_snapshot(db, user.id)
     db.expire_all()
 
     created = _get_user_expense_or_404(db, user.id, expense.id)
-    return _to_response(created)
+    response = _to_response(created)
+    with transaction_scope(db):
+        finalize_idempotent_request(
+            db,
+            record=record,
+            response_body=response.model_dump(mode="json"),
+            status_code=201,
+        )
+    db.commit()
+    if record is not None:
+        return JSONResponse(status_code=201, content=response.model_dump(mode="json"))
+    return response
 
 
 @router.patch("/{expense_id}", response_model=ExpenseRead)
@@ -375,91 +410,100 @@ def update_expense(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    expense = _get_user_expense_or_404(db, user.id, expense_id)
-    previous_payment_method = expense.payment_method
-    previous_bank_account_id = expense.bank_account_id
-    previous_value = _to_money_decimal(expense.value)
+    with transaction_scope(db):
+        expense = _get_user_expense_or_404(db, user.id, expense_id)
+        previous_payment_method = expense.payment_method
+        previous_bank_account_id = expense.bank_account_id
+        previous_value = to_money_decimal(expense.value)
 
-    next_payment_method = payload.payment_method or expense.payment_method
-    next_expense_category_id = (
-        payload.expense_category_id
-        if payload.expense_category_id is not None
-        else expense.expense_category_id
-    )
-    next_bank_account_id = (
-        payload.bank_account_id
-        if payload.bank_account_id is not None
-        else expense.bank_account_id
-    )
-    next_credit_card_id = (
-        payload.credit_card_id
-        if payload.credit_card_id is not None
-        else expense.credit_card_id
-    )
-
-    if next_payment_method == "debit":
-        if next_bank_account_id is None:
-            raise HTTPException(
-                status_code=400, detail="bank_account_id é obrigatório para débito"
-            )
-        next_credit_card_id = None
-        _validate_account_belongs_to_user(db, user.id, next_bank_account_id)
-
-    if next_payment_method == "credit":
-        if next_credit_card_id is None:
-            raise HTTPException(
-                status_code=400, detail="credit_card_id é obrigatório para crédito"
-            )
-        next_bank_account_id = None
-        _validate_card_belongs_to_user(db, user.id, next_credit_card_id)
-
-    _validate_category_belongs_to_user(db, user.id, next_expense_category_id)
-
-    next_value = (
-        _to_money_decimal(payload.value)
-        if payload.value is not None
-        else _to_money_decimal(expense.value)
-    )
-    account_deltas: dict[int, Decimal] = {}
-    if previous_payment_method == "debit" and previous_bank_account_id is not None:
-        account_deltas[previous_bank_account_id] = (
-            account_deltas.get(previous_bank_account_id, Decimal("0")) + previous_value
+        next_payment_method = payload.payment_method or expense.payment_method
+        next_expense_category_id = (
+            payload.expense_category_id
+            if payload.expense_category_id is not None
+            else expense.expense_category_id
         )
-    if next_payment_method == "debit" and next_bank_account_id is not None:
-        account_deltas[next_bank_account_id] = (
-            account_deltas.get(next_bank_account_id, Decimal("0")) - next_value
+        next_bank_account_id = (
+            payload.bank_account_id
+            if payload.bank_account_id is not None
+            else expense.bank_account_id
+        )
+        next_credit_card_id = (
+            payload.credit_card_id
+            if payload.credit_card_id is not None
+            else expense.credit_card_id
         )
 
-    touched_dream_ids: set[int] = set()
-    for account_id, delta in account_deltas.items():
-        account = _get_user_account_or_400(db, user.id, account_id, for_update=True)
-        _apply_account_delta(account, delta)
-        if account.objective_dream_id is not None:
-            touched_dream_ids.add(account.objective_dream_id)
+        if next_payment_method == "debit":
+            if next_bank_account_id is None:
+                raise HTTPException(
+                    status_code=400, detail="bank_account_id é obrigatório para débito"
+                )
+            next_credit_card_id = None
+            _validate_account_belongs_to_user(db, user.id, next_bank_account_id)
 
-    if payload.value is not None:
-        expense.value = payload.value
-    if payload.description is not None:
-        clean_description = payload.description.strip()
-        if not clean_description:
-            raise HTTPException(status_code=400, detail="Descrição é obrigatória")
-        expense.description = clean_description
-    if payload.launch_date is not None:
-        expense.launch_date = payload.launch_date
+        if next_payment_method == "credit":
+            if next_credit_card_id is None:
+                raise HTTPException(
+                    status_code=400, detail="credit_card_id é obrigatório para crédito"
+                )
+            next_bank_account_id = None
+            _validate_card_belongs_to_user(db, user.id, next_credit_card_id)
 
-    expense.expense_category_id = next_expense_category_id
-    expense.payment_method = next_payment_method
-    expense.bank_account_id = next_bank_account_id
-    expense.credit_card_id = next_credit_card_id
+        _validate_category_belongs_to_user(db, user.id, next_expense_category_id)
 
-    db.flush()
-    for dream_id in touched_dream_ids:
-        sync_dream_milestone_financial_progress(db, user.id, dream_id)
-    if touched_dream_ids:
-        capture_patrimony_snapshot(db, user.id)
-    db.commit()
+        next_value = (
+            to_money_decimal(payload.value)
+            if payload.value is not None
+            else to_money_decimal(expense.value)
+        )
+        account_deltas: dict[int, Decimal] = {}
+        if previous_payment_method == "debit" and previous_bank_account_id is not None:
+            account_deltas[previous_bank_account_id] = (
+                account_deltas.get(previous_bank_account_id, Decimal("0"))
+                + previous_value
+            )
+        if next_payment_method == "debit" and next_bank_account_id is not None:
+            account_deltas[next_bank_account_id] = (
+                account_deltas.get(next_bank_account_id, Decimal("0")) - next_value
+            )
+
+        touched_dream_ids: set[int] = set()
+        for account_id, delta in account_deltas.items():
+            account = _get_user_account_or_400(db, user.id, account_id, for_update=True)
+            apply_account_delta(
+                db,
+                user_id=user.id,
+                account=account,
+                delta=delta,
+                transaction_type=TransactionType.EXPENSE_ADJUSTMENT,
+                description=f"Ajuste da despesa #{expense.id}",
+            )
+            if account.objective_dream_id is not None:
+                touched_dream_ids.add(account.objective_dream_id)
+
+        if payload.value is not None:
+            expense.value = payload.value
+        if payload.description is not None:
+            clean_description = payload.description.strip()
+            if not clean_description:
+                raise HTTPException(status_code=400, detail="Descrição é obrigatória")
+            expense.description = clean_description
+        if payload.launch_date is not None:
+            expense.launch_date = payload.launch_date
+
+        expense.expense_category_id = next_expense_category_id
+        expense.payment_method = next_payment_method
+        expense.bank_account_id = next_bank_account_id
+        expense.credit_card_id = next_credit_card_id
+
+        db.flush()
+        for dream_id in touched_dream_ids:
+            sync_dream_milestone_financial_progress(db, user.id, dream_id)
+        if touched_dream_ids:
+            capture_patrimony_snapshot(db, user.id)
     db.expire_all()
 
+    db.commit()
     updated = _get_user_expense_or_404(db, user.id, expense_id)
     return _to_response(updated)
 
@@ -470,23 +514,31 @@ def delete_expense(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    expense = _get_user_expense_or_404(db, user.id, expense_id)
-    touched_dream_ids: set[int] = set()
+    with transaction_scope(db):
+        expense = _get_user_expense_or_404(db, user.id, expense_id)
+        touched_dream_ids: set[int] = set()
 
-    if expense.payment_method == "debit" and expense.bank_account_id is not None:
-        account = _get_user_account_or_400(
-            db, user.id, expense.bank_account_id, for_update=True
-        )
-        _apply_account_delta(account, _to_money_decimal(expense.value))
-        if account.objective_dream_id is not None:
-            touched_dream_ids.add(account.objective_dream_id)
+        if expense.payment_method == "debit" and expense.bank_account_id is not None:
+            account = _get_user_account_or_400(
+                db, user.id, expense.bank_account_id, for_update=True
+            )
+            apply_account_delta(
+                db,
+                user_id=user.id,
+                account=account,
+                delta=to_money_decimal(expense.value),
+                transaction_type=TransactionType.EXPENSE_REVERSAL,
+                description=f"Estorno da despesa #{expense.id}",
+            )
+            if account.objective_dream_id is not None:
+                touched_dream_ids.add(account.objective_dream_id)
 
-    db.delete(expense)
-    db.flush()
-    for dream_id in touched_dream_ids:
-        sync_dream_milestone_financial_progress(db, user.id, dream_id)
-    if touched_dream_ids:
-        capture_patrimony_snapshot(db, user.id)
+        db.delete(expense)
+        db.flush()
+        for dream_id in touched_dream_ids:
+            sync_dream_milestone_financial_progress(db, user.id, dream_id)
+        if touched_dream_ids:
+            capture_patrimony_snapshot(db, user.id)
     db.commit()
     return None
 
@@ -494,6 +546,7 @@ def delete_expense(
 @router.post("/pay-credit-invoice", response_model=PayCreditInvoiceResponse)
 def pay_credit_invoice(
     payload: PayCreditInvoiceRequest,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -502,102 +555,130 @@ def pay_credit_invoice(
         raise HTTPException(
             status_code=400, detail="Informe ao menos uma despesa para pagar"
         )
-
-    card = _get_user_card_or_400(db, user.id, payload.credit_card_id)
-    account = _get_user_account_or_400(
-        db, user.id, payload.bank_account_id, for_update=True
-    )
-
-    expenses = (
-        db.query(Expense)
-        .options(
-            joinedload(Expense.bank_account),
-            joinedload(Expense.credit_card),
-            joinedload(Expense.expense_category),
-        )
-        .filter(
-            Expense.user_id == user.id,
-            Expense.id.in_(unique_expense_ids),
-        )
-        .with_for_update()
-        .all()
-    )
-    if len(expenses) != len(unique_expense_ids):
-        raise HTTPException(status_code=400, detail="Despesa inválida na seleção")
-
-    for expense in expenses:
-        if expense.payment_method != "credit":
-            raise HTTPException(
-                status_code=400,
-                detail="Apenas despesas no crédito podem ser pagas na fatura",
-            )
-        if expense.credit_card_id != payload.credit_card_id:
-            raise HTTPException(
-                status_code=400,
-                detail="Todas as despesas devem pertencer ao cartão selecionado",
-            )
-        if expense.invoice_paid_at is not None:
-            raise HTTPException(
-                status_code=400,
-                detail="Existe despesa já vinculada a uma fatura paga",
-            )
-
-    total_paid = _to_money_decimal(
-        sum(_to_money_decimal(exp.value) for exp in expenses)
-    )
-    if total_paid <= Decimal("0"):
-        raise HTTPException(status_code=400, detail="Valor total da fatura inválido")
-
-    _apply_account_delta(account, -total_paid)
-
-    if payload.expense_category_id is not None:
-        _validate_category_belongs_to_user(db, user.id, payload.expense_category_id)
-        payment_category_id = payload.expense_category_id
-    else:
-        payment_category = _get_or_create_invoice_payment_category(db, user.id)
-        payment_category_id = payment_category.id
-
-    payment_description = (
-        payload.description.strip()
-        if payload.description is not None
-        else f"Pagamento de fatura - {card.name}"
-    )
-    if not payment_description:
-        raise HTTPException(status_code=400, detail="Descrição é obrigatória")
-
-    payment_expense = Expense(
+    record, replay_response = begin_idempotent_request(
+        db,
         user_id=user.id,
-        value=total_paid,
-        description=payment_description,
-        expense_category_id=payment_category_id,
-        payment_method="debit",
-        bank_account_id=payload.bank_account_id,
-        credit_card_id=None,
-        launch_date=payload.launch_date,
+        route_key="expenses.pay_credit_invoice",
+        idempotency_key=idempotency_key,
+        payload={**payload.model_dump(mode="json"), "expense_ids": unique_expense_ids},
     )
-    db.add(payment_expense)
-    db.flush()
+    if replay_response is not None:
+        return replay_response
 
-    now = datetime.utcnow()
-    for expense in expenses:
-        expense.invoice_paid_at = now
-        expense.invoice_payment_expense_id = payment_expense.id
+    with transaction_scope(db):
+        card = _get_user_card_or_400(db, user.id, payload.credit_card_id)
+        account = _get_user_account_or_400(
+            db, user.id, payload.bank_account_id, for_update=True
+        )
 
-    touched_dream_ids: set[int] = set()
-    if account.objective_dream_id is not None:
-        touched_dream_ids.add(account.objective_dream_id)
+        expenses = (
+            db.query(Expense)
+            .options(
+                joinedload(Expense.bank_account),
+                joinedload(Expense.credit_card),
+                joinedload(Expense.expense_category),
+            )
+            .filter(
+                Expense.user_id == user.id,
+                Expense.id.in_(unique_expense_ids),
+            )
+            .with_for_update()
+            .all()
+        )
+        if len(expenses) != len(unique_expense_ids):
+            raise HTTPException(status_code=400, detail="Despesa inválida na seleção")
 
-    for dream_id in touched_dream_ids:
-        sync_dream_milestone_financial_progress(db, user.id, dream_id)
-    if touched_dream_ids:
-        capture_patrimony_snapshot(db, user.id)
+        for expense in expenses:
+            if expense.payment_method != "credit":
+                raise HTTPException(
+                    status_code=400,
+                    detail="Apenas despesas no crédito podem ser pagas na fatura",
+                )
+            if expense.credit_card_id != payload.credit_card_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Todas as despesas devem pertencer ao cartão selecionado",
+                )
+            if expense.invoice_paid_at is not None:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Existe despesa já vinculada a uma fatura paga",
+                )
 
-    db.commit()
+        total_paid = to_money_decimal(
+            sum(to_money_decimal(exp.value) for exp in expenses)
+        )
+        if total_paid <= Decimal("0"):
+            raise HTTPException(
+                status_code=400, detail="Valor total da fatura inválido"
+            )
+
+        apply_account_delta(
+            db,
+            user_id=user.id,
+            account=account,
+            delta=-total_paid,
+            transaction_type=TransactionType.INVOICE_PAYMENT,
+            description=f"Pagamento de fatura - {card.name}",
+        )
+
+        if payload.expense_category_id is not None:
+            _validate_category_belongs_to_user(db, user.id, payload.expense_category_id)
+            payment_category_id = payload.expense_category_id
+        else:
+            payment_category = _get_or_create_invoice_payment_category(db, user.id)
+            payment_category_id = payment_category.id
+
+        payment_description = (
+            payload.description.strip()
+            if payload.description is not None
+            else f"Pagamento de fatura - {card.name}"
+        )
+        if not payment_description:
+            raise HTTPException(status_code=400, detail="Descrição é obrigatória")
+
+        payment_expense = Expense(
+            user_id=user.id,
+            value=total_paid,
+            description=payment_description,
+            expense_category_id=payment_category_id,
+            payment_method="debit",
+            bank_account_id=payload.bank_account_id,
+            credit_card_id=None,
+            launch_date=payload.launch_date,
+        )
+        db.add(payment_expense)
+        db.flush()
+
+        now = datetime.utcnow()
+        for expense in expenses:
+            expense.invoice_paid_at = now
+            expense.invoice_payment_expense_id = payment_expense.id
+
+        touched_dream_ids: set[int] = set()
+        if account.objective_dream_id is not None:
+            touched_dream_ids.add(account.objective_dream_id)
+
+        for dream_id in touched_dream_ids:
+            sync_dream_milestone_financial_progress(db, user.id, dream_id)
+        if touched_dream_ids:
+            capture_patrimony_snapshot(db, user.id)
     db.expire_all()
 
     created = _get_user_expense_or_404(db, user.id, payment_expense.id)
-    return PayCreditInvoiceResponse(
+    response = PayCreditInvoiceResponse(
         payment_expense=_to_response(created),
         paid_expense_ids=sorted(unique_expense_ids),
         total_paid=total_paid,
     )
+    with transaction_scope(db):
+        finalize_idempotent_request(
+            db,
+            record=record,
+            response_body=response.model_dump(mode="json"),
+            status_code=200,
+        )
+    db.commit()
+    if record is not None:
+        return JSONResponse(status_code=200, content=response.model_dump(mode="json"))
+    return response

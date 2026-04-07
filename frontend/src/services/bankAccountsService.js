@@ -1,8 +1,8 @@
 import api from "./api";
 
 const bankAccountsService = {
-  list() {
-    return api.get("/bank-accounts");
+  list(params = {}) {
+    return api.get("/bank-accounts", { params });
   },
 
   snapshots(days = 365) {
@@ -13,6 +13,10 @@ const bankAccountsService = {
 
   create(payload) {
     return api.post("/bank-accounts", payload);
+  },
+
+  transfer(payload) {
+    return api.post("/bank-accounts/transfer", payload);
   },
 
   update(id, payload) {

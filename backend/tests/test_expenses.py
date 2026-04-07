@@ -414,6 +414,51 @@ def test_expenses_summary_endpoint(client: TestClient):
     assert body["by_category"][0]["total"] == "80.00"
 
 
+def test_expenses_summary_excludes_invoice_payment_expense(client: TestClient):
+    dream_id = _create_dream(client)
+    account_id = _create_account(client, dream_id)
+    card_id = _create_card(client)
+    category_id = _create_category(client, "Farmacia")
+
+    credit_expense = client.post(
+        "/expenses",
+        json={
+            "value": "14.06",
+            "description": "Remedio",
+            "expense_category_id": category_id,
+            "payment_method": "credit",
+            "bank_account_id": None,
+            "credit_card_id": card_id,
+            "launch_date": "2026-03-17",
+        },
+    )
+    assert credit_expense.status_code == 201
+
+    pay_res = client.post(
+        "/expenses/pay-credit-invoice",
+        json={
+            "credit_card_id": card_id,
+            "bank_account_id": account_id,
+            "expense_ids": [credit_expense.json()["id"]],
+            "launch_date": "2026-03-17",
+        },
+    )
+    assert pay_res.status_code == 200
+
+    summary = client.get("/expenses/summary?from=2026-03-17&to=2026-03-17")
+    assert summary.status_code == 200
+    body = summary.json()
+
+    assert body["count"] == 1
+    assert body["total"] == "14.06"
+    assert body["average"] == "14.06"
+    assert body["credit_total"] == "14.06"
+    assert body["debit_total"] == "0.00"
+    assert len(body["by_category"]) == 1
+    assert body["by_category"][0]["category_name"] == "Farmacia"
+    assert body["by_category"][0]["total"] == "14.06"
+
+
 def test_pay_credit_invoice_creates_debit_expense_and_marks_items_paid(
     client: TestClient,
 ):

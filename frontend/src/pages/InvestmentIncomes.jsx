@@ -90,7 +90,7 @@ export default function InvestmentIncomes() {
         const [incomesData, investmentsData, accountsData] = await Promise.all([
           investmentIncomesService.list(),
           investmentsService.list(),
-          bankAccountsService.list(),
+          bankAccountsService.list({ allow_investment_income: true }),
         ]);
 
         setItems(Array.isArray(incomesData) ? incomesData : []);
@@ -381,7 +381,7 @@ export default function InvestmentIncomes() {
             >
               <option value="">
                 {accountOptions.length === 0
-                  ? "Cadastre uma conta primeiro"
+                  ? "Nenhuma conta habilitada para proventos"
                   : "Selecione a conta"}
               </option>
               {accountOptions.map((account) => (
