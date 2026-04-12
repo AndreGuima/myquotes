@@ -5,6 +5,7 @@ import { getApiErrorMessage } from "../core/apiError";
 import bankAccountsService from "../services/bankAccountsService";
 import investmentIncomesService from "../services/investmentIncomesService";
 import investmentsService from "../services/investmentsService";
+import Pagination from "./investments/components/Pagination";
 
 const INCOME_TYPE_OPTIONS = [
   { value: "dividend", label: "Dividendo" },
@@ -75,6 +76,7 @@ function getErrorMessage(error, fallback) {
 }
 
 export default function InvestmentIncomes() {
+  const PAGE_SIZE = 10;
   const [items, setItems] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [availableTickers, setAvailableTickers] = useState([]);
@@ -82,6 +84,7 @@ export default function InvestmentIncomes() {
   const [saving, setSaving] = useState(false);
   const [removingId, setRemovingId] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [page, setPage] = useState(1);
   const [form, setForm] = useState(getInitialForm);
 
   useEffect(() => {
@@ -133,6 +136,30 @@ export default function InvestmentIncomes() {
     () => items.reduce((acc, item) => acc + Number(item.amount || 0), 0),
     [items],
   );
+  const totalPages = Math.max(1, Math.ceil(sortedItems.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  useEffect(() => {
+    setPage((prev) => Math.min(Math.max(prev, 1), totalPages));
+  }, [totalPages]);
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return sortedItems.slice(start, start + PAGE_SIZE);
+  }, [currentPage, sortedItems]);
+
+  const visiblePageNumbers = useMemo(() => {
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, currentPage + 2);
+    const pages = [];
+
+    for (let p = start; p <= end; p += 1) {
+      pages.push(p);
+    }
+
+    return pages;
+  }, [currentPage, totalPages]);
+
   const tickerOptions = useMemo(() => {
     if (!form.ticker || availableTickers.includes(form.ticker)) {
       return availableTickers;
@@ -461,7 +488,7 @@ export default function InvestmentIncomes() {
                 </tr>
               </thead>
               <tbody>
-                {sortedItems.map((item) => (
+                {paginatedItems.map((item) => (
                   <tr
                     key={item.id}
                     className={`border-b themed-border last:border-b-0 ${
@@ -508,6 +535,16 @@ export default function InvestmentIncomes() {
                 ))}
               </tbody>
             </table>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={sortedItems.length}
+              visiblePageNumbers={visiblePageNumbers}
+              onPrev={() => setPage((prev) => Math.max(1, prev - 1))}
+              onNext={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              onGoToPage={setPage}
+            />
           </div>
         )}
       </div>

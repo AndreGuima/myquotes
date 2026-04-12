@@ -66,6 +66,38 @@ function buildPieSlices(summary) {
   return { total, slices };
 }
 
+function formatInputDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getShortcutPeriod(shortcut) {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+
+  if (shortcut === "thisMonth") {
+    return {
+      fromDate: formatInputDate(new Date(year, month, 1)),
+      toDate: formatInputDate(new Date(year, month + 1, 0)),
+    };
+  }
+
+  if (shortcut === "lastMonth") {
+    return {
+      fromDate: formatInputDate(new Date(year, month - 1, 1)),
+      toDate: formatInputDate(new Date(year, month, 0)),
+    };
+  }
+
+  return {
+    fromDate: formatInputDate(new Date(year, 0, 1)),
+    toDate: formatInputDate(new Date(year, 11, 31)),
+  };
+}
+
 function AssetTypePieCard({ summary }) {
   const { total, slices } = useMemo(() => buildPieSlices(summary), [summary]);
   const [hoveredType, setHoveredType] = useState(null);
@@ -251,6 +283,29 @@ export default function InvestmentIncomesDashboards() {
         <>
           <div className="themed-card themed-border border rounded-xl p-5 mb-4">
             <h2 className="font-semibold mb-3">Filtro por período</h2>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <button
+                type="button"
+                className="themed-border border rounded px-3 py-2 text-sm hover:opacity-90 transition"
+                onClick={() => setPeriodFilters(getShortcutPeriod("thisMonth"))}
+              >
+                Este mês
+              </button>
+              <button
+                type="button"
+                className="themed-border border rounded px-3 py-2 text-sm hover:opacity-90 transition"
+                onClick={() => setPeriodFilters(getShortcutPeriod("lastMonth"))}
+              >
+                Mês passado
+              </button>
+              <button
+                type="button"
+                className="themed-border border rounded px-3 py-2 text-sm hover:opacity-90 transition"
+                onClick={() => setPeriodFilters(getShortcutPeriod("thisYear"))}
+              >
+                Este ano
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <label className="text-sm">
                 <span className="block themed-muted mb-1">De</span>
