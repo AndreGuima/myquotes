@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import investmentsService from "../services/investmentsService";
-import { getApiErrorMessage } from "../core/apiError";
 import { confirm, notify } from "../core/toast";
 import { normalizeInvestmentSector } from "../constants/investmentSectors";
 import InvestmentSummary from "./investments/components/InvestmentSummary";
@@ -72,7 +71,6 @@ export default function Investments() {
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [removingId, setRemovingId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [page, setPage] = useState(1);
@@ -346,24 +344,6 @@ export default function Investments() {
     }
   }
 
-  async function handleSyncPrices() {
-    setSyncing(true);
-    try {
-      const result = await investmentsService.syncPrices();
-      const data = await investmentsService.list();
-      setInvestments(Array.isArray(data) ? data : []);
-      if ((result?.synced_investments ?? 0) > 0) {
-        notify.success("Cotações atualizadas");
-      } else {
-        notify.info("Nenhuma cotação foi atualizada agora");
-      }
-    } catch (err) {
-      notify.error(getApiErrorMessage(err, "Erro ao atualizar cotações"));
-    } finally {
-      setSyncing(false);
-    }
-  }
-
   function handleRemove(id) {
     confirm({
       message: "Deseja remover este investimento?",
@@ -407,8 +387,6 @@ export default function Investments() {
         totalCurrent={totalCurrent}
         profitability={profitability}
         formatCurrency={formatCurrency}
-        syncing={syncing}
-        onSyncPrices={handleSyncPrices}
       />
 
       <InvestmentForm

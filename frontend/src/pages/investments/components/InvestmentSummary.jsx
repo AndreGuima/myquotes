@@ -5,14 +5,12 @@ export default function InvestmentSummary({
   totalCurrent,
   profitability,
   formatCurrency,
-  syncing,
-  onSyncPrices,
 }) {
   const valueClassName =
     "text-[clamp(1.5rem,2.3vw,2rem)] leading-tight font-bold break-all";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
       <div className="themed-card themed-border border rounded-xl p-5 min-w-0">
         <h2 className="font-semibold mb-1">Valor Investido</h2>
         <p className={valueClassName}>{formatCurrency(totalInvested)}</p>
@@ -50,21 +48,6 @@ export default function InvestmentSummary({
         >
           Abrir dividendos
         </Link>
-      </div>
-
-      <div className="themed-card themed-border border rounded-xl p-5 min-w-0">
-        <h2 className="font-semibold mb-1">Cotações</h2>
-        <p className="themed-muted text-sm mt-1 mb-4">
-          Atualize agora ou aguarde a sincronização automática do cron.
-        </p>
-        <button
-          type="button"
-          onClick={onSyncPrices}
-          className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-60"
-          disabled={syncing}
-        >
-          {syncing ? "Atualizando..." : "Atualizar preços"}
-        </button>
       </div>
 
       <div className="themed-card themed-border border rounded-xl p-5 min-w-0">
