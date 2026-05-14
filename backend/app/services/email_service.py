@@ -21,7 +21,12 @@ class EmailService:
 
     @staticmethod
     def send_daily_quote(
-        email: str, text: str, author: str, username: str | None = None
+        email: str,
+        text: str,
+        author: str,
+        username: str | None = None,
+        patrimony_total_label: str | None = None,
+        patrimony_comparison_label: str | None = None,
     ):
         html = render_template(
             "emails/daily_quote.html",
@@ -29,11 +34,13 @@ class EmailService:
                 "text": text,
                 "author": author,
                 "username": username,
+                "patrimony_total_label": patrimony_total_label,
+                "patrimony_comparison_label": patrimony_comparison_label,
             },
         )
 
         send_html_email(
             to=email,
-            subject="📜 Quote of the Day",
+            subject="📜 Daily Digest",
             html=html,
         )

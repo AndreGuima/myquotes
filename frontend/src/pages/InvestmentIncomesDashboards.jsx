@@ -7,6 +7,9 @@ import PieDonutChart from "../components/charts/PieDonutChart";
 import { describeArc } from "../utils/charts/pieMath";
 
 const PIE_COLORS = ["#0ea5e9", "#22c55e", "#f59e0b"];
+const PERIOD_BUTTON_BASE =
+  "themed-border border rounded px-3 py-2 text-sm hover:opacity-90 transition";
+const PERIOD_BUTTON_ACTIVE = "bg-blue-600 text-white border-blue-600";
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -121,10 +124,9 @@ export default function InvestmentIncomesDashboards() {
   const [items, setItems] = useState([]);
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [periodFilters, setPeriodFilters] = useState({
-    fromDate: "",
-    toDate: "",
-  });
+  const [periodFilters, setPeriodFilters] = useState(() =>
+    getShortcutPeriod("thisMonth"),
+  );
 
   const invalidPeriod =
     periodFilters.fromDate &&
@@ -264,6 +266,17 @@ export default function InvestmentIncomesDashboards() {
   }, [visibleItems]);
 
   const maxMonthly = Math.max(1, ...monthlySeries.map((item) => item.total));
+  const isShortcutActive = (shortcut) => {
+    const period = getShortcutPeriod(shortcut);
+    return (
+      periodFilters.fromDate === period.fromDate &&
+      periodFilters.toDate === period.toDate
+    );
+  };
+  const getPeriodButtonClass = (shortcut) =>
+    `${PERIOD_BUTTON_BASE} ${
+      isShortcutActive(shortcut) ? PERIOD_BUTTON_ACTIVE : ""
+    }`;
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -286,21 +299,24 @@ export default function InvestmentIncomesDashboards() {
             <div className="flex flex-wrap gap-2 mb-3">
               <button
                 type="button"
-                className="themed-border border rounded px-3 py-2 text-sm hover:opacity-90 transition"
+                className={getPeriodButtonClass("thisMonth")}
+                aria-pressed={isShortcutActive("thisMonth")}
                 onClick={() => setPeriodFilters(getShortcutPeriod("thisMonth"))}
               >
                 Este mês
               </button>
               <button
                 type="button"
-                className="themed-border border rounded px-3 py-2 text-sm hover:opacity-90 transition"
+                className={getPeriodButtonClass("lastMonth")}
+                aria-pressed={isShortcutActive("lastMonth")}
                 onClick={() => setPeriodFilters(getShortcutPeriod("lastMonth"))}
               >
                 Mês passado
               </button>
               <button
                 type="button"
-                className="themed-border border rounded px-3 py-2 text-sm hover:opacity-90 transition"
+                className={getPeriodButtonClass("thisYear")}
+                aria-pressed={isShortcutActive("thisYear")}
                 onClick={() => setPeriodFilters(getShortcutPeriod("thisYear"))}
               >
                 Este ano
