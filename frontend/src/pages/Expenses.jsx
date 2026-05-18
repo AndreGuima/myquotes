@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import bankAccountsService from "../services/bankAccountsService";
 import creditCardsService from "../services/creditCardsService";
@@ -15,6 +15,23 @@ function formatCurrency(value) {
     style: "currency",
     currency: "BRL",
   });
+}
+
+function formatCurrencyInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+
+  const numberValue = Number(digits) / 100;
+  return numberValue.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function parseCurrencyInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return 0;
+  return Number(digits) / 100;
 }
 
 function toDateInputValue(date) {
@@ -55,6 +72,7 @@ function getInitialForm() {
 }
 
 export default function Expenses() {
+  const valueInputRef = useRef(null);
   const [accounts, setAccounts] = useState([]);
   const [cards, setCards] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -294,6 +312,24 @@ export default function Expenses() {
     return sortedExpenses.slice(start, start + EXPENSES_PAGE_SIZE);
   }, [sortedExpenses, expensesPage]);
 
+  const lastCreditCardId = useMemo(() => {
+    const cardIds = new Set(cards.map((card) => String(card.id)));
+    const lastCreditExpense = expenses
+      .filter(
+        (expense) =>
+          expense.payment_method === "credit" &&
+          expense.credit_card_id &&
+          cardIds.has(String(expense.credit_card_id)),
+      )
+      .sort((a, b) => {
+        const bTime = toTimestamp(b.created_at) || toTimestamp(b.launch_date);
+        const aTime = toTimestamp(a.created_at) || toTimestamp(a.launch_date);
+        return bTime - aTime;
+      })[0];
+
+    return lastCreditExpense ? String(lastCreditExpense.credit_card_id) : "";
+  }, [cards, expenses]);
+
   useEffect(() => {
     setExpensesPage((prev) => Math.min(prev, totalExpensePages));
   }, [totalExpensePages]);
@@ -348,10 +384,16 @@ export default function Expenses() {
     setAutoCategoryDisabled(false);
   }
 
+  function focusValueInput() {
+    window.setTimeout(() => {
+      valueInputRef.current?.focus();
+    }, 0);
+  }
+
   async function handleSubmitExpense(e) {
     e.preventDefault();
 
-    const value = Number(form.value);
+    const value = parseCurrencyInput(form.value);
     const description = form.description.trim();
     const categoryId = Number(form.categoryId);
     const paymentMethod = form.paymentMethod;
@@ -408,6 +450,7 @@ export default function Expenses() {
         notify.success("Despesa lançada");
       }
       resetExpenseForm();
+      focusValueInput();
     } catch (err) {
       notify.error(getApiErrorMessage(err, "Erro ao salvar despesa"));
     } finally {
@@ -419,7 +462,7 @@ export default function Expenses() {
     setEditingExpenseId(expense.id);
     setAutoCategoryDisabled(true);
     setForm({
-      value: String(expense.value || ""),
+      value: formatCurrencyInput(Math.round(Number(expense.value || 0) * 100)),
       description: expense.description || "",
       categoryId: String(expense.expense_category_id || ""),
       paymentMethod: expense.payment_method || "debit",
@@ -453,7 +496,7 @@ export default function Expenses() {
       ...prev,
       paymentMethod: method,
       accountId: method === "debit" ? prev.accountId : "",
-      cardId: method === "credit" ? prev.cardId : "",
+      cardId: method === "credit" ? lastCreditCardId || prev.cardId : "",
     }));
   }
 
@@ -648,13 +691,17 @@ export default function Expenses() {
           className="grid grid-cols-1 md:grid-cols-2 gap-3"
         >
           <input
-            type="number"
-            step="0.01"
+            ref={valueInputRef}
+            type="text"
+            inputMode="decimal"
             className="themed-input rounded px-3 py-2"
             placeholder="Valor"
             value={form.value}
             onChange={(e) =>
-              setForm((prev) => ({ ...prev, value: e.target.value }))
+              setForm((prev) => ({
+                ...prev,
+                value: formatCurrencyInput(e.target.value),
+              }))
             }
           />
 

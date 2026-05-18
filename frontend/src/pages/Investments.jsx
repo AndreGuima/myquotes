@@ -42,6 +42,12 @@ function getAssetTypeLabel(type) {
   return "Ação";
 }
 
+function formatIntegerQuantity(value) {
+  const numberValue = Number(value || 0);
+  if (!Number.isFinite(numberValue) || numberValue <= 0) return "";
+  return String(Math.trunc(numberValue));
+}
+
 function loadLegacyInvestments() {
   try {
     const raw = localStorage.getItem(LEGACY_INVESTMENTS_STORAGE_KEY);
@@ -286,7 +292,7 @@ export default function Investments() {
       sector: normalizeInvestmentSector(item.asset_type, item.sector),
       ticker: String(item.ticker || ""),
       name: String(item.name || ""),
-      quantity: String(item.quantity || ""),
+      quantity: formatIntegerQuantity(item.quantity),
       averagePrice: String(item.average_price || ""),
     });
   }
@@ -303,8 +309,8 @@ export default function Investments() {
       return;
     }
 
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      notify.error("Informe uma quantidade válida");
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      notify.error("Informe uma quantidade inteira válida");
       return;
     }
 
