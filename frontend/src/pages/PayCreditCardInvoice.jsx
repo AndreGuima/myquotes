@@ -92,52 +92,47 @@ export default function PayCreditCardInvoice() {
     loadInitialData();
   }, []);
 
-  const fetchInvoiceExpenses = useCallback(
-    async ({ cardId, month, year }) => {
-      if (!cardId) {
-        return [];
-      }
+  const fetchInvoiceExpenses = useCallback(async ({ cardId, month, year }) => {
+    if (!cardId) {
+      return [];
+    }
 
-      const numericMonth = Number(month);
-      const numericYear = Number(year);
-      const validMonth =
-        Number.isInteger(numericMonth) &&
-        numericMonth >= 1 &&
-        numericMonth <= 12;
-      const validYear =
-        Number.isInteger(numericYear) &&
-        numericYear >= 2000 &&
-        numericYear <= 2100;
+    const numericMonth = Number(month);
+    const numericYear = Number(year);
+    const validMonth =
+      Number.isInteger(numericMonth) && numericMonth >= 1 && numericMonth <= 12;
+    const validYear =
+      Number.isInteger(numericYear) &&
+      numericYear >= 2000 &&
+      numericYear <= 2100;
 
-      if (!validMonth || !validYear) {
-        return [];
-      }
+    if (!validMonth || !validYear) {
+      return [];
+    }
 
-      const expensesData = await expensesService.list({
-        limit: 500,
-        offset: 0,
-      });
-      const periodEnd = getPeriodEndDate(numericYear, numericMonth);
-      const list = Array.isArray(expensesData) ? expensesData : [];
-      return list.filter((expense) => {
-        const launchDate = expense.launch_date
-          ? new Date(`${expense.launch_date}T00:00:00`)
-          : null;
-        const isUntilSelectedPeriod =
-          launchDate instanceof Date &&
-          !Number.isNaN(launchDate.getTime()) &&
-          launchDate <= periodEnd;
+    const expensesData = await expensesService.list({
+      limit: 500,
+      offset: 0,
+    });
+    const periodEnd = getPeriodEndDate(numericYear, numericMonth);
+    const list = Array.isArray(expensesData) ? expensesData : [];
+    return list.filter((expense) => {
+      const launchDate = expense.launch_date
+        ? new Date(`${expense.launch_date}T00:00:00`)
+        : null;
+      const isUntilSelectedPeriod =
+        launchDate instanceof Date &&
+        !Number.isNaN(launchDate.getTime()) &&
+        launchDate <= periodEnd;
 
-        return (
-          expense.payment_method === "credit" &&
-          expense.invoice_paid_at == null &&
-          String(expense.credit_card_id || "") === String(cardId) &&
-          isUntilSelectedPeriod
-        );
-      });
-    },
-    [],
-  );
+      return (
+        expense.payment_method === "credit" &&
+        expense.invoice_paid_at == null &&
+        String(expense.credit_card_id || "") === String(cardId) &&
+        isUntilSelectedPeriod
+      );
+    });
+  }, []);
 
   const loadInvoiceExpenses = useCallback(
     async ({

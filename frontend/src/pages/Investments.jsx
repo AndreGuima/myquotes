@@ -403,7 +403,10 @@ export default function Investments() {
         onCancelEdit={resetForm}
       />
 
-      <InvestmentFilters filters={filters} setFilters={setFiltersAndResetPage} />
+      <InvestmentFilters
+        filters={filters}
+        setFilters={setFiltersAndResetPage}
+      />
 
       <InvestmentTable
         loading={loading}

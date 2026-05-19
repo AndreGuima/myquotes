@@ -348,7 +348,10 @@ export default function Expenses() {
     setExpensesPage(1);
   }
 
-  function getSuggestedCategoryId(description, { ignoreAutoDisabled = false } = {}) {
+  function getSuggestedCategoryId(
+    description,
+    { ignoreAutoDisabled = false } = {},
+  ) {
     if (
       editingExpenseId ||
       (!ignoreAutoDisabled && autoCategoryDisabled) ||
