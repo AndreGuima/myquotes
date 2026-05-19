@@ -236,11 +236,7 @@ export default function Investments() {
     1,
     Math.ceil(sortedInvestments.length / PAGE_SIZE),
   );
-  const currentPage = Math.min(page, totalPages);
-
-  useEffect(() => {
-    setPage((prev) => Math.min(Math.max(prev, 1), totalPages));
-  }, [totalPages]);
+  const currentPage = Math.min(Math.max(page, 1), totalPages);
 
   const paginatedInvestments = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
@@ -259,9 +255,12 @@ export default function Investments() {
     return pages;
   }, [currentPage, totalPages]);
 
-  useEffect(() => {
+  function setFiltersAndResetPage(nextFilters) {
+    setFilters((prev) =>
+      typeof nextFilters === "function" ? nextFilters(prev) : nextFilters,
+    );
     setPage(1);
-  }, [filters]);
+  }
 
   function handleSort(columnKey) {
     setSortConfig((prev) => {
@@ -404,7 +403,7 @@ export default function Investments() {
         onCancelEdit={resetForm}
       />
 
-      <InvestmentFilters filters={filters} setFilters={setFilters} />
+      <InvestmentFilters filters={filters} setFilters={setFiltersAndResetPage} />
 
       <InvestmentTable
         loading={loading}

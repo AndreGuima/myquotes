@@ -252,6 +252,10 @@ export default function Expenses() {
     () => Math.max(1, Math.ceil(sortedExpenses.length / EXPENSES_PAGE_SIZE)),
     [sortedExpenses.length],
   );
+  const currentExpensePage = Math.min(
+    Math.max(expensesPage, 1),
+    totalExpensePages,
+  );
 
   const suggestedCategoryByPrefix = useMemo(() => {
     const prefixStats = new Map();
@@ -308,9 +312,9 @@ export default function Expenses() {
   }, [expenses]);
 
   const paginatedExpenses = useMemo(() => {
-    const start = (expensesPage - 1) * EXPENSES_PAGE_SIZE;
+    const start = (currentExpensePage - 1) * EXPENSES_PAGE_SIZE;
     return sortedExpenses.slice(start, start + EXPENSES_PAGE_SIZE);
-  }, [sortedExpenses, expensesPage]);
+  }, [sortedExpenses, currentExpensePage]);
 
   const lastCreditCardId = useMemo(() => {
     const cardIds = new Set(cards.map((card) => String(card.id)));
@@ -330,14 +334,6 @@ export default function Expenses() {
     return lastCreditExpense ? String(lastCreditExpense.credit_card_id) : "";
   }, [cards, expenses]);
 
-  useEffect(() => {
-    setExpensesPage((prev) => Math.min(prev, totalExpensePages));
-  }, [totalExpensePages]);
-
-  useEffect(() => {
-    setExpensesPage(1);
-  }, [launchFilters, launchSort]);
-
   function toggleLaunchSort(key) {
     setLaunchSort((prev) => {
       if (prev.key === key) {
@@ -349,34 +345,27 @@ export default function Expenses() {
 
       return { key, direction: "asc" };
     });
+    setExpensesPage(1);
+  }
+
+  function getSuggestedCategoryId(description, { ignoreAutoDisabled = false } = {}) {
+    if (
+      editingExpenseId ||
+      (!ignoreAutoDisabled && autoCategoryDisabled) ||
+      form.categoryId
+    ) {
+      return "";
+    }
+    const normalizedDescription = normalizeDescription(description);
+    if (normalizedDescription.length < 3) return "";
+
+    return suggestedCategoryByPrefix[normalizedDescription] || "";
   }
 
   function getSortIndicator(key) {
     if (launchSort.key !== key) return "↕";
     return launchSort.direction === "asc" ? "↑" : "↓";
   }
-
-  useEffect(() => {
-    if (editingExpenseId || autoCategoryDisabled || form.categoryId) return;
-
-    const normalizedDescription = normalizeDescription(form.description);
-    if (normalizedDescription.length < 3) return;
-
-    const suggestedCategoryId =
-      suggestedCategoryByPrefix[normalizedDescription];
-    if (!suggestedCategoryId) return;
-
-    setForm((prev) => {
-      if (prev.categoryId) return prev;
-      return { ...prev, categoryId: suggestedCategoryId };
-    });
-  }, [
-    autoCategoryDisabled,
-    editingExpenseId,
-    form.categoryId,
-    form.description,
-    suggestedCategoryByPrefix,
-  ]);
 
   function resetExpenseForm() {
     setEditingExpenseId(null);
@@ -711,8 +700,17 @@ export default function Expenses() {
             placeholder="Descricao"
             value={form.description}
             onChange={(e) => {
+              const description = e.target.value;
               setAutoCategoryDisabled(false);
-              setForm((prev) => ({ ...prev, description: e.target.value }));
+              setForm((prev) => ({
+                ...prev,
+                description,
+                categoryId:
+                  prev.categoryId ||
+                  getSuggestedCategoryId(description, {
+                    ignoreAutoDisabled: true,
+                  }),
+              }));
             }}
           />
 
@@ -821,20 +819,22 @@ export default function Expenses() {
             className="themed-input rounded px-3 py-2 md:col-span-2"
             placeholder="Buscar por descrição, categoria ou origem"
             value={launchFilters.query}
-            onChange={(e) =>
-              setLaunchFilters((prev) => ({ ...prev, query: e.target.value }))
-            }
+            onChange={(e) => {
+              setLaunchFilters((prev) => ({ ...prev, query: e.target.value }));
+              setExpensesPage(1);
+            }}
           />
 
           <select
             className="themed-input rounded px-3 py-2"
             value={launchFilters.categoryId}
-            onChange={(e) =>
+            onChange={(e) => {
               setLaunchFilters((prev) => ({
                 ...prev,
                 categoryId: e.target.value,
-              }))
-            }
+              }));
+              setExpensesPage(1);
+            }}
           >
             <option value="">Todas as categorias</option>
             {categories.map((category) => (
@@ -847,12 +847,13 @@ export default function Expenses() {
           <select
             className="themed-input rounded px-3 py-2"
             value={launchFilters.paymentMethod}
-            onChange={(e) =>
+            onChange={(e) => {
               setLaunchFilters((prev) => ({
                 ...prev,
                 paymentMethod: e.target.value,
-              }))
-            }
+              }));
+              setExpensesPage(1);
+            }}
           >
             <option value="">Todos os pagamentos</option>
             <option value="debit">Débito</option>
@@ -861,15 +862,16 @@ export default function Expenses() {
 
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               setLaunchFilters({
                 query: "",
                 categoryId: "",
                 paymentMethod: "",
                 fromDate: "",
                 toDate: "",
-              })
-            }
+              });
+              setExpensesPage(1);
+            }}
             className="themed-card themed-border border px-4 py-2 rounded hover:opacity-90"
           >
             Limpar filtros
@@ -879,21 +881,23 @@ export default function Expenses() {
             type="date"
             className="themed-input rounded px-3 py-2"
             value={launchFilters.fromDate}
-            onChange={(e) =>
+            onChange={(e) => {
               setLaunchFilters((prev) => ({
                 ...prev,
                 fromDate: e.target.value,
-              }))
-            }
+              }));
+              setExpensesPage(1);
+            }}
           />
 
           <input
             type="date"
             className="themed-input rounded px-3 py-2"
             value={launchFilters.toDate}
-            onChange={(e) =>
-              setLaunchFilters((prev) => ({ ...prev, toDate: e.target.value }))
-            }
+            onChange={(e) => {
+              setLaunchFilters((prev) => ({ ...prev, toDate: e.target.value }));
+              setExpensesPage(1);
+            }}
           />
         </div>
       </div>
@@ -1038,19 +1042,19 @@ export default function Expenses() {
           <div className="flex items-center justify-between gap-2 mt-4 text-sm">
             <button
               type="button"
-              disabled={expensesPage <= 1}
+              disabled={currentExpensePage <= 1}
               onClick={() => setExpensesPage((prev) => Math.max(1, prev - 1))}
               className="themed-card themed-border border px-3 py-1 rounded hover:opacity-90 disabled:opacity-50"
             >
               Anterior
             </button>
             <div className="themed-muted">
-              Página {expensesPage} de {totalExpensePages} •{" "}
+              Página {currentExpensePage} de {totalExpensePages} •{" "}
               {filteredExpenses.length} lançamento(s)
             </div>
             <button
               type="button"
-              disabled={expensesPage >= totalExpensePages}
+              disabled={currentExpensePage >= totalExpensePages}
               onClick={() =>
                 setExpensesPage((prev) => Math.min(totalExpensePages, prev + 1))
               }

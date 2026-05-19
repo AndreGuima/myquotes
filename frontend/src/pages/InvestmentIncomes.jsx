@@ -139,10 +139,6 @@ export default function InvestmentIncomes() {
   const totalPages = Math.max(1, Math.ceil(sortedItems.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
 
-  useEffect(() => {
-    setPage((prev) => Math.min(Math.max(prev, 1), totalPages));
-  }, [totalPages]);
-
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
     return sortedItems.slice(start, start + PAGE_SIZE);

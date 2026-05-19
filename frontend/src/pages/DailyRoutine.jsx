@@ -274,30 +274,37 @@ export default function DailyRoutine() {
     const minHeight = 54;
     const gap = 8;
 
-    let extraOffset = 0;
-    let lastBottom = 0;
+    const initialLayout = {
+      positioned: [],
+      extraOffset: 0,
+      lastBottom: 0,
+    };
 
-    const positioned = schedule.map((item) => {
+    const { positioned, lastBottom } = schedule.reduce((acc, item) => {
       const startMinutes = item.visualStart - timeBounds.startOfDay;
       const endMinutes = item.visualEnd - timeBounds.startOfDay;
       const rawTop = startMinutes * pxPerMinute;
       const rawHeight = (endMinutes - startMinutes) * pxPerMinute;
       const height = Math.max(rawHeight, minHeight);
-      let top = rawTop + extraOffset;
-
-      if (top < lastBottom + gap) {
-        top = lastBottom + gap;
-        extraOffset = top - rawTop;
-      }
-
-      lastBottom = top + height;
+      const offsetTop = rawTop + acc.extraOffset;
+      const overlapsPrevious = offsetTop < acc.lastBottom + gap;
+      const top = overlapsPrevious ? acc.lastBottom + gap : offsetTop;
+      const extraOffset = overlapsPrevious ? top - rawTop : acc.extraOffset;
+      const lastBottom = top + height;
 
       return {
-        ...item,
-        top,
-        height,
+        positioned: [
+          ...acc.positioned,
+          {
+            ...item,
+            top,
+            height,
+          },
+        ],
+        extraOffset,
+        lastBottom,
       };
-    });
+    }, initialLayout);
 
     return {
       layout: positioned,

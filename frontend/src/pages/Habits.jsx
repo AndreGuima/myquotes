@@ -18,18 +18,18 @@ export default function Habits() {
     return end ? `${start}–${end}` : start;
   }
 
-  async function loadHabits() {
-    try {
-      const data = await habitsService.list({ include_stats: true });
-      setHabits(data);
-    } catch (err) {
-      notify.error(getApiErrorMessage(err, "Erro ao carregar hábitos"));
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
+    async function loadHabits() {
+      try {
+        const data = await habitsService.list({ include_stats: true });
+        setHabits(data);
+      } catch (err) {
+        notify.error(getApiErrorMessage(err, "Erro ao carregar hábitos"));
+      } finally {
+        setLoading(false);
+      }
+    }
+
     loadHabits();
   }, []);
 

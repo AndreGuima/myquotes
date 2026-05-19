@@ -62,7 +62,6 @@ export default function Home() {
   // ============================
   useEffect(() => {
     if (!user) {
-      setLoadingQuote(false);
       return;
     }
 
@@ -107,7 +106,7 @@ export default function Home() {
   // ============================
   // ⏳ Loading inicial
   // ============================
-  if (loadingQuote) {
+  if (user && loadingQuote) {
     return (
       <div className="animate-pulse p-6 max-w-5xl mx-auto">
         <div className="h-6 bg-[var(--line-color)] rounded w-48 mb-6"></div>

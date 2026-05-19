@@ -20,6 +20,7 @@ export default function ResetPassword() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const token = params.get("token");
+  const hasToken = Boolean(token);
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,9 +28,9 @@ export default function ResetPassword() {
   const [passwordFocused, setPasswordFocused] = useState(false);
 
   const [loading, setLoading] = useState(false);
-  const [checking, setChecking] = useState(true);
+  const [checking, setChecking] = useState(hasToken);
   const [done, setDone] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(hasToken ? "" : "Token inválido.");
 
   // 🔐 Password policy
   const passwordChecks = useMemo(() => validatePassword(password), [password]);
@@ -49,12 +50,7 @@ export default function ResetPassword() {
       }
     }
 
-    if (token) {
-      validateToken();
-    } else {
-      setError("Token inválido.");
-      setChecking(false);
-    }
+    if (token) validateToken();
   }, [token]);
 
   // 💾 2) Enviar nova senha
