@@ -2,7 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <title>Quote of the Day</title>
+    <title>Daily Digest</title>
   </head>
 
   <body
@@ -35,7 +35,7 @@
             <!-- Header -->
             <tr>
               <td align="center" style="padding-bottom: 16px">
-                <h2 style="margin: 0; color: #333333">📜 Quote of the Day</h2>
+                <h2 style="margin: 0; color: #333333">📜 Daily Digest</h2>
               </td>
             </tr>
 
@@ -81,6 +81,57 @@
                 </p>
               </td>
             </tr>
+
+            {% if patrimony_total_label %}
+            <!-- Patrimony -->
+            <tr>
+              <td style="padding-top: 16px">
+                <table
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  style="
+                    background-color: #f8fafc;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    padding: 16px;
+                  "
+                >
+                  <tr>
+                    <td style="color: #555555; font-size: 14px">
+                      Montante atual
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      style="
+                        color: #222222;
+                        font-size: 24px;
+                        font-weight: bold;
+                        padding-top: 4px;
+                      "
+                    >
+                      {{ patrimony_total_label }}
+                    </td>
+                  </tr>
+                  {% if patrimony_comparison_label %}
+                  <tr>
+                    <td
+                      style="
+                        color: #555555;
+                        font-size: 14px;
+                        line-height: 1.5;
+                        padding-top: 8px;
+                      "
+                    >
+                      {{ patrimony_comparison_label }}
+                    </td>
+                  </tr>
+                  {% endif %}
+                </table>
+              </td>
+            </tr>
+            {% endif %}
 
             <!-- Spacer -->
             <tr>

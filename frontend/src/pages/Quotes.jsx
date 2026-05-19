@@ -22,8 +22,19 @@ export default function Quotes() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    async function loadQuotes() {
+      try {
+        const data = await quotesService.list();
+        setQuotes(data);
+      } catch (err) {
+        notify.error(getApiErrorMessage(err, "Erro ao carregar quotes"));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadQuotes();
+  }, []);
 
   const handleDelete = (id) => {
     confirm({

@@ -274,30 +274,37 @@ export default function DailyRoutine() {
     const minHeight = 54;
     const gap = 8;
 
-    let extraOffset = 0;
-    let lastBottom = 0;
+    const initialLayout = {
+      positioned: [],
+      extraOffset: 0,
+      lastBottom: 0,
+    };
 
-    const positioned = schedule.map((item) => {
+    const { positioned, lastBottom } = schedule.reduce((acc, item) => {
       const startMinutes = item.visualStart - timeBounds.startOfDay;
       const endMinutes = item.visualEnd - timeBounds.startOfDay;
       const rawTop = startMinutes * pxPerMinute;
       const rawHeight = (endMinutes - startMinutes) * pxPerMinute;
       const height = Math.max(rawHeight, minHeight);
-      let top = rawTop + extraOffset;
-
-      if (top < lastBottom + gap) {
-        top = lastBottom + gap;
-        extraOffset = top - rawTop;
-      }
-
-      lastBottom = top + height;
+      const offsetTop = rawTop + acc.extraOffset;
+      const overlapsPrevious = offsetTop < acc.lastBottom + gap;
+      const top = overlapsPrevious ? acc.lastBottom + gap : offsetTop;
+      const extraOffset = overlapsPrevious ? top - rawTop : acc.extraOffset;
+      const lastBottom = top + height;
 
       return {
-        ...item,
-        top,
-        height,
+        positioned: [
+          ...acc.positioned,
+          {
+            ...item,
+            top,
+            height,
+          },
+        ],
+        extraOffset,
+        lastBottom,
       };
-    });
+    }, initialLayout);
 
     return {
       layout: positioned,
@@ -577,14 +584,83 @@ export default function DailyRoutine() {
                 <p className="text-xs uppercase tracking-[0.3em] themed-muted">
                   Sem Horário
                 </p>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 space-y-2">
                   {unscheduledHabits.map((habit) => (
-                    <span
+                    <article
                       key={habit.id ?? habit.title}
-                      className="rounded-full bg-[var(--panel-bg)] px-3 py-1 text-xs font-semibold text-[var(--panel-text)]"
+                      className={`rounded-xl bg-[var(--panel-bg)] px-3 py-2 text-[var(--panel-text)] transition ${
+                        Number.isInteger(habit.id)
+                          ? "cursor-pointer hover:opacity-90"
+                          : ""
+                      }`}
+                      onClick={() => {
+                        if (Number.isInteger(habit.id)) {
+                          navigate(`/habits/${habit.id}/edit`);
+                        }
+                      }}
+                      onKeyDown={(event) => {
+                        if (!Number.isInteger(habit.id)) return;
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          navigate(`/habits/${habit.id}/edit`);
+                        }
+                      }}
+                      role={Number.isInteger(habit.id) ? "link" : undefined}
+                      tabIndex={Number.isInteger(habit.id) ? 0 : undefined}
                     >
-                      {habit.title ?? "Hábito"}
-                    </span>
+                      <div className="flex items-center justify-between gap-3">
+                        {Number.isInteger(habit.id) ? (
+                          <Link
+                            to={`/habits/${habit.id}/edit`}
+                            className="text-sm font-semibold hover:underline"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {habit.title ?? "Hábito"}
+                          </Link>
+                        ) : (
+                          <p className="text-sm font-semibold">
+                            {habit.title ?? "Hábito"}
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (Number.isInteger(habit.id))
+                              handleToggle(habit.id);
+                          }}
+                          disabled={
+                            !Number.isInteger(habit.id) || toggling === habit.id
+                          }
+                          className={`h-8 min-w-[78px] rounded-md px-2 text-xs font-semibold transition ${
+                            habit.stats?.today_completed
+                              ? "bg-green-600 text-white hover:bg-green-700"
+                              : "bg-white/70 text-black/70 hover:bg-white"
+                          } ${
+                            !Number.isInteger(habit.id) || toggling === habit.id
+                              ? "cursor-not-allowed opacity-60"
+                              : ""
+                          }`}
+                          aria-label={
+                            habit.stats?.today_completed
+                              ? "Desmarcar feito hoje"
+                              : "Marcar feito hoje"
+                          }
+                          title={
+                            habit.stats?.today_completed
+                              ? "Feito hoje"
+                              : "Marcar feito"
+                          }
+                        >
+                          {toggling === habit.id
+                            ? "Salvando"
+                            : habit.stats?.today_completed
+                              ? "✓ Feito"
+                              : "○ Marcar"}
+                        </button>
+                      </div>
+                    </article>
                   ))}
                 </div>
               </div>

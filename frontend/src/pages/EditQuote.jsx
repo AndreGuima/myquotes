@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import quotesService from "../services/quotesService";
 import { notify } from "../core/toast";
@@ -17,22 +17,22 @@ export default function EditQuote() {
   // ============================
   // 📥 Carregar quote
   // ============================
-  const loadData = useCallback(async () => {
-    try {
-      const q = await quotesService.get(id);
-      setAuthor(q.author ?? "");
-      setText(q.text ?? "");
-    } catch (err) {
-      notify.error(getApiErrorMessage(err, "Erro ao carregar quote"));
-      navigate("/quotes");
-    } finally {
-      setLoading(false);
-    }
-  }, [id, navigate]);
-
   useEffect(() => {
+    async function loadData() {
+      try {
+        const q = await quotesService.get(id);
+        setAuthor(q.author ?? "");
+        setText(q.text ?? "");
+      } catch (err) {
+        notify.error(getApiErrorMessage(err, "Erro ao carregar quote"));
+        navigate("/quotes");
+      } finally {
+        setLoading(false);
+      }
+    }
+
     loadData();
-  }, [loadData]);
+  }, [id, navigate]);
 
   // ============================
   // 💾 Salvar alterações

@@ -59,13 +59,11 @@ export default function PayCreditCardInvoice() {
   const [loading, setLoading] = useState(false);
   const [paying, setPaying] = useState(false);
 
-  useEffect(() => {
+  function handleInvoiceFilterChange(setter, value) {
+    setter(value);
     setSelectedExpenseIds([]);
-  }, [selectedCardId, selectedMonth, selectedYear]);
-
-  useEffect(() => {
     setLoading(true);
-  }, [selectedCardId, selectedMonth, selectedYear]);
+  }
 
   useEffect(() => {
     async function loadInitialData() {
@@ -94,60 +92,60 @@ export default function PayCreditCardInvoice() {
     loadInitialData();
   }, []);
 
+  const fetchInvoiceExpenses = useCallback(async ({ cardId, month, year }) => {
+    if (!cardId) {
+      return [];
+    }
+
+    const numericMonth = Number(month);
+    const numericYear = Number(year);
+    const validMonth =
+      Number.isInteger(numericMonth) && numericMonth >= 1 && numericMonth <= 12;
+    const validYear =
+      Number.isInteger(numericYear) &&
+      numericYear >= 2000 &&
+      numericYear <= 2100;
+
+    if (!validMonth || !validYear) {
+      return [];
+    }
+
+    const expensesData = await expensesService.list({
+      limit: 500,
+      offset: 0,
+    });
+    const periodEnd = getPeriodEndDate(numericYear, numericMonth);
+    const list = Array.isArray(expensesData) ? expensesData : [];
+    return list.filter((expense) => {
+      const launchDate = expense.launch_date
+        ? new Date(`${expense.launch_date}T00:00:00`)
+        : null;
+      const isUntilSelectedPeriod =
+        launchDate instanceof Date &&
+        !Number.isNaN(launchDate.getTime()) &&
+        launchDate <= periodEnd;
+
+      return (
+        expense.payment_method === "credit" &&
+        expense.invoice_paid_at == null &&
+        String(expense.credit_card_id || "") === String(cardId) &&
+        isUntilSelectedPeriod
+      );
+    });
+  }, []);
+
   const loadInvoiceExpenses = useCallback(
     async ({
       cardId = selectedCardId,
       month = selectedMonth,
       year = selectedYear,
     } = {}) => {
-      if (!cardId) {
-        setCreditExpenses([]);
-        setSelectedExpenseIds([]);
-        setLoading(false);
-        return;
-      }
-
-      const numericMonth = Number(month);
-      const numericYear = Number(year);
-      const validMonth =
-        Number.isInteger(numericMonth) &&
-        numericMonth >= 1 &&
-        numericMonth <= 12;
-      const validYear =
-        Number.isInteger(numericYear) &&
-        numericYear >= 2000 &&
-        numericYear <= 2100;
-
-      if (!validMonth || !validYear) {
-        setCreditExpenses([]);
-        setSelectedExpenseIds([]);
-        setLoading(false);
-        return;
-      }
-
       setLoading(true);
       try {
-        const expensesData = await expensesService.list({
-          limit: 500,
-          offset: 0,
-        });
-        const periodEnd = getPeriodEndDate(numericYear, numericMonth);
-        const list = Array.isArray(expensesData) ? expensesData : [];
-        const filtered = list.filter((expense) => {
-          const launchDate = expense.launch_date
-            ? new Date(`${expense.launch_date}T00:00:00`)
-            : null;
-          const isUntilSelectedPeriod =
-            launchDate instanceof Date &&
-            !Number.isNaN(launchDate.getTime()) &&
-            launchDate <= periodEnd;
-
-          return (
-            expense.payment_method === "credit" &&
-            expense.invoice_paid_at == null &&
-            String(expense.credit_card_id || "") === String(cardId) &&
-            isUntilSelectedPeriod
-          );
+        const filtered = await fetchInvoiceExpenses({
+          cardId,
+          month,
+          year,
         });
         setCreditExpenses(filtered);
         setSelectedExpenseIds(filtered.map((expense) => expense.id));
@@ -157,12 +155,28 @@ export default function PayCreditCardInvoice() {
         setLoading(false);
       }
     },
-    [selectedCardId, selectedMonth, selectedYear],
+    [fetchInvoiceExpenses, selectedCardId, selectedMonth, selectedYear],
   );
 
   useEffect(() => {
-    loadInvoiceExpenses();
-  }, [loadInvoiceExpenses]);
+    async function loadSelectedInvoiceExpenses() {
+      try {
+        const filtered = await fetchInvoiceExpenses({
+          cardId: selectedCardId,
+          month: selectedMonth,
+          year: selectedYear,
+        });
+        setCreditExpenses(filtered);
+        setSelectedExpenseIds(filtered.map((expense) => expense.id));
+      } catch (err) {
+        notify.error(getApiErrorMessage(err, "Erro ao carregar fatura"));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadSelectedInvoiceExpenses();
+  }, [fetchInvoiceExpenses, selectedCardId, selectedMonth, selectedYear]);
 
   const totalInvoice = useMemo(
     () =>
@@ -252,7 +266,9 @@ export default function PayCreditCardInvoice() {
           <select
             className="themed-input rounded px-3 py-2"
             value={selectedCardId}
-            onChange={(event) => setSelectedCardId(event.target.value)}
+            onChange={(event) =>
+              handleInvoiceFilterChange(setSelectedCardId, event.target.value)
+            }
           >
             <option value="">Selecione o cartao</option>
             {cards.map((card) => (
@@ -265,7 +281,9 @@ export default function PayCreditCardInvoice() {
           <select
             className="themed-input rounded px-3 py-2"
             value={selectedMonth}
-            onChange={(event) => setSelectedMonth(event.target.value)}
+            onChange={(event) =>
+              handleInvoiceFilterChange(setSelectedMonth, event.target.value)
+            }
           >
             {monthOptions.map((month) => (
               <option key={month.value} value={month.value}>
@@ -280,7 +298,9 @@ export default function PayCreditCardInvoice() {
             min="2000"
             max="2100"
             value={selectedYear}
-            onChange={(event) => setSelectedYear(event.target.value)}
+            onChange={(event) =>
+              handleInvoiceFilterChange(setSelectedYear, event.target.value)
+            }
             placeholder="Ano"
           />
 

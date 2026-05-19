@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import investmentsService from "../services/investmentsService";
-import { getApiErrorMessage } from "../core/apiError";
 import { confirm, notify } from "../core/toast";
 import { normalizeInvestmentSector } from "../constants/investmentSectors";
 import InvestmentSummary from "./investments/components/InvestmentSummary";
@@ -43,6 +42,12 @@ function getAssetTypeLabel(type) {
   return "Ação";
 }
 
+function formatIntegerQuantity(value) {
+  const numberValue = Number(value || 0);
+  if (!Number.isFinite(numberValue) || numberValue <= 0) return "";
+  return String(Math.trunc(numberValue));
+}
+
 function loadLegacyInvestments() {
   try {
     const raw = localStorage.getItem(LEGACY_INVESTMENTS_STORAGE_KEY);
@@ -72,7 +77,6 @@ export default function Investments() {
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [removingId, setRemovingId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [page, setPage] = useState(1);
@@ -232,11 +236,7 @@ export default function Investments() {
     1,
     Math.ceil(sortedInvestments.length / PAGE_SIZE),
   );
-  const currentPage = Math.min(page, totalPages);
-
-  useEffect(() => {
-    setPage((prev) => Math.min(Math.max(prev, 1), totalPages));
-  }, [totalPages]);
+  const currentPage = Math.min(Math.max(page, 1), totalPages);
 
   const paginatedInvestments = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
@@ -255,9 +255,12 @@ export default function Investments() {
     return pages;
   }, [currentPage, totalPages]);
 
-  useEffect(() => {
+  function setFiltersAndResetPage(nextFilters) {
+    setFilters((prev) =>
+      typeof nextFilters === "function" ? nextFilters(prev) : nextFilters,
+    );
     setPage(1);
-  }, [filters]);
+  }
 
   function handleSort(columnKey) {
     setSortConfig((prev) => {
@@ -288,7 +291,7 @@ export default function Investments() {
       sector: normalizeInvestmentSector(item.asset_type, item.sector),
       ticker: String(item.ticker || ""),
       name: String(item.name || ""),
-      quantity: String(item.quantity || ""),
+      quantity: formatIntegerQuantity(item.quantity),
       averagePrice: String(item.average_price || ""),
     });
   }
@@ -305,8 +308,8 @@ export default function Investments() {
       return;
     }
 
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      notify.error("Informe uma quantidade válida");
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      notify.error("Informe uma quantidade inteira válida");
       return;
     }
 
@@ -343,24 +346,6 @@ export default function Investments() {
       notify.error("Erro ao salvar investimento");
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleSyncPrices() {
-    setSyncing(true);
-    try {
-      const result = await investmentsService.syncPrices();
-      const data = await investmentsService.list();
-      setInvestments(Array.isArray(data) ? data : []);
-      if ((result?.synced_investments ?? 0) > 0) {
-        notify.success("Cotações atualizadas");
-      } else {
-        notify.info("Nenhuma cotação foi atualizada agora");
-      }
-    } catch (err) {
-      notify.error(getApiErrorMessage(err, "Erro ao atualizar cotações"));
-    } finally {
-      setSyncing(false);
     }
   }
 
@@ -407,8 +392,6 @@ export default function Investments() {
         totalCurrent={totalCurrent}
         profitability={profitability}
         formatCurrency={formatCurrency}
-        syncing={syncing}
-        onSyncPrices={handleSyncPrices}
       />
 
       <InvestmentForm
@@ -420,7 +403,10 @@ export default function Investments() {
         onCancelEdit={resetForm}
       />
 
-      <InvestmentFilters filters={filters} setFilters={setFilters} />
+      <InvestmentFilters
+        filters={filters}
+        setFilters={setFiltersAndResetPage}
+      />
 
       <InvestmentTable
         loading={loading}

@@ -7,6 +7,7 @@ from database import SessionLocal
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from models.user import User
 from services.daily_quote_lock import try_acquire_daily_email_lock
+from services.patrimony_snapshot_service import build_patrimony_email_context
 from services.quote_of_the_day import get_quote_of_the_day_for_user
 from services.user_preferences_service import get_user_preferences
 from sqlalchemy.orm import Session
@@ -177,12 +178,13 @@ def _process_user(
         text=quote.text,
         author=quote.author,
         username=user.username,
+        **build_patrimony_email_context(db, user.id, now),
     )
 
     # 📨 Envio
     send_html_email(
         to=user.email,
-        subject="📜 Quote of the Day",
+        subject="📜 Daily Digest",
         html=html,
     )
 

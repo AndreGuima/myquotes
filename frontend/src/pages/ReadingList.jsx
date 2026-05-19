@@ -23,20 +23,19 @@ export default function ReadingList() {
     rating: "",
   });
 
-  const loadBooks = async () => {
-    try {
-      setLoading(true);
-      const data = await readingListService.list();
-      setBooks(data);
-    } catch (err) {
-      notify.error(getApiErrorMessage(err, "Erro ao carregar livros"));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadBooks();
+    async function loadInitialBooks() {
+      try {
+        const data = await readingListService.list();
+        setBooks(data);
+      } catch (err) {
+        notify.error(getApiErrorMessage(err, "Erro ao carregar livros"));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadInitialBooks();
   }, []);
 
   const updateBookInState = (updated) => {

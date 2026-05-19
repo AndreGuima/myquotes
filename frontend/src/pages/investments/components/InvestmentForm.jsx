@@ -80,14 +80,17 @@ export default function InvestmentForm({
         />
 
         <input
-          type="number"
-          step="0.0001"
-          min="0"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           className="themed-input rounded px-3 py-2"
           placeholder="Quantidade"
           value={form.quantity}
           onChange={(e) =>
-            setForm((prev) => ({ ...prev, quantity: e.target.value }))
+            setForm((prev) => ({
+              ...prev,
+              quantity: e.target.value.replace(/\D/g, ""),
+            }))
           }
         />
 

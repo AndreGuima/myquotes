@@ -29,7 +29,18 @@ export default function Users() {
   };
 
   useEffect(() => {
-    loadUsers();
+    async function loadInitialUsers() {
+      try {
+        const users = await usersService.getAll();
+        setUsers(users);
+      } catch (err) {
+        notify.error(getApiErrorMessage(err, "Erro ao carregar usuários"));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadInitialUsers();
   }, []);
 
   const startEdit = (user) => {
