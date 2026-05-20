@@ -43,6 +43,36 @@ function buildSectorSummaryByType(investments, assetType) {
   return Object.values(grouped).sort((a, b) => b.total - a.total);
 }
 
+function buildInvestedSummaryByAssetType(investments, assetType) {
+  const filtered = (investments || []).filter(
+    (item) => item.asset_type === assetType,
+  );
+
+  const grouped = filtered.reduce((acc, item) => {
+    const ticker = String(item.ticker || "")
+      .trim()
+      .toUpperCase();
+    const assetName = ticker || String(item.name || "").trim() || "Sem ticker";
+    const investedValue =
+      Number(item.quantity || 0) * Number(item.average_price || 0);
+    const quantity = Number(item.quantity || 0);
+
+    if (!acc[assetName]) {
+      acc[assetName] = {
+        asset: assetName,
+        total: 0,
+        count: 0,
+      };
+    }
+
+    acc[assetName].total += investedValue;
+    acc[assetName].count += quantity;
+    return acc;
+  }, {});
+
+  return Object.values(grouped).sort((a, b) => b.total - a.total);
+}
+
 function buildPieSlices(summary) {
   const total = summary.reduce((acc, item) => acc + Number(item.total || 0), 0);
   if (total <= 0 || summary.length === 0) return { total, slices: [] };
@@ -52,9 +82,10 @@ function buildPieSlices(summary) {
     const percentage = (item.total / total) * 100;
     const angle = (item.total / total) * 360;
     const endAngle = startAngle + angle;
+    const label = item.sector || item.asset;
     const slice = {
-      id: item.sector,
-      label: item.sector,
+      id: label,
+      label,
       ...item,
       percentage,
       color: PIE_COLORS[index % PIE_COLORS.length],
@@ -67,9 +98,9 @@ function buildPieSlices(summary) {
   return { total, slices };
 }
 
-function PieBySectorCard({ title, summary }) {
+function PieCard({ title, summary, ariaLabel, countSuffix }) {
   const { total, slices } = useMemo(() => buildPieSlices(summary), [summary]);
-  const [hoveredSector, setHoveredSector] = useState(null);
+  const [hoveredSlice, setHoveredSlice] = useState(null);
 
   return (
     <div className="themed-card themed-border border rounded-xl p-5">
@@ -77,10 +108,10 @@ function PieBySectorCard({ title, summary }) {
       <PieDonutChart
         slices={slices}
         total={total}
-        hoveredId={hoveredSector}
-        setHoveredId={setHoveredSector}
-        ariaLabel={`Gráfico de pizza de ${title} por setor`}
-        countSuffix="ativos"
+        hoveredId={hoveredSlice}
+        setHoveredId={setHoveredSlice}
+        ariaLabel={ariaLabel}
+        countSuffix={countSuffix}
       />
     </div>
   );
@@ -110,6 +141,14 @@ export default function InvestmentsDashboards() {
     () => buildSectorSummaryByType(investments, "fii"),
     [investments],
   );
+  const stockInvestedSummary = useMemo(
+    () => buildInvestedSummaryByAssetType(investments, "stock"),
+    [investments],
+  );
+  const fiiInvestedSummary = useMemo(
+    () => buildInvestedSummaryByAssetType(investments, "fii"),
+    [investments],
+  );
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -124,12 +163,35 @@ export default function InvestmentsDashboards() {
       </div>
 
       <p className="themed-muted mb-6">
-        Distribuição da carteira por setor com base no valor atual.
+        Distribuição da carteira por setor com base no valor atual e por ativo
+        com base no valor investido.
       </p>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <PieBySectorCard title="Ações por Setor" summary={stockSummary} />
-        <PieBySectorCard title="FIIs por Setor" summary={fiiSummary} />
+        <PieCard
+          title="Ações por Setor"
+          summary={stockSummary}
+          ariaLabel="Gráfico de pizza de ações por setor"
+          countSuffix="ativos"
+        />
+        <PieCard
+          title="FIIs por Setor"
+          summary={fiiSummary}
+          ariaLabel="Gráfico de pizza de FIIs por setor"
+          countSuffix="ativos"
+        />
+        <PieCard
+          title="Ações por Ativo (valor investido)"
+          summary={stockInvestedSummary}
+          ariaLabel="Gráfico de pizza de ações por ativo pelo valor investido"
+          countSuffix="ações"
+        />
+        <PieCard
+          title="FIIs por Ativo (valor investido)"
+          summary={fiiInvestedSummary}
+          ariaLabel="Gráfico de pizza de FIIs por ativo pelo valor investido"
+          countSuffix="cotas"
+        />
       </div>
     </div>
   );

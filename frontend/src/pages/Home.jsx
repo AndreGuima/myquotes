@@ -54,6 +54,7 @@ export default function Home() {
 
   const [habits, setHabits] = useState([]);
   const [loadingHabits, setLoadingHabits] = useState(true);
+  const [togglingHabitId, setTogglingHabitId] = useState(null);
 
   const { user } = useAuth();
 
@@ -96,6 +97,35 @@ export default function Home() {
 
     loadHabits();
   }, []);
+
+  async function handleToggleHabit(habitId) {
+    setTogglingHabitId(habitId);
+
+    try {
+      const result = await habitsService.toggle(habitId);
+
+      setHabits((prev) =>
+        prev.map((habit) =>
+          habit.id === habitId ? { ...habit, stats: result.stats } : habit,
+        ),
+      );
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      if (detail === "Habit is before scheduled time") {
+        const habit = habits.find((item) => item.id === habitId);
+        const startLabel = habit?.start_time
+          ? habit.start_time.slice(0, 5)
+          : "o horário definido";
+        notify.error(
+          `Esse hábito só pode ser marcado a partir de ${startLabel}.`,
+        );
+      } else {
+        notify.error(getApiErrorMessage(err, "Erro ao atualizar hábito"));
+      }
+    } finally {
+      setTogglingHabitId(null);
+    }
+  }
 
   const todayHabits = sortHabitsByPriority(habits.filter(isHabitForToday));
   const homeModuleCardClass =
@@ -213,10 +243,14 @@ export default function Home() {
               gap-4
             "
           >
-            {todayHabits.map((habit) => (
-              <div
-                key={habit.id}
-                className="
+            {todayHabits.map((habit) => {
+              const completed = habit.stats?.today_completed;
+              const isToggling = togglingHabitId === habit.id;
+
+              return (
+                <div
+                  key={habit.id}
+                  className="
                   border
                   themed-border
                   rounded-lg
@@ -225,50 +259,75 @@ export default function Home() {
                   hover:shadow-md
                   transition
                 "
-              >
-                {/* Título */}
-                <Link
-                  to={`/habits/${habit.id}/edit`}
-                  className="text-lg font-semibold themed-link hover:underline"
                 >
-                  {habit.title}
-                </Link>
-
-                <div className="text-xs themed-muted mt-1">
-                  ⏰ {formatTimeRange(habit.start_time, habit.end_time)}
-                </div>
-
-                {/* Badge pendente */}
-                {!habit.stats?.today_completed && (
-                  <div className="text-xs text-red-500 font-medium mt-1">
-                    • pendente hoje
-                  </div>
-                )}
-
-                {/* Resumo */}
-                <div className="mt-2">
-                  <HabitHistorySummary habit={habit} />
-                </div>
-
-                {/* Heatmap binário */}
-                <div className="mt-3">
-                  <div className="text-xs themed-muted mb-1">
-                    Últimos 30 dias
-                  </div>
-                  <HabitHeatmap habitId={habit.id} days={30} />
-                </div>
-
-                {/* CTA */}
-                <div className="mt-3 text-sm">
+                  {/* Título */}
                   <Link
                     to={`/habits/${habit.id}/edit`}
-                    className="themed-muted hover:text-blue-600 hover:underline"
+                    className="text-lg font-semibold themed-link hover:underline"
                   >
-                    Ver histórico →
+                    {habit.title}
                   </Link>
+
+                  <div className="text-xs themed-muted mt-1">
+                    ⏰ {formatTimeRange(habit.start_time, habit.end_time)}
+                  </div>
+
+                  {/* Badge pendente */}
+                  {!completed && (
+                    <div className="text-xs text-red-500 font-medium mt-1">
+                      • pendente hoje
+                    </div>
+                  )}
+
+                  {/* Resumo */}
+                  <div className="mt-2">
+                    <HabitHistorySummary habit={habit} />
+                  </div>
+
+                  {/* Heatmap binário */}
+                  <div className="mt-3">
+                    <div className="text-xs themed-muted mb-1">
+                      Últimos 30 dias
+                    </div>
+                    <HabitHeatmap
+                      key={`${habit.id}-${completed ? "done" : "pending"}`}
+                      habitId={habit.id}
+                      days={30}
+                    />
+                  </div>
+
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleHabit(habit.id)}
+                      disabled={isToggling}
+                      className={`
+                        inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition
+                        ${
+                          completed
+                            ? "bg-green-600 text-white hover:bg-green-700"
+                            : "bg-blue-600 text-white hover:bg-blue-700"
+                        }
+                        ${isToggling ? "cursor-not-allowed opacity-60" : ""}
+                      `}
+                    >
+                      {isToggling
+                        ? "Salvando..."
+                        : completed
+                          ? "Feito hoje"
+                          : "Marcar como feito"}
+                    </button>
+
+                    <Link
+                      to={`/habits/${habit.id}/edit`}
+                      className="themed-muted text-sm hover:text-blue-600 hover:underline"
+                    >
+                      Ver histórico →
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
