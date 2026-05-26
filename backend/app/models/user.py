@@ -74,6 +74,9 @@ class User(Base):
     patrimony_snapshots: Mapped[List["PatrimonySnapshot"]] = relationship(
         "PatrimonySnapshot", back_populates="user", cascade="all, delete-orphan"
     )
+    notes: Mapped[List["Note"]] = relationship(
+        "Note", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 from models.bank_account import BankAccount  # noqa: E402,F401
@@ -86,6 +89,7 @@ from models.expense_category import ExpenseCategory  # noqa: E402,F401
 from models.idempotency_key import IdempotencyKey  # noqa: E402,F401
 from models.investment import Investment  # noqa: E402,F401
 from models.investment_income import InvestmentIncome  # noqa: E402,F401
+from models.note import Note  # noqa: E402,F401
 from models.patrimony_snapshot import PatrimonySnapshot  # noqa: E402,F401
 from models.patrimony_snapshot_account import (  # noqa: E402,F401
     PatrimonySnapshotAccount,

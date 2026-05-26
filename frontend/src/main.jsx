@@ -44,6 +44,7 @@ import InvestmentsDashboards from "./pages/InvestmentsDashboards.jsx";
 import InvestmentIncomes from "./pages/InvestmentIncomes.jsx";
 import InvestmentIncomesDashboards from "./pages/InvestmentIncomesDashboards.jsx";
 import PatrimonyDashboards from "./pages/PatrimonyDashboards.jsx";
+import Notes from "./pages/Notes.jsx";
 
 initializeTheme();
 
@@ -131,6 +132,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                 path="/finances/investments/dashboards"
                 element={<InvestmentsDashboards />}
               />
+              <Route path="/finances/notes" element={<Notes />} />
               <Route path="/preferences" element={<Preferences />} />
 
               <Route

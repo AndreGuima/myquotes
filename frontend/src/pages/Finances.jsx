@@ -61,6 +61,16 @@ export default function Finances() {
             Acesse o gerenciamento dos seus sonhos e metas SMART.
           </div>
         </Link>
+
+        <Link
+          to="/finances/notes"
+          className="themed-card themed-border border rounded-xl p-5 text-left hover:shadow-md transition"
+        >
+          <div className="text-lg font-semibold mb-1">Anotações</div>
+          <div className="themed-muted text-sm">
+            Registre lembretes, ideias e observações financeiras.
+          </div>
+        </Link>
       </div>
     </div>
   );
