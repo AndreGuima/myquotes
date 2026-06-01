@@ -2,10 +2,23 @@
 set -e
 
 REBUILD=false
+NO_CACHE=false
 
-if [ "$1" == "--rebuild" ]; then
-  REBUILD=true
-fi
+for arg in "$@"; do
+  case "$arg" in
+    --rebuild)
+      REBUILD=true
+      ;;
+    --no-cache)
+      REBUILD=true
+      NO_CACHE=true
+      ;;
+    *)
+      echo "Uso: $0 [--rebuild] [--no-cache]"
+      exit 1
+      ;;
+  esac
+done
 
 # =========================================================
 # 🧪 Rodar testes ANTES de qualquer build
@@ -14,8 +27,16 @@ echo "🧪 Ativando ambiente virtual..."
 cd ~/repo/myquotes
 source venv/bin/activate
 
-echo "📦 Instalando dependências do backend..."
-pip install -r backend/requirements.txt --quiet
+REQ_HASH_FILE="venv/.backend-requirements.sha256"
+REQ_CURRENT="$(sha256sum backend/requirements.txt)"
+
+if [ ! -f "$REQ_HASH_FILE" ] || [ "$REQ_CURRENT" != "$(cat "$REQ_HASH_FILE")" ]; then
+  echo "📦 Instalando dependências do backend..."
+  pip install -r backend/requirements.txt --quiet
+  printf "%s\n" "$REQ_CURRENT" > "$REQ_HASH_FILE"
+else
+  echo "📦 Dependências do backend sem mudanças; pulando pip install"
+fi
 
 echo "🧪 Rodando testes do backend..."
 pytest -v backend/tests/
@@ -27,8 +48,15 @@ echo ""
 # 🧱 Build (somente se testes passaram)
 # =========================================================
 if [ "$REBUILD" = true ]; then
-  echo "🧱 Rebuildando imagens (no-cache)..."
-  docker compose build --no-cache
+  export DOCKER_BUILDKIT=1
+
+  if [ "$NO_CACHE" = true ]; then
+    echo "🧱 Rebuildando imagens sem cache..."
+    docker compose build --no-cache backend frontend
+  else
+    echo "🧱 Rebuildando imagens com cache..."
+    docker compose build backend frontend
+  fi
 fi
 
 # =========================================================
