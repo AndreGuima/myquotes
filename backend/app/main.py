@@ -18,6 +18,7 @@ from routes.expenses import router as expenses_router
 from routes.habits import router as habits_router
 from routes.investment_incomes import router as investment_incomes_router
 from routes.investments import router as investments_router
+from routes.notes import router as notes_router
 from routes.preferences import router as preferences_router
 from routes.quotes import router as quotes_router
 from routes.reading_list import router as reading_list_router
@@ -100,6 +101,7 @@ app.include_router(expense_categories_router)
 app.include_router(expenses_router)
 app.include_router(investments_router)
 app.include_router(investment_incomes_router)
+app.include_router(notes_router)
 app.include_router(
     habits_router,
     prefix="/habits",

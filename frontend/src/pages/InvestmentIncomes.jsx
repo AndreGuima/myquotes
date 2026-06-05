@@ -13,6 +13,17 @@ const INCOME_TYPE_OPTIONS = [
   { value: "rendimento", label: "Rendimento" },
 ];
 
+const INITIAL_FILTERS = {
+  search: "",
+  incomeType: "",
+  ticker: "",
+  accountId: "",
+  fromDate: "",
+  toDate: "",
+  minAmount: "",
+  maxAmount: "",
+};
+
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -40,6 +51,12 @@ function getIncomeTypeLabel(value) {
 function toTimestamp(value) {
   const ts = new Date(value || "").getTime();
   return Number.isFinite(ts) ? ts : 0;
+}
+
+function normalizeSearch(value) {
+  return String(value || "")
+    .trim()
+    .toLocaleLowerCase("pt-BR");
 }
 
 function parseLocaleAmount(value) {
@@ -86,6 +103,7 @@ export default function InvestmentIncomes() {
   const [editingId, setEditingId] = useState(null);
   const [page, setPage] = useState(1);
   const [form, setForm] = useState(getInitialForm);
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
 
   useEffect(() => {
     async function loadData() {
@@ -124,38 +142,6 @@ export default function InvestmentIncomes() {
     loadData();
   }, []);
 
-  const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
-      const byDate = toTimestamp(b.received_at) - toTimestamp(a.received_at);
-      if (byDate !== 0) return byDate;
-      return toTimestamp(b.created_at) - toTimestamp(a.created_at);
-    });
-  }, [items]);
-
-  const totalAmount = useMemo(
-    () => items.reduce((acc, item) => acc + Number(item.amount || 0), 0),
-    [items],
-  );
-  const totalPages = Math.max(1, Math.ceil(sortedItems.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-
-  const paginatedItems = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return sortedItems.slice(start, start + PAGE_SIZE);
-  }, [currentPage, sortedItems]);
-
-  const visiblePageNumbers = useMemo(() => {
-    const start = Math.max(1, currentPage - 2);
-    const end = Math.min(totalPages, currentPage + 2);
-    const pages = [];
-
-    for (let p = start; p <= end; p += 1) {
-      pages.push(p);
-    }
-
-    return pages;
-  }, [currentPage, totalPages]);
-
   const tickerOptions = useMemo(() => {
     if (!form.ticker || availableTickers.includes(form.ticker)) {
       return availableTickers;
@@ -190,10 +176,130 @@ export default function InvestmentIncomes() {
     });
     return map;
   }, [accounts]);
+  const historyTickerOptions = useMemo(() => {
+    return [
+      ...new Set(
+        items
+          .map((item) =>
+            String(item.ticker || "")
+              .trim()
+              .toUpperCase(),
+          )
+          .filter(Boolean),
+      ),
+    ].sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+  }, [items]);
+  const filteredItems = useMemo(() => {
+    const search = normalizeSearch(filters.search);
+    const minAmount = parseLocaleAmount(filters.minAmount);
+    const maxAmount = parseLocaleAmount(filters.maxAmount);
+    const hasMinAmount = Number.isFinite(minAmount);
+    const hasMaxAmount = Number.isFinite(maxAmount);
+
+    return items.filter((item) => {
+      const itemTicker = String(item.ticker || "");
+      const itemTypeLabel = getIncomeTypeLabel(item.income_type);
+      const itemAccountName =
+        item.bank_account_name ||
+        accountNameById.get(String(item.bank_account_id)) ||
+        "";
+      const itemAmount = Number(item.amount || 0);
+      const itemDate = String(item.received_at || "").slice(0, 10);
+
+      if (search) {
+        const searchable = normalizeSearch(
+          [
+            itemDate,
+            itemTicker,
+            itemTypeLabel,
+            itemAccountName,
+            formatCurrency(itemAmount),
+          ].join(" "),
+        );
+        if (!searchable.includes(search)) return false;
+      }
+
+      if (filters.incomeType && item.income_type !== filters.incomeType) {
+        return false;
+      }
+      if (filters.ticker && itemTicker !== filters.ticker) {
+        return false;
+      }
+      if (
+        filters.accountId &&
+        String(item.bank_account_id || "") !== filters.accountId
+      ) {
+        return false;
+      }
+      if (filters.fromDate && itemDate < filters.fromDate) {
+        return false;
+      }
+      if (filters.toDate && itemDate > filters.toDate) {
+        return false;
+      }
+      if (hasMinAmount && itemAmount < minAmount) {
+        return false;
+      }
+      if (hasMaxAmount && itemAmount > maxAmount) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [accountNameById, filters, items]);
+
+  const sortedItems = useMemo(() => {
+    return [...filteredItems].sort((a, b) => {
+      const byDate = toTimestamp(b.received_at) - toTimestamp(a.received_at);
+      if (byDate !== 0) return byDate;
+      return toTimestamp(b.created_at) - toTimestamp(a.created_at);
+    });
+  }, [filteredItems]);
+
+  const totalAmount = useMemo(
+    () => items.reduce((acc, item) => acc + Number(item.amount || 0), 0),
+    [items],
+  );
+  const filteredTotalAmount = useMemo(
+    () =>
+      filteredItems.reduce((acc, item) => acc + Number(item.amount || 0), 0),
+    [filteredItems],
+  );
+  const totalPages = Math.max(1, Math.ceil(sortedItems.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return sortedItems.slice(start, start + PAGE_SIZE);
+  }, [currentPage, sortedItems]);
+
+  const visiblePageNumbers = useMemo(() => {
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, currentPage + 2);
+    const pages = [];
+
+    for (let p = start; p <= end; p += 1) {
+      pages.push(p);
+    }
+
+    return pages;
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
 
   function resetForm() {
     setForm(getInitialForm());
     setEditingId(null);
+  }
+
+  function updateFilter(key, value) {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function clearFilters() {
+    setFilters(INITIAL_FILTERS);
   }
 
   function startEditing(item) {
@@ -463,12 +569,137 @@ export default function InvestmentIncomes() {
       </form>
 
       <div className="themed-card themed-border border rounded-xl p-5">
-        <h2 className="font-semibold mb-3">Histórico de recebimentos</h2>
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between mb-4">
+          <div>
+            <h2 className="font-semibold">Histórico de recebimentos</h2>
+            <p className="themed-muted text-sm mt-1">
+              {filteredItems.length} lançamento(s) encontrados ·{" "}
+              {formatCurrency(filteredTotalAmount)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="themed-card themed-border border px-3 py-2 rounded text-sm hover:opacity-90 w-fit"
+          >
+            Limpar filtros
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
+          <label className="flex flex-col text-sm md:col-span-2">
+            <span className="mb-1 themed-muted">Pesquisar</span>
+            <input
+              type="search"
+              value={filters.search}
+              onChange={(e) => updateFilter("search", e.target.value)}
+              placeholder="Ticker, conta, tipo ou valor"
+              className="themed-input themed-border border rounded px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col text-sm">
+            <span className="mb-1 themed-muted">Tipo</span>
+            <select
+              value={filters.incomeType}
+              onChange={(e) => updateFilter("incomeType", e.target.value)}
+              className="themed-input themed-border border rounded px-3 py-2"
+            >
+              <option value="">Todos</option>
+              {INCOME_TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col text-sm">
+            <span className="mb-1 themed-muted">Ticker</span>
+            <select
+              value={filters.ticker}
+              onChange={(e) => updateFilter("ticker", e.target.value)}
+              className="themed-input themed-border border rounded px-3 py-2"
+            >
+              <option value="">Todos</option>
+              {historyTickerOptions.map((ticker) => (
+                <option key={ticker} value={ticker}>
+                  {ticker}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col text-sm">
+            <span className="mb-1 themed-muted">Conta</span>
+            <select
+              value={filters.accountId}
+              onChange={(e) => updateFilter("accountId", e.target.value)}
+              className="themed-input themed-border border rounded px-3 py-2"
+            >
+              <option value="">Todas</option>
+              {accountOptions.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col text-sm">
+            <span className="mb-1 themed-muted">De</span>
+            <input
+              type="date"
+              value={filters.fromDate}
+              onChange={(e) => updateFilter("fromDate", e.target.value)}
+              className="themed-input themed-border border rounded px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col text-sm">
+            <span className="mb-1 themed-muted">Até</span>
+            <input
+              type="date"
+              value={filters.toDate}
+              onChange={(e) => updateFilter("toDate", e.target.value)}
+              className="themed-input themed-border border rounded px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col text-sm">
+            <span className="mb-1 themed-muted">Valor mínimo</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={filters.minAmount}
+              onChange={(e) => updateFilter("minAmount", e.target.value)}
+              placeholder="0,00"
+              className="themed-input themed-border border rounded px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col text-sm">
+            <span className="mb-1 themed-muted">Valor máximo</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={filters.maxAmount}
+              onChange={(e) => updateFilter("maxAmount", e.target.value)}
+              placeholder="500,00"
+              className="themed-input themed-border border rounded px-3 py-2"
+            />
+          </label>
+        </div>
+
         {loading ? (
           <p className="themed-muted text-sm">Carregando...</p>
-        ) : sortedItems.length === 0 ? (
+        ) : items.length === 0 ? (
           <p className="themed-muted text-sm">
             Nenhum lançamento cadastrado ainda.
+          </p>
+        ) : sortedItems.length === 0 ? (
+          <p className="themed-muted text-sm">
+            Nenhum lançamento encontrado com os filtros atuais.
           </p>
         ) : (
           <div className="overflow-x-auto">

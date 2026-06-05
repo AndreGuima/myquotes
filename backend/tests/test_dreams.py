@@ -100,3 +100,42 @@ def test_cannot_link_other_user_habit(client: TestClient, db_session):
         },
     )
     assert res.status_code == 400
+
+
+def test_dream_details_returns_financial_remaining_value(client: TestClient):
+    create_res = client.post(
+        "/dreams",
+        json={
+            "title": "Reserva de emergencia",
+            "smart": {
+                "specific": "Guardar a reserva",
+                "financialTargetValue": "2000.00",
+            },
+            "milestones": [
+                {
+                    "title": "Juntar R$ 2.000",
+                    "financialTargetValue": "2000.00",
+                }
+            ],
+        },
+    )
+    assert create_res.status_code == 201
+    dream_id = create_res.json()["id"]
+
+    account_res = client.post(
+        "/bank-accounts",
+        json={
+            "name": "Caixinha da reserva",
+            "objective_dream_id": dream_id,
+            "total_value": "1500.00",
+        },
+    )
+    assert account_res.status_code == 201
+
+    detail_res = client.get(f"/dreams/{dream_id}")
+    assert detail_res.status_code == 200
+    smart = detail_res.json()["smart"]
+    assert smart["financialTargetValue"] == "2000.00"
+    assert smart["financialCurrentValue"] == "1500.00"
+    assert smart["financialRemainingValue"] == "500.00"
+    assert smart["financialProgressPercent"] == "75.00"

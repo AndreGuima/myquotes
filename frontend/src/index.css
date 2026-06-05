@@ -137,3 +137,74 @@ body {
   background-color: var(--input-disabled-bg);
   color: var(--input-disabled-text);
 }
+
+.notes-editor,
+.note-sheet-body {
+  line-height: 1.75rem;
+  background-image: linear-gradient(
+    transparent 1.68rem,
+    rgba(100, 116, 139, 0.45) 1.72rem
+  );
+  background-size: 100% 1.75rem;
+}
+
+.note-sheet {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: var(--card-bg);
+  color: var(--card-text);
+  min-height: 260px;
+}
+
+.note-sheet::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 58px;
+  height: 58px;
+  border-top-left-radius: 10px;
+  box-shadow: -5px -5px 12px rgba(15, 23, 42, 0.25);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78), currentColor);
+  opacity: 0.45;
+}
+
+.note-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  color: white;
+}
+
+.note-sheet-coral {
+  color: #f87171;
+}
+
+.note-sheet-coral .note-sheet-header {
+  background-color: #f87171;
+}
+
+.note-sheet-blue {
+  color: #38bdf8;
+}
+
+.note-sheet-blue .note-sheet-header {
+  background-color: #38bdf8;
+}
+
+.note-sheet-sky {
+  color: #7dd3fc;
+}
+
+.note-sheet-sky .note-sheet-header {
+  background-color: #7dd3fc;
+}
+
+.note-sheet-body {
+  color: var(--card-text);
+  min-height: 150px;
+  padding: 1rem;
+}

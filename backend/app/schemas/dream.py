@@ -66,6 +66,9 @@ class DreamSmartRead(BaseModel):
     timeBound: Optional[str] = None
     targetDate: Optional[date] = None
     financialTargetValue: Optional[Decimal] = None
+    financialCurrentValue: Optional[Decimal] = None
+    financialRemainingValue: Optional[Decimal] = None
+    financialProgressPercent: Optional[Decimal] = None
 
 
 class DreamRead(BaseModel):

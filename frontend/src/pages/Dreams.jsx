@@ -144,26 +144,6 @@ function computeMilestoneProgress(dream) {
   return Math.round((completed / total) * 100);
 }
 
-function computeXp(dream, habitsById) {
-  const completedMilestones =
-    dream.milestones?.filter(isMilestoneCompleted).length ?? 0;
-  const smartScore = computeSmartScore(dream);
-
-  const linkedHabits = dream.linkedHabitIds
-    .map((id) => habitsById.get(id))
-    .filter(Boolean);
-
-  const todayDone = linkedHabits.filter((h) => h.stats?.today_completed).length;
-  const streakBonus = linkedHabits.reduce(
-    (acc, h) => acc + Math.min(h.stats?.current_streak ?? 0, 30),
-    0,
-  );
-
-  return (
-    completedMilestones * 120 + smartScore * 2 + todayDone * 25 + streakBonus
-  );
-}
-
 function updateDraftState(setDraftState, path, value) {
   if (path.startsWith("smart.")) {
     const key = path.replace("smart.", "");
@@ -364,16 +344,6 @@ export default function Dreams() {
       },
     });
   }
-
-  const orderedDreams = useMemo(
-    () =>
-      [...dreams].sort((a, b) => {
-        const aXp = computeXp(a, habitsById);
-        const bXp = computeXp(b, habitsById);
-        return bXp - aXp;
-      }),
-    [dreams, habitsById],
-  );
 
   if (loading) {
     return <p className="p-4 themed-muted">Carregando sonhos...</p>;
@@ -627,15 +597,14 @@ export default function Dreams() {
           </form>
 
           <div className="xl:col-span-3 space-y-4">
-            {orderedDreams.length === 0 ? (
+            {dreams.length === 0 ? (
               <div className="themed-card border themed-border rounded-xl p-6 themed-muted">
                 Nenhum sonho cadastrado ainda.
               </div>
             ) : (
-              orderedDreams.map((dream) => {
+              dreams.map((dream) => {
                 const smartScore = computeSmartScore(dream);
                 const progress = computeMilestoneProgress(dream);
-                const xp = computeXp(dream, habitsById);
                 const linkedHabits = dream.linkedHabitIds
                   .map((id) => habitsById.get(id))
                   .filter(Boolean);
@@ -951,23 +920,17 @@ export default function Dreams() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                      <div className="border themed-border rounded-lg p-3 bg-blue-50">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                      <div className="border themed-border rounded-lg p-4 bg-blue-50">
                         <div className="text-xs text-blue-900">SMART</div>
                         <div className="text-2xl font-bold text-blue-900">
                           {smartScore}%
                         </div>
                       </div>
-                      <div className="border themed-border rounded-lg p-3 bg-green-50">
+                      <div className="border themed-border rounded-lg p-4 bg-green-50">
                         <div className="text-xs text-green-900">Progresso</div>
                         <div className="text-2xl font-bold text-green-900">
                           {progress}%
-                        </div>
-                      </div>
-                      <div className="border themed-border rounded-lg p-3 bg-amber-50">
-                        <div className="text-xs text-amber-900">XP</div>
-                        <div className="text-2xl font-bold text-amber-900">
-                          {xp}
                         </div>
                       </div>
                     </div>

@@ -20,6 +20,7 @@ services:
   backend:
     environment:
       TZ: America/Sao_Paulo
+    image: myquotes-backend:local
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -37,9 +38,7 @@ services:
   cron:
     environment:
       TZ: America/Sao_Paulo
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: myquotes-backend:local
     container_name: myquotes-cron
     restart: always
     command: sh -c "/app/wait-for-db.sh && printenv > /etc/environment && cron -f"
