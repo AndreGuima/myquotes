@@ -17,12 +17,40 @@ const PIE_COLORS = [
   "#84cc16",
 ];
 const EXCLUDED_PIE_CATEGORY = "Pagamento de Fatura";
+const PERIOD_BUTTON_BASE =
+  "themed-border border rounded px-3 py-2 text-sm hover:opacity-90 transition";
+const PERIOD_BUTTON_ACTIVE = "bg-blue-600 text-white border-blue-600";
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
+}
+
+function formatInputDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getShortcutPeriod(shortcut) {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+
+  if (shortcut === "thisMonth") {
+    return {
+      fromDate: formatInputDate(new Date(year, month, 1)),
+      toDate: formatInputDate(new Date(year, month + 1, 0)),
+    };
+  }
+
+  return {
+    fromDate: formatInputDate(new Date(year, month - 1, 1)),
+    toDate: formatInputDate(new Date(year, month, 0)),
+  };
 }
 
 export default function ExpensesDashboards() {
@@ -44,6 +72,18 @@ export default function ExpensesDashboards() {
     periodFilters.fromDate &&
     periodFilters.toDate &&
     periodFilters.fromDate > periodFilters.toDate;
+
+  const isShortcutActive = (shortcut) => {
+    const period = getShortcutPeriod(shortcut);
+    return (
+      periodFilters.fromDate === period.fromDate &&
+      periodFilters.toDate === period.toDate
+    );
+  };
+  const getPeriodButtonClass = (shortcut) =>
+    `${PERIOD_BUTTON_BASE} ${
+      isShortcutActive(shortcut) ? PERIOD_BUTTON_ACTIVE : ""
+    }`;
 
   useEffect(() => {
     if (invalidPeriod) return;
@@ -143,6 +183,24 @@ export default function ExpensesDashboards() {
 
       <div className="themed-card themed-border border rounded-xl p-5 mb-4">
         <h2 className="font-semibold mb-3">Filtro por período</h2>
+        <div className="flex flex-wrap gap-2 mb-3">
+          <button
+            type="button"
+            className={getPeriodButtonClass("thisMonth")}
+            aria-pressed={isShortcutActive("thisMonth")}
+            onClick={() => setPeriodFilters(getShortcutPeriod("thisMonth"))}
+          >
+            Mês atual
+          </button>
+          <button
+            type="button"
+            className={getPeriodButtonClass("lastMonth")}
+            aria-pressed={isShortcutActive("lastMonth")}
+            onClick={() => setPeriodFilters(getShortcutPeriod("lastMonth"))}
+          >
+            Mês passado
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <label className="text-sm">
             <span className="block themed-muted mb-1">De</span>

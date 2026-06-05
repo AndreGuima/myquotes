@@ -1,10 +1,19 @@
 import re
+from dataclasses import dataclass
 from decimal import Decimal
 
 from models.bank_account import BankAccount
 from models.dream import Dream, DreamMilestone
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+
+@dataclass(frozen=True)
+class DreamFinancialProgress:
+    total_amount: Decimal
+    target_amount: Decimal | None
+    remaining_amount: Decimal | None
+    progress_percent: Decimal
 
 
 def _compute_progress_percent(
@@ -44,11 +53,43 @@ def _extract_currency_from_title(title: str | None) -> Decimal | None:
     return value if value > 0 else None
 
 
+def get_dream_financial_progress(
+    db: Session,
+    user_id: int,
+    dream: Dream,
+) -> DreamFinancialProgress:
+    total_amount = (
+        db.query(func.coalesce(func.sum(BankAccount.total_value), 0))
+        .filter(
+            BankAccount.user_id == user_id,
+            BankAccount.objective_dream_id == dream.id,
+        )
+        .scalar()
+    )
+
+    total = Decimal(total_amount or 0)
+    target = (
+        Decimal(dream.smart_financial_target_value)
+        if dream.smart_financial_target_value is not None
+        else None
+    )
+    remaining = None
+    if target is not None:
+        remaining = max(target - total, Decimal("0"))
+
+    return DreamFinancialProgress(
+        total_amount=total,
+        target_amount=target,
+        remaining_amount=remaining,
+        progress_percent=_compute_progress_percent(total, target),
+    )
+
+
 def sync_dream_milestone_financial_progress(
     db: Session,
     user_id: int,
     dream_id: int,
-) -> Decimal:
+) -> DreamFinancialProgress:
     dream = (
         db.query(Dream)
         .filter(
@@ -58,21 +99,14 @@ def sync_dream_milestone_financial_progress(
         .first()
     )
     if not dream:
-        return Decimal("0")
-
-    total_amount = (
-        db.query(func.coalesce(func.sum(BankAccount.total_value), 0))
-        .filter(
-            BankAccount.user_id == user_id,
-            BankAccount.objective_dream_id == dream_id,
+        return DreamFinancialProgress(
+            total_amount=Decimal("0"),
+            target_amount=None,
+            remaining_amount=None,
+            progress_percent=Decimal("0"),
         )
-        .scalar()
-    )
 
-    progress_percent = _compute_progress_percent(
-        total_amount=total_amount,
-        target_amount=dream.smart_financial_target_value,
-    )
+    progress = get_dream_financial_progress(db, user_id, dream)
 
     milestones = (
         db.query(DreamMilestone).filter(DreamMilestone.dream_id == dream_id).all()
@@ -97,8 +131,8 @@ def sync_dream_milestone_financial_progress(
             )
 
         milestone.progress_percent = _compute_progress_percent(
-            total_amount=total_amount,
+            total_amount=progress.total_amount,
             target_amount=milestone_target,
         )
 
-    return progress_percent
+    return progress

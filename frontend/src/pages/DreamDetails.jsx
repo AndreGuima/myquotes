@@ -18,6 +18,11 @@ function toMoneyLabel(value) {
   });
 }
 
+function toMoneyValue(value) {
+  const amount = Number(value ?? 0);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
 function toTimestamp(value) {
   const ts = new Date(value || "").getTime();
   return Number.isFinite(ts) ? ts : 0;
@@ -72,6 +77,23 @@ export default function DreamDetails() {
     }));
   }, [habits, dream]);
 
+  const financialSummary = useMemo(() => {
+    const target = toMoneyValue(dream?.smart?.financialTargetValue);
+    if (target <= 0) return null;
+
+    const current = toMoneyValue(dream?.smart?.financialCurrentValue);
+    const remaining = Math.max(
+      toMoneyValue(dream?.smart?.financialRemainingValue),
+      0,
+    );
+    const progress = Math.min(
+      100,
+      Math.max(0, toMoneyValue(dream?.smart?.financialProgressPercent)),
+    );
+
+    return { current, target, remaining, progress };
+  }, [dream]);
+
   if (loading) {
     return <p className="p-4 themed-muted">Carregando sonho...</p>;
   }
@@ -94,6 +116,25 @@ export default function DreamDetails() {
 
       <section className="themed-card themed-border border rounded-xl p-5 mb-5">
         <h2 className="text-2xl font-semibold">{dream.title}</h2>
+        {financialSummary && (
+          <div className="mt-4 rounded-lg border themed-border bg-green-50 p-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+              <div className="text-lg font-semibold text-green-900">
+                {toMoneyLabel(financialSummary.current)} de{" "}
+                {toMoneyLabel(financialSummary.target)}
+              </div>
+              <div className="text-sm font-medium text-green-800">
+                Restando {toMoneyLabel(financialSummary.remaining)}
+              </div>
+            </div>
+            <div className="mt-3 h-2 bg-green-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-600"
+                style={{ width: `${financialSummary.progress}%` }}
+              />
+            </div>
+          </div>
+        )}
         <p className="themed-muted mt-2">
           {dream.description || "Sem descrição"}
         </p>

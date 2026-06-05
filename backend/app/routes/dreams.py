@@ -15,14 +15,18 @@ from schemas.dream import (
     DreamSmartRead,
     DreamUpdate,
 )
-from services.dream_financial_progress import sync_dream_milestone_financial_progress
+from services.dream_financial_progress import (
+    get_dream_financial_progress,
+    sync_dream_milestone_financial_progress,
+)
 from sqlalchemy.orm import Session, selectinload
 
 router = APIRouter(prefix="/dreams", tags=["Dreams"])
 
 
-def _to_response(dream: Dream) -> DreamRead:
+def _to_response(db: Session, user_id: int, dream: Dream) -> DreamRead:
     linked_habit_ids = [link.habit_id for link in dream.habit_links]
+    financial_progress = get_dream_financial_progress(db, user_id, dream)
     milestones = [
         DreamMilestoneRead(
             id=item.id,
@@ -48,6 +52,9 @@ def _to_response(dream: Dream) -> DreamRead:
             timeBound=dream.smart_time_bound,
             targetDate=dream.smart_target_date,
             financialTargetValue=dream.smart_financial_target_value,
+            financialCurrentValue=financial_progress.total_amount,
+            financialRemainingValue=financial_progress.remaining_amount,
+            financialProgressPercent=financial_progress.progress_percent,
         ),
         linkedHabitIds=linked_habit_ids,
         milestones=milestones,
@@ -169,7 +176,7 @@ def list_dreams(
         .order_by(Dream.created_at.desc())
         .all()
     )
-    return [_to_response(dream) for dream in dreams]
+    return [_to_response(db, user.id, dream) for dream in dreams]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=DreamRead)
@@ -187,7 +194,7 @@ def create_dream(
     db.commit()
     db.refresh(dream)
     dream = _get_user_dream_or_404(db, user.id, dream.id)
-    return _to_response(dream)
+    return _to_response(db, user.id, dream)
 
 
 @router.get("/{dream_id}", response_model=DreamRead)
@@ -200,7 +207,7 @@ def get_dream(
     sync_dream_milestone_financial_progress(db, user.id, dream.id)
     db.commit()
     dream = _get_user_dream_or_404(db, user.id, dream_id)
-    return _to_response(dream)
+    return _to_response(db, user.id, dream)
 
 
 @router.patch("/{dream_id}", response_model=DreamRead)
@@ -217,7 +224,7 @@ def update_dream(
     db.commit()
     db.refresh(dream)
     dream = _get_user_dream_or_404(db, user.id, dream.id)
-    return _to_response(dream)
+    return _to_response(db, user.id, dream)
 
 
 @router.delete("/{dream_id}", status_code=status.HTTP_204_NO_CONTENT)
