@@ -296,20 +296,18 @@ export default function InvestmentIncomes() {
     return pages;
   }, [currentPage, totalPages]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [filters]);
-
   function resetForm() {
     setForm(getInitialForm());
     setEditingId(null);
   }
 
   function updateFilter(key, value) {
+    setPage(1);
     setFilters((prev) => ({ ...prev, [key]: value }));
   }
 
   function clearFilters() {
+    setPage(1);
     setFilters(INITIAL_FILTERS);
   }
 
