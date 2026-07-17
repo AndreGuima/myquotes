@@ -5,6 +5,7 @@ import bankAccountsService from "../services/bankAccountsService";
 import { notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
 import { describeArc } from "../utils/charts/pieMath";
+import { buildPatrimonyComparisonSummary } from "../utils/patrimonyComparison";
 
 function toDateKey(value) {
   if (!value) return null;
@@ -431,6 +432,14 @@ export default function PatrimonyDashboards() {
   const totalCurrent = chart.points.length
     ? chart.points[chart.points.length - 1].total
     : 0;
+  const comparisonSummary = useMemo(
+    () =>
+      buildPatrimonyComparisonSummary(
+        chart.points,
+        chart.points.at(-1)?.dateKey,
+      ),
+    [chart.points],
+  );
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -458,6 +467,52 @@ export default function PatrimonyDashboards() {
           <p className="themed-muted text-sm mt-1">
             Datas com evolução registrada
           </p>
+        </div>
+      </div>
+
+      <div className="themed-card themed-border border rounded-xl p-5 mb-6">
+        <h2 className="text-xl font-semibold mb-2">
+          Comparativo de Patrimônio
+        </h2>
+        <p className="themed-muted text-sm mb-4">
+          Acompanhamento rápido do patrimônio atual em relação a ontem, semana
+          passada e mês passado.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-left themed-muted">
+                <th className="py-2 pr-4">Período</th>
+                <th className="py-2">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparisonSummary.map((item) => {
+                const delta = item.value - comparisonSummary[3].value;
+                const isPositive = delta >= 0;
+                return (
+                  <tr
+                    key={item.label}
+                    className="border-t border-[var(--border-color)]/60"
+                  >
+                    <td className="py-3 pr-4 font-medium">{item.label}</td>
+                    <td className="py-3">
+                      <div className="font-semibold">{toMoney(item.value)}</div>
+                      {item.label !== "Patrimônio atual" && (
+                        <div
+                          className={`text-xs ${isPositive ? "text-emerald-600" : "text-rose-600"}`}
+                        >
+                          {isPositive ? "+" : ""}
+                          {toMoney(Math.abs(delta))}{" "}
+                          {isPositive ? "acima" : "abaixo"} do mês passado
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 
