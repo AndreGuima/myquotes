@@ -6,6 +6,23 @@ import dreamsService from "../services/dreamsService";
 import { confirm, notify } from "../core/toast";
 import { getApiErrorMessage } from "../core/apiError";
 
+function formatCurrencyInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+
+  const numberValue = Number(digits) / 100;
+  return numberValue.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function parseCurrencyInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return 0;
+  return Number(digits) / 100;
+}
+
 const PATRIMONY_SHOW_VALUES_KEY = "patrimony_show_values";
 
 export default function Patrimony() {
@@ -80,7 +97,7 @@ export default function Patrimony() {
   const filteredAccounts = useMemo(() => {
     const normalizedName = filters.name.trim().toLowerCase();
     const objectiveDreamId = Number(filters.objectiveDreamId);
-    const minValue = Number(filters.totalValue);
+    const minValue = parseCurrencyInput(filters.totalValue);
 
     return accounts.filter((account) => {
       const matchesName = normalizedName
@@ -132,7 +149,7 @@ export default function Patrimony() {
 
     const name = String(accountForm.name || "").trim();
     const objectiveDreamId = Number(accountForm.objectiveDreamId);
-    const totalValue = Number(accountForm.totalValue);
+    const totalValue = parseCurrencyInput(accountForm.totalValue);
 
     if (!name) {
       notify.error("Informe o nome da conta");
@@ -169,7 +186,9 @@ export default function Patrimony() {
 
   function startUpdateValue(account) {
     setUpdatingValueId(account.id);
-    setUpdatingValueInput(String(account.total_value || ""));
+    setUpdatingValueInput(
+      formatCurrencyInput(String(account.total_value || "")),
+    );
   }
 
   function cancelUpdateValue() {
@@ -178,7 +197,7 @@ export default function Patrimony() {
   }
 
   async function handleUpdateValue(accountId) {
-    const totalValue = Number(updatingValueInput);
+    const totalValue = parseCurrencyInput(updatingValueInput);
 
     if (!Number.isFinite(totalValue) || totalValue < 0) {
       notify.error("Informe um valor total válido");
@@ -321,16 +340,15 @@ export default function Patrimony() {
           </select>
 
           <input
-            type="number"
-            step="0.01"
-            min="0"
+            type="text"
+            inputMode="decimal"
             className="themed-input rounded px-3 py-2"
             placeholder="Valor total"
             value={accountForm.totalValue}
             onChange={(e) =>
               setAccountForm((prev) => ({
                 ...prev,
-                totalValue: e.target.value,
+                totalValue: formatCurrencyInput(e.target.value),
               }))
             }
           />
@@ -403,14 +421,16 @@ export default function Patrimony() {
           </select>
 
           <input
-            type="number"
-            step="0.01"
-            min="0"
+            type="text"
+            inputMode="decimal"
             className="themed-input rounded px-3 py-2"
             placeholder="Valor mínimo"
             value={filters.totalValue}
             onChange={(e) =>
-              setFilters((prev) => ({ ...prev, totalValue: e.target.value }))
+              setFilters((prev) => ({
+                ...prev,
+                totalValue: formatCurrencyInput(e.target.value),
+              }))
             }
           />
 
@@ -472,20 +492,28 @@ export default function Patrimony() {
                   </p>
 
                   {isUpdatingValue && (
-                    <div className="mt-3 flex items-center gap-2">
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleUpdateValue(account.id);
+                      }}
+                      className="mt-3 flex items-center gap-2"
+                    >
                       <input
-                        type={showValues ? "number" : "password"}
-                        step="0.01"
-                        min="0"
+                        type="text"
+                        inputMode="decimal"
                         className="themed-input rounded px-3 py-2 w-full"
                         placeholder="Novo valor"
                         value={updatingValueInput}
-                        onChange={(e) => setUpdatingValueInput(e.target.value)}
+                        onChange={(e) =>
+                          setUpdatingValueInput(
+                            formatCurrencyInput(e.target.value),
+                          )
+                        }
                       />
                       <button
-                        type="button"
+                        type="submit"
                         disabled={isSavingValue}
-                        onClick={() => handleUpdateValue(account.id)}
                         className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
                       >
                         {isSavingValue ? "Salvando..." : "Salvar"}
@@ -498,7 +526,7 @@ export default function Patrimony() {
                       >
                         Cancelar
                       </button>
-                    </div>
+                    </form>
                   )}
 
                   <div className="flex gap-4 text-sm mt-3">

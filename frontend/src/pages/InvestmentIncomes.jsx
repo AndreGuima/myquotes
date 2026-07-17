@@ -31,6 +31,17 @@ function formatCurrency(value) {
   });
 }
 
+function formatCurrencyInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+
+  const numberValue = Number(digits) / 100;
+  return numberValue.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 function getInitialForm() {
   return {
     incomeType: "dividend",
@@ -309,7 +320,7 @@ export default function InvestmentIncomes() {
       ticker: String(item.ticker || ""),
       accountId: item.bank_account_id ? String(item.bank_account_id) : "",
       receivedAt: String(item.received_at || "").slice(0, 10),
-      amount: String(item.amount || ""),
+      amount: formatCurrencyInput(String(item.amount || "")),
     });
   }
 
@@ -540,7 +551,10 @@ export default function InvestmentIncomes() {
               inputMode="decimal"
               value={form.amount}
               onChange={(e) =>
-                setForm((prev) => ({ ...prev, amount: e.target.value }))
+                setForm((prev) => ({
+                  ...prev,
+                  amount: formatCurrencyInput(e.target.value),
+                }))
               }
               placeholder="150,25"
               className="themed-input themed-border border rounded px-3 py-2"

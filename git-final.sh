@@ -15,6 +15,7 @@ python - <<'PY'
 import sys
 if sys.version_info[:2] != (3, 11):
     print("⚠ CI usa Python 3.11. Ambiente local diferente pode mascarar erros.")
+    print("⚠ O ambiente local está usando Python", sys.version.split()[0])
 PY
 
 # ======================================

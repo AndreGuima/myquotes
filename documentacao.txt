@@ -45,8 +45,7 @@
         ./ver_frontend.sh
 
     docker logs myquotes-frontend --tail 20
-    
-
+ 
 ####### Database ################################
     ### Entrar dentro do container
         docker exec -it myquotes-backend bash
@@ -91,7 +90,6 @@
             ./scripts/start.sh --rebuild
             ./verificaMigrations.sh | xclip -selection clipboard
 
-
 ######## documentacao pessoal de lembretes ######
 ### Antes de comecar a trabalhar
     ./prework.sh "Criar proteção contra brute-force (limitar tentativas)." | xclip -selection clipboard
@@ -100,13 +98,10 @@
     /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
 
 ### Rodar Testes ou installar dependencias. Python 3.13
-    cd ~/repo/myquotes
-    source venv/bin/activate
-    ### install aqui
-    pip freeze > backend/requirements.txt
-    pip install -r backend/requirements.txt
+    cd /home/andre/repo/myquotes
+    source /home/andre/.local/miniconda3/etc/profile.d/conda.sh
+    conda activate /home/andre/.local/miniconda3/envs/myquotes_py313
     pytest -v backend/tests/
-    pytest -v backend/tests/ | xclip -selection clipboard
 
 ### para commitar, no final do dia, testes
     ### Crie testes para essa nova feature que acabamos de realizar:

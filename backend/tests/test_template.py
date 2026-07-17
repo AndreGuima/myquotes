@@ -12,6 +12,12 @@ def test_render_daily_quote_template():
             "patrimony_comparison_label": (
                 "Você tem R$ 50,00 a mais que o mês passado."
             ),
+            "patrimony_semester_comparison_label": (
+                "Você tem R$ 100,00 a mais em relação ao semestre passado."
+            ),
+            "patrimony_year_comparison_label": (
+                "Você tem R$ 150,00 a mais em relação ao mesmo dia do ano passado."
+            ),
         },
     )
 
@@ -21,6 +27,8 @@ def test_render_daily_quote_template():
     assert "Montante atual" in html
     assert "R$ 500,00" in html
     assert "Você tem R$ 50,00 a mais que o mês passado." in html
+    assert "Você tem R$ 100,00 a mais em relação ao semestre passado." in html
+    assert "Você tem R$ 150,00 a mais em relação ao mesmo dia do ano passado." in html
 
 
 def test_render_daily_quote_template_without_username():
