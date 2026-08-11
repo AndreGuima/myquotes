@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildPatrimonyComparisonSummary } from "./patrimonyComparison.js";
+import {
+  buildPatrimonyComparisonSummary,
+  buildPreviousAccountValuesByLastChange,
+} from "./patrimonyComparison.js";
 
 test("buildPatrimonyComparisonSummary returns current, yesterday, week and month values", () => {
   const points = [
@@ -21,4 +24,36 @@ test("buildPatrimonyComparisonSummary returns current, yesterday, week and month
   assert.equal(summary[1].value, 140);
   assert.equal(summary[2].value, 130);
   assert.equal(summary[3].value, 100);
+});
+
+test("buildPreviousAccountValuesByLastChange keeps each account last changed value", () => {
+  const previousValues = buildPreviousAccountValuesByLastChange([
+    {
+      id: 1,
+      snapshot_at: "2024-01-01T10:00:00",
+      accounts: [
+        { bank_account_id: 10, total_value: "100.00" },
+        { bank_account_id: 20, total_value: "200.00" },
+      ],
+    },
+    {
+      id: 2,
+      snapshot_at: "2024-01-01T10:01:00",
+      accounts: [
+        { bank_account_id: 10, total_value: "112.93" },
+        { bank_account_id: 20, total_value: "200.00" },
+      ],
+    },
+    {
+      id: 3,
+      snapshot_at: "2024-01-01T10:02:00",
+      accounts: [
+        { bank_account_id: 10, total_value: "112.93" },
+        { bank_account_id: 20, total_value: "210.00" },
+      ],
+    },
+  ]);
+
+  assert.equal(previousValues.get(10), 100);
+  assert.equal(previousValues.get(20), 200);
 });

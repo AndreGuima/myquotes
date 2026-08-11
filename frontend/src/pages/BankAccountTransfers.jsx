@@ -12,6 +12,23 @@ function formatCurrency(value) {
   });
 }
 
+function formatCurrencyInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+
+  const numberValue = Number(digits) / 100;
+  return numberValue.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function parseCurrencyInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return 0;
+  return Number(digits) / 100;
+}
+
 function getInitialForm() {
   return {
     fromAccountId: "",
@@ -79,7 +96,7 @@ export default function BankAccountTransfers() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    const amount = Number(form.amount);
+    const amount = parseCurrencyInput(form.amount);
     if (!form.fromAccountId) {
       notify.error("Selecione a conta de origem");
       return;
@@ -256,9 +273,7 @@ export default function BankAccountTransfers() {
                 Valor da transferência
               </span>
               <input
-                type="number"
-                min="0.01"
-                step="0.01"
+                type="text"
                 inputMode="decimal"
                 className="themed-input rounded px-3 py-2 w-full mt-1"
                 placeholder="0,00"
@@ -266,7 +281,7 @@ export default function BankAccountTransfers() {
                 onChange={(event) =>
                   setForm((prev) => ({
                     ...prev,
-                    amount: event.target.value,
+                    amount: formatCurrencyInput(event.target.value),
                   }))
                 }
                 disabled={loading || accounts.length < 2 || saving}

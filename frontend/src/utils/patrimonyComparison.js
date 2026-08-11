@@ -67,3 +67,41 @@ export function buildPatrimonyComparisonSummary(
     { label: "Mês passado", value: findClosestPoint(previousMonth) },
   ];
 }
+
+export function buildPreviousAccountValuesByLastChange(snapshots = []) {
+  const lastValuesByAccount = new Map();
+  const previousValuesByAccount = new Map();
+
+  const orderedSnapshots = (snapshots || [])
+    .filter((snapshot) => Array.isArray(snapshot?.accounts))
+    .slice()
+    .sort((a, b) => {
+      const snapshotAtA = new Date(a.snapshot_at).getTime();
+      const snapshotAtB = new Date(b.snapshot_at).getTime();
+
+      if (snapshotAtA !== snapshotAtB) {
+        return snapshotAtA - snapshotAtB;
+      }
+
+      return Number(a.id || 0) - Number(b.id || 0);
+    });
+
+  orderedSnapshots.forEach((snapshot) => {
+    snapshot.accounts.forEach((item) => {
+      const accountId = item?.bank_account_id;
+      if (!accountId) return;
+
+      const currentValue = Number(item.total_value || 0);
+      const hasLastValue = lastValuesByAccount.has(accountId);
+      const lastValue = lastValuesByAccount.get(accountId);
+
+      if (hasLastValue && currentValue !== lastValue) {
+        previousValuesByAccount.set(accountId, lastValue);
+      }
+
+      lastValuesByAccount.set(accountId, currentValue);
+    });
+  });
+
+  return previousValuesByAccount;
+}

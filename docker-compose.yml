@@ -18,9 +18,9 @@ services:
 
   # 🐍 FastAPI Backend #
   backend:
+    image: myquotes-backend:1.0.0
     environment:
-      TZ: America/Sao_Paulo
-    image: myquotes-backend:local
+      TZ: America/Sao_Paulo    
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -36,9 +36,9 @@ services:
       - myquotes-network
 
   cron:
+    image: myquotes-backend:1.0.0
     environment:
-      TZ: America/Sao_Paulo
-    image: myquotes-backend:local
+      TZ: America/Sao_Paulo    
     container_name: myquotes-cron
     restart: always
     command: sh -c "/app/wait-for-db.sh && printenv > /etc/environment && cron -f"
@@ -49,15 +49,15 @@ services:
     networks:
       - myquotes-network
 
-
   # 🌐 Vite + React Frontend #
   frontend:
+    image: myquotes-frontend:1.0.0
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: /api
-    container_name: myquotes-frontend
+    container_name: myquotes-frontend    
     restart: unless-stopped
     ports:
       - "5173:80"
