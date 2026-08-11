@@ -5,6 +5,7 @@ import investmentIncomesService from "../services/investmentIncomesService";
 import investmentsService from "../services/investmentsService";
 import PieDonutChart from "../components/charts/PieDonutChart";
 import { describeArc } from "../utils/charts/pieMath";
+import { localDateTimestamp, localMonthKey } from "../utils/localDate";
 
 const PIE_COLORS = ["#0ea5e9", "#22c55e", "#f59e0b"];
 const PERIOD_BUTTON_BASE =
@@ -19,16 +20,11 @@ function formatCurrency(value) {
 }
 
 function toTimestamp(value) {
-  const ts = new Date(value || "").getTime();
-  return Number.isFinite(ts) ? ts : 0;
+  return localDateTimestamp(value);
 }
 
 function monthKey(value) {
-  const date = new Date(value || "");
-  if (Number.isNaN(date.getTime())) return null;
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  return `${y}-${m}`;
+  return localMonthKey(value);
 }
 
 function monthLabel(key) {
