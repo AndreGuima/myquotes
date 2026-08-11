@@ -1,6 +1,6 @@
-# ✨ MyLife — Full-Stack Quotes App
+# ✨ MyLife — Full-Stack Life Manager App
 
-> 📝 Aplicação completa para gerenciamento de habitos feita com **FastAPI + React Native + MySQL + Pytest + Docker**.  
+> 📝 Aplicação completa para gerenciamento de habitos feita com **FastAPI + React Native + MySQL + Pytest + Docker + Kubernetes**.  
 > Focada em boas práticas e ambiente moderno de desenvolvimento.
 
 <p align="center">
