@@ -43,8 +43,7 @@ export default function EntriesVsExpenses() {
     };
 
     // A carga inicial é intencional e depende do servidor; o efeito só dispara
-    // uma vez para popular a tela sem re-render em cascata.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // uma vez para popular a tela sem re-render em cascata.    
     void run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
