@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-echo "🛑 Parando ambiente MyQuotes (prod-like)..."
+echo "🛑 Parando ambiente MyLife (prod-like)..."
 
 docker compose down --remove-orphans
 
-echo "✅ Ambiente MyQuotes parado com sucesso!"
+echo "✅ Ambiente MyLife parado com sucesso!"

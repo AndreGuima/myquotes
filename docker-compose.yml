@@ -1,8 +1,11 @@
 services:
   # 🐬 MySQL 8.0 #
   db:
-    image: mysql:8.0
-    container_name: myquotes-db
+    image: mylife-db:8.0
+    build:
+      context: ./docker/mysql
+      dockerfile: Dockerfile
+    container_name: mylife-db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -12,19 +15,19 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mylife_mysql_data:/var/lib/mysql
     networks:
-      - myquotes-network
+      - mylife-network
 
   # 🐍 FastAPI Backend #
   backend:
-    image: myquotes-backend:1.0.0
+    image: mylife-backend:1.0.0
     environment:
       TZ: America/Sao_Paulo    
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: myquotes-backend
+    container_name: mylife-backend
     restart: always
     depends_on:
       - db
@@ -32,14 +35,21 @@ services:
       - "8000:8000"
     env_file:
       - .env
+
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "mylife-backend"
+
     networks:
-      - myquotes-network
+      - mylife-network
 
   cron:
-    image: myquotes-backend:1.0.0
+    image: mylife-backend:1.0.0
     environment:
       TZ: America/Sao_Paulo    
-    container_name: myquotes-cron
+    container_name: mylife-cron
     restart: always
     command: sh -c "/app/wait-for-db.sh && printenv > /etc/environment && cron -f"
     depends_on:
@@ -47,29 +57,31 @@ services:
     env_file:
       - .env
     networks:
-      - myquotes-network
+      - mylife-network
 
   # 🌐 Vite + React Frontend #
   frontend:
-    image: myquotes-frontend:1.0.0
+    image: mylife-frontend:1.0.0
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: /api
-    container_name: myquotes-frontend    
+    container_name: mylife-frontend    
     restart: unless-stopped
     ports:
       - "5173:80"
     depends_on:
       - backend
     networks:
-      - myquotes-network
+      - mylife-network
 
 
 volumes:
-  mysql_data:
+  mylife_mysql_data:
+    name: mylife-mysql-data
 
 networks:
-  myquotes-network:
+  mylife-network:
+    name: mylife-network
     driver: bridge

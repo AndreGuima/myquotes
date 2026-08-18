@@ -40,6 +40,16 @@ export default function Finances() {
         </Link>
 
         <Link
+          to="/finances/entries-vs-expenses"
+          className="themed-card themed-border border rounded-xl p-5 text-left hover:shadow-md transition"
+        >
+          <div className="text-lg font-semibold mb-1">Entrada x Saídas</div>
+          <div className="themed-muted text-sm">
+            Veja o balanço diário entre entradas e saídas.
+          </div>
+        </Link>
+
+        <Link
           to="/finances/transfers"
           className="themed-card themed-border border rounded-xl p-5 text-left hover:shadow-md transition"
         >

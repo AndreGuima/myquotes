@@ -1,140 +1,117 @@
-# ✨ MyLife — Full-Stack Quotes App
+# MyLife
 
-> 📝 Aplicação completa para gerenciamento de habitos feita com **FastAPI + React Native + MySQL + Pytest + Docker**.  
-> Focada em boas práticas e ambiente moderno de desenvolvimento.
+Aplicação full-stack com frontend em React/Vite e backend em FastAPI.
 
-<p align="center">
- <img src="https://img.shields.io/badge/python-3.13-blue" />
- <img src="https://img.shields.io/badge/fastapi-rocket-brightgreen" />
- <img src="https://img.shields.io/badge/react_native-expo-blueviolet" />
- <img src="https://img.shields.io/badge/pydantic-v2-success" />
- <img src="https://img.shields.io/badge/sqlalchemy-2.x-orange" />
- <img src="https://img.shields.io/badge/tests-100%25%20passing-brightgreen" />
- <img src="https://img.shields.io/badge/docker-compose-2496ED" />
-</p>
+## Estrutura do projeto
 
----
+- `frontend/` - aplicação web
+- `backend/` - API FastAPI
+- `docker/` - imagens e configurações do banco
+- `graylog/` - stack opcional de logs
+- `scripts/` - utilitários de operação
+- `.env` - variáveis globais da aplicação
 
-# 📦 Stack Tecnológica
+## Requisitos
 
-| Camada      | Tecnologias                                      |
-|-------------|--------------------------------------------------|
-| **Backend** | Python · FastAPI · SQLAlchemy · Pydantic v2      |
-| **Database**| MySQL 8 (Docker)                                 |
-| **Frontend**| Expo · React Native · Axios                      |
-| **Testes**  | Pytest · SQLite in-memory · Overrides FastAPI    |
-| **Infra**   | Docker Compose · Ambiente Virtual (venv)         |
+- Docker
+- Docker Compose
 
----
+## Subir o ambiente completo
 
-# 🚀 Como Rodar o Projeto
-
-## 🧠 Backend — API FastAPI
-
-### ▶️ Ambiente Prod-like (Docker)
+Na raiz do projeto:
 
 ```bash
-cd ~/repo/myquotes
-./scripts/start.sh
-# ou
-cd ~/repo/myquotes
-./scripts/start.sh --rebuild
+cd /home/andre/repo/mylife
+docker compose up --build -d
 ```
 
-Esse fluxo sobe:
+Isso reconstrói as imagens e inicia os containers:
 
-- `db` (MySQL 8)
-- `backend` (FastAPI + migrations automáticas)
-- `cron` (jobs agendados)
-- `frontend` (build Vite servido por Nginx)
+- `mylife-db`
+- `mylife-backend`
+- `mylife-frontend`
+- `mylife-cron`
 
-URLs locais:
+## Reiniciar após mudanças no código
 
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:8000`
-- Swagger: `http://localhost:8000/docs`
-
-### 📱 Acessar pelo celular na mesma rede Wi‑Fi
-
-O jeito correto no modo Docker é abrir o frontend no IP do seu computador. O Nginx do frontend faz proxy de `/api` para o backend, então o celular não precisa falar direto com a porta `8000`.
-
-1. Descubra o IP local do seu computador:
+### Rebuild completo
 
 ```bash
-hostname -I
+cd /home/andre/repo/mylife
+docker compose up --build -d
 ```
 
-ou:
+### Reiniciar apenas os containers existentes
 
 ```bash
-ip addr show
+docker compose restart
 ```
 
-2. Suba o ambiente:
+### Reiniciar serviços específicos
 
 ```bash
-cd ~/repo/myquotes
-./scripts/start.sh --rebuild
+docker compose restart backend
+docker compose restart frontend
+docker compose restart db
 ```
 
-3. No celular, abra:
-
-```text
-http://SEU_IP_LOCAL:5173
-```
-
-Exemplo:
-
-```text
-http://192.168.1.25:5173
-```
-
-4. Se não abrir, libere no firewall do computador as portas `5173` e `8000`.
-
-Observação importante:
-
-- Para navegação normal no app via celular, basta acessar `http://SEU_IP_LOCAL:5173`.
-- Se você usa links enviados por e-mail, como reset de senha, ajuste `FRONTEND_URL` no arquivo `.env` para o IP da sua máquina, por exemplo `http://192.168.1.25:5173`, e depois rode `./scripts/restart.sh --rebuild`.
-
-### 🧪 Rodar Testes
+## Parar o ambiente
 
 ```bash
-cd ~/repo/myquotes
-source venv/bin/activate
-pip install -r backend/requirements.txt
-pytest -v backend/tests/
+docker compose down
 ```
 
-➡️ API disponível em:
-**http://localhost:8000**
-**http://localhost:8000/docs** (Swagger)
-
----
-
-## 📱 Frontend — Expo (React Native)
+Se quiser remover também os volumes persistentes do banco:
 
 ```bash
-cd ~/repo/myquotes/myquotes-web
-npm install
-npm run dev
+docker compose down -v
 ```
 
-Frontend disponível em:  
-➡️ **http://localhost:5173**
+> Atenção: `-v` apaga os dados do banco MySQL local.
 
----
+## Verificar status
 
-# 🧹 Scripts Úteis
+```bash
+docker ps
+```
 
-| Ação                  | Comando                      |
-|----------------------|------------------------------|
-| Start containers     | `./scripts/start.sh`         |
-| Stop containers      | `./scripts/stop.sh`          |
-| Status geral         | `./scripts/status.sh`        |
-| Criar ambiente dev   | `./backend/run-dev.sh`       |
-| Rodar testes         | `pytest -v backend/tests/`   |
+## Ver logs
 
+```bash
+docker logs mylife-backend --tail 100
+docker logs mylife-frontend --tail 100
+docker logs mylife-db --tail 100
+```
 
-<p align="center">
- Feito com ❤️ café ☕ e muita dedicação.
-</p>
+## Testar a aplicação
+
+### Backend
+
+```bash
+curl http://localhost:8000/
+```
+
+### Frontend
+
+```bash
+curl http://localhost:5173/
+```
+
+## Observações importantes
+
+- Depois de alterar frontend, backend, Dockerfile, dependências ou variáveis de ambiente, use `docker compose up --build -d`.
+- O banco MySQL usa volume persistente, então os dados podem sobreviver entre reinicializações.
+- Se houver problemas de e-mail, SMTP ou validação de login, verifique o arquivo `.env` e os logs do backend.
+
+## Fluxo recomendado
+
+Para qualquer mudança no projeto:
+
+```bash
+cd /home/andre/repo/mylife
+docker compose down
+docker compose up --build -d
+docker ps
+```
+
+Esse é o caminho mais seguro para reconstruir e validar o ambiente inteiro.

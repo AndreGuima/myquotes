@@ -277,23 +277,31 @@ export default function BankAccounts() {
             }
           />
 
-          <select
-            className="themed-input rounded px-3 py-2"
-            value={accountForm.objectiveDreamId}
-            onChange={(e) =>
-              setAccountForm((prev) => ({
-                ...prev,
-                objectiveDreamId: e.target.value,
-              }))
-            }
-          >
-            <option value="">Selecione um objetivo</option>
-            {dreams.map((dream) => (
-              <option key={dream.id} value={dream.id}>
-                {dream.title}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col gap-1">
+            <select
+              className="themed-input rounded px-3 py-2"
+              value={accountForm.objectiveDreamId}
+              onChange={(e) =>
+                setAccountForm((prev) => ({
+                  ...prev,
+                  objectiveDreamId: e.target.value,
+                }))
+              }
+            >
+              <option value="">Selecione um objetivo</option>
+              {dreams.map((dream) => (
+                <option key={dream.id} value={dream.id}>
+                  {dream.title}
+                </option>
+              ))}
+            </select>
+            <Link
+              to="/dreams"
+              className="text-sm font-medium text-blue-500 hover:underline"
+            >
+              + adicionar objetivo
+            </Link>
+          </div>
 
           <input
             type="text"

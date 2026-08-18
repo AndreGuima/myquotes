@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
 import PasswordInput from "../components/PasswordInput";
+import authService from "../services/authService";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -14,6 +16,7 @@ export default function Login() {
   async function handleLogin(e) {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     try {
       await login({ email, password });
@@ -25,6 +28,29 @@ export default function Login() {
       setError(backendMessage);
     }
   }
+
+  async function handleResendVerification() {
+    if (!email.trim()) {
+      setError("Informe seu e-mail antes de reenviar a verificação.");
+      return;
+    }
+
+    try {
+      const response = await authService.resendVerificationEmail(email);
+      setError("");
+      setSuccessMessage(
+        response.data?.message || "E-mail de verificação reenviado.",
+      );
+    } catch (err) {
+      const backendMessage =
+        err.response?.data?.detail || "Não foi possível reenviar o e-mail.";
+      setError(backendMessage);
+    }
+  }
+
+  const canResendVerification = error
+    .toLowerCase()
+    .includes("verificar seu email");
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[var(--app-bg)] p-4 text-[var(--app-text)]">
@@ -38,6 +64,12 @@ export default function Login() {
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-4">
             {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-3 py-2 rounded mb-4">
+            {successMessage}
           </div>
         )}
 
@@ -67,6 +99,16 @@ export default function Login() {
           >
             Entrar
           </button>
+
+          {canResendVerification && (
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              className="w-full bg-amber-500 text-white py-2 rounded hover:bg-amber-600"
+            >
+              Reenviar validação do e-mail
+            </button>
+          )}
         </form>
 
         <div className="text-center mt-4 space-y-2">

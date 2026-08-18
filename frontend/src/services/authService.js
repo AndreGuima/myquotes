@@ -31,6 +31,10 @@ const authService = {
       params: { token },
     });
   },
+
+  async resendVerificationEmail(email) {
+    return api.post("/auth/resend-verification-email", { email });
+  },
 };
 
 export default authService;

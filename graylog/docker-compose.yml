@@ -1,0 +1,107 @@
+services:
+
+  # ==========================================
+  # MongoDB
+  # ==========================================
+  mongodb:
+    image: mongo:${MONGO_VERSION}
+    container_name: mylife-graylog-mongodb
+    restart: unless-stopped
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+
+    volumes:
+      - mongodb_data:/data/db
+
+    networks:
+      - graylog-network
+
+
+  # ==========================================
+  # Graylog Data Node
+  # ==========================================
+  datanode:
+    image: graylog/graylog-datanode:${DATANODE_VERSION}
+    container_name: mylife-graylog-datanode
+    hostname: graylog-datanode
+    restart: unless-stopped
+
+    environment:
+      GRAYLOG_DATANODE_NODE_ID_FILE: /var/lib/graylog-datanode/node-id
+      GRAYLOG_DATANODE_MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/graylog?authSource=admin
+      GRAYLOG_DATANODE_PASSWORD_SECRET: ${GRAYLOG_PASSWORD_SECRET}
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+
+    volumes:
+      - datanode_data:/var/lib/graylog-datanode
+
+    depends_on:
+      - mongodb
+
+    networks:
+      - graylog-network
+
+
+  # ==========================================
+  # Graylog
+  # ==========================================
+  graylog:
+    image: graylog/graylog:${GRAYLOG_VERSION}
+    container_name: mylife-graylog
+    hostname: graylog
+    restart: unless-stopped
+
+    environment:
+      GRAYLOG_PASSWORD_SECRET: ${GRAYLOG_PASSWORD_SECRET}
+
+      GRAYLOG_ROOT_PASSWORD_SHA2: ${GRAYLOG_ROOT_PASSWORD_SHA2}
+
+      GRAYLOG_HTTP_BIND_ADDRESS: 0.0.0.0:9000
+
+      GRAYLOG_HTTP_EXTERNAL_URI: http://localhost:9000/
+
+      GRAYLOG_MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/graylog?authSource=admin
+
+      GRAYLOG_NODE_ID_FILE: /usr/share/graylog/data/config/node-id
+
+    depends_on:
+      - mongodb
+      - datanode
+
+    ports:
+      - "9000:9000"
+      - "12201:12201/udp"
+
+    volumes:
+      - graylog_data:/usr/share/graylog/data
+
+    networks:
+      - graylog-network
+
+
+volumes:
+
+  mongodb_data:
+    name: mylife-graylog-mongodb-data
+
+  datanode_data:
+    name: mylife-graylog-datanode-data
+
+  graylog_data:
+    name: mylife-graylog-data
+
+
+networks:
+
+  graylog-network:
+    name: mylife-graylog-network
+    driver: bridge

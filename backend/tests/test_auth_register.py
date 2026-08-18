@@ -23,6 +23,25 @@ def test_register_ok(client):
     assert data["user"]["email"] == payload["email"]
 
 
+def test_register_sends_verification_email(client, monkeypatch):
+    calls = {}
+
+    def fake_send_html_email(to, subject, html):
+        calls["to"] = to
+        calls["subject"] = subject
+        calls["html"] = html
+
+    monkeypatch.setattr("core.email.send_html_email", fake_send_html_email)
+
+    payload = make_register_payload("verification")
+    r = client.post("/auth/register", json=payload)
+
+    assert r.status_code == 201
+    assert calls["to"] == payload["email"]
+    assert "verifique" in calls["subject"].lower()
+    assert "verify-email" in calls["html"] or "verify-email" in calls["html"].lower()
+
+
 def test_register_duplicate_email(client):
     payload = make_register_payload("dup")
 

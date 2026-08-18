@@ -170,7 +170,7 @@ def test_reset_password_invalidates_all_tokens(client, db_sessionmaker):
     try:
         user = create_user(db)
 
-        token1 = create_valid_token(db, user)  # token antigo, deve ser invalidado
+        create_valid_token(db, user)  # token antigo, deve ser invalidado
 
         # criar token2 invalida token1
         token2 = create_valid_token(db, user)

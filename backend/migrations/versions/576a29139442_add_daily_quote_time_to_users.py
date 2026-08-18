@@ -20,11 +20,26 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    conn = op.get_bind()
+
+    result = conn.execute(
+        sa.text(
+            """
+            SELECT COUNT(*)
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'users'
+              AND COLUMN_NAME = 'daily_quote_time'
+            """
+        )
+    ).scalar()
+
     # 1️⃣ Adiciona coluna permitindo NULL temporariamente
-    op.add_column(
-        "users",
-        sa.Column("daily_quote_time", sa.Time(), nullable=True),
-    )
+    if result == 0:
+        op.add_column(
+            "users",
+            sa.Column("daily_quote_time", sa.Time(), nullable=True),
+        )
 
     # 2️⃣ Backfill para usuários existentes
     op.execute(
@@ -41,9 +56,25 @@ def upgrade() -> None:
     op.alter_column(
         "users",
         "daily_quote_time",
+        existing_type=sa.Time(),
         nullable=False,
     )
 
 
 def downgrade() -> None:
-    op.drop_column("users", "daily_quote_time")
+    conn = op.get_bind()
+
+    result = conn.execute(
+        sa.text(
+            """
+            SELECT COUNT(*)
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'users'
+              AND COLUMN_NAME = 'daily_quote_time'
+            """
+        )
+    ).scalar()
+
+    if result > 0:
+        op.drop_column("users", "daily_quote_time")

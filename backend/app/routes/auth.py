@@ -1,5 +1,6 @@
 from core.security import (
     create_access_token,
+    create_email_verification_token,
     decode_access_token,
     validate_and_hash_password,
     verify_password,
@@ -14,6 +15,7 @@ from services.auth_bruteforce import (
     get_client_ip,
     register_failed_login,
 )
+from services.email_service import EmailService
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -86,10 +88,54 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
+    verification_token = create_email_verification_token(new_user.id)
+    try:
+        EmailService.send_verification_email(new_user.email, verification_token)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Usuário criado, mas não foi possível enviar o e-mail de "
+                "verificação."
+            ),
+        ) from exc
+
     return {
         "message": "Usuário criado com sucesso. Verifique seu email.",
         "user": UserRead.model_validate(new_user),
     }
+
+
+@router.post("/resend-verification-email")
+def resend_verification_email(payload: dict, db: Session = Depends(get_db)):
+    email = str(payload.get("email", "")).strip().lower()
+    if not email:
+        raise HTTPException(400, "Informe o e-mail para reenviar a validação.")
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        return {
+            "message": (
+                "Se o email existir e ainda não estiver verificado, "
+                "enviaremos uma nova mensagem."
+            )
+        }
+
+    if user.is_verified:
+        return {"message": "Este e-mail já foi verificado."}
+
+    token = create_email_verification_token(user.id)
+
+    try:
+        EmailService.send_verification_email(user.email, token)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=("Não foi possível reenviar o e-mail de verificação."),
+        ) from exc
+
+    return {"message": "E-mail de verificação reenviado com sucesso."}
 
 
 @router.get("/verify-email")
