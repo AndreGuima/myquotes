@@ -10,11 +10,6 @@ function newDraft() {
     title: "",
     description: "",
     smart: {
-      specific: "",
-      measurable: "",
-      achievable: "",
-      relevant: "",
-      timeBound: "",
       targetDate: "",
       financialTargetValue: "",
     },
@@ -28,11 +23,6 @@ function draftFromDream(dream) {
     title: dream.title || "",
     description: dream.description || "",
     smart: {
-      specific: dream.smart?.specific || "",
-      measurable: dream.smart?.measurable || "",
-      achievable: dream.smart?.achievable || "",
-      relevant: dream.smart?.relevant || "",
-      timeBound: dream.smart?.timeBound || "",
       targetDate: dream.smart?.targetDate || "",
       financialTargetValue: dream.smart?.financialTargetValue
         ? String(dream.smart.financialTargetValue)
@@ -59,11 +49,6 @@ function dreamPayloadFromDraft(draft) {
     title: draft.title.trim(),
     description: draft.description.trim() || null,
     smart: {
-      specific: draft.smart.specific || null,
-      measurable: draft.smart.measurable || null,
-      achievable: draft.smart.achievable || null,
-      relevant: draft.smart.relevant || null,
-      timeBound: draft.smart.timeBound || null,
       targetDate: draft.smart.targetDate || null,
       financialTargetValue: draft.smart.financialTargetValue
         ? Number(draft.smart.financialTargetValue)
@@ -110,19 +95,6 @@ function isMilestoneCompleted(milestone) {
     Boolean(milestone?.completedAt) ||
     Number(milestone?.progressPercent ?? 0) >= 100
   );
-}
-
-function computeSmartScore(dream) {
-  const fields = [
-    dream.smart?.specific,
-    dream.smart?.measurable,
-    dream.smart?.achievable,
-    dream.smart?.relevant,
-    dream.smart?.timeBound,
-  ];
-
-  const done = fields.filter((item) => String(item || "").trim().length > 0);
-  return Math.round((done.length / fields.length) * 100);
 }
 
 function computeMilestoneProgress(dream) {
@@ -394,60 +366,8 @@ export default function Dreams() {
             </div>
 
             <div className="border themed-border rounded-lg p-3 themed-subtle">
-              <h3 className="font-medium mb-2">SMART</h3>
+              <h3 className="font-medium mb-2">Alvo financeiro</h3>
               <div className="space-y-2">
-                <input
-                  value={draft.smart.specific}
-                  onChange={(e) =>
-                    updateDraftState(setDraft, "smart.specific", e.target.value)
-                  }
-                  className="w-full border themed-border rounded px-3 py-2"
-                  placeholder="S - Específico"
-                />
-                <input
-                  value={draft.smart.measurable}
-                  onChange={(e) =>
-                    updateDraftState(
-                      setDraft,
-                      "smart.measurable",
-                      e.target.value,
-                    )
-                  }
-                  className="w-full border themed-border rounded px-3 py-2"
-                  placeholder="M - Mensurável"
-                />
-                <input
-                  value={draft.smart.achievable}
-                  onChange={(e) =>
-                    updateDraftState(
-                      setDraft,
-                      "smart.achievable",
-                      e.target.value,
-                    )
-                  }
-                  className="w-full border themed-border rounded px-3 py-2"
-                  placeholder="A - Atingível"
-                />
-                <input
-                  value={draft.smart.relevant}
-                  onChange={(e) =>
-                    updateDraftState(setDraft, "smart.relevant", e.target.value)
-                  }
-                  className="w-full border themed-border rounded px-3 py-2"
-                  placeholder="R - Relevante"
-                />
-                <input
-                  value={draft.smart.timeBound}
-                  onChange={(e) =>
-                    updateDraftState(
-                      setDraft,
-                      "smart.timeBound",
-                      e.target.value,
-                    )
-                  }
-                  className="w-full border themed-border rounded px-3 py-2"
-                  placeholder="T - Temporal"
-                />
                 <div>
                   <label className="block text-sm mb-1">Data alvo final</label>
                   <input
@@ -611,7 +531,6 @@ export default function Dreams() {
               </div>
             ) : (
               dreams.map((dream) => {
-                const smartScore = computeSmartScore(dream);
                 const progress = computeMilestoneProgress(dream);
                 const linkedHabits = dream.linkedHabitIds
                   .map((id) => habitsById.get(id))
@@ -701,66 +620,6 @@ export default function Dreams() {
                         />
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <input
-                            value={editDraft.smart.specific}
-                            onChange={(e) =>
-                              updateDraftState(
-                                setEditDraft,
-                                "smart.specific",
-                                e.target.value,
-                              )
-                            }
-                            className="border themed-border rounded px-3 py-2"
-                            placeholder="S - Específico"
-                          />
-                          <input
-                            value={editDraft.smart.measurable}
-                            onChange={(e) =>
-                              updateDraftState(
-                                setEditDraft,
-                                "smart.measurable",
-                                e.target.value,
-                              )
-                            }
-                            className="border themed-border rounded px-3 py-2"
-                            placeholder="M - Mensurável"
-                          />
-                          <input
-                            value={editDraft.smart.achievable}
-                            onChange={(e) =>
-                              updateDraftState(
-                                setEditDraft,
-                                "smart.achievable",
-                                e.target.value,
-                              )
-                            }
-                            className="border themed-border rounded px-3 py-2"
-                            placeholder="A - Atingível"
-                          />
-                          <input
-                            value={editDraft.smart.relevant}
-                            onChange={(e) =>
-                              updateDraftState(
-                                setEditDraft,
-                                "smart.relevant",
-                                e.target.value,
-                              )
-                            }
-                            className="border themed-border rounded px-3 py-2"
-                            placeholder="R - Relevante"
-                          />
-                          <input
-                            value={editDraft.smart.timeBound}
-                            onChange={(e) =>
-                              updateDraftState(
-                                setEditDraft,
-                                "smart.timeBound",
-                                e.target.value,
-                              )
-                            }
-                            className="border themed-border rounded px-3 py-2"
-                            placeholder="T - Temporal"
-                          />
                           <input
                             type="date"
                             value={editDraft.smart.targetDate}
@@ -929,12 +788,6 @@ export default function Dreams() {
                     )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                      <div className="border themed-border rounded-lg p-4 bg-blue-50">
-                        <div className="text-xs text-blue-900">SMART</div>
-                        <div className="text-2xl font-bold text-blue-900">
-                          {smartScore}%
-                        </div>
-                      </div>
                       <div className="border themed-border rounded-lg p-4 bg-green-50">
                         <div className="text-xs text-green-900">Progresso</div>
                         <div className="text-2xl font-bold text-green-900">

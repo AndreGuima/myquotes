@@ -58,5 +58,5 @@ EXPOSE 8000
 # -------------------------
 # Start
 # -------------------------
-CMD ["sh", "-c", "/app/wait-for-db.sh && alembic upgrade head && su appuser -c \"uvicorn main:app --host 0.0.0.0 --port 8000\""]
+CMD ["sh", "-c", "/app/wait-for-db.sh && alembic upgrade heads && su appuser -c \"uvicorn main:app --host 0.0.0.0 --port 8000\""]
 

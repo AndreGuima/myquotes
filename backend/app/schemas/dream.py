@@ -6,11 +6,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class DreamSmartPayload(BaseModel):
-    specific: Optional[str] = None
-    measurable: Optional[str] = None
-    achievable: Optional[str] = None
-    relevant: Optional[str] = None
-    timeBound: Optional[str] = None
     targetDate: Optional[date] = None
     financialTargetValue: Optional[Decimal] = Field(
         default=None, ge=0, decimal_places=2
@@ -59,11 +54,6 @@ class DreamMilestoneRead(BaseModel):
 
 
 class DreamSmartRead(BaseModel):
-    specific: Optional[str] = None
-    measurable: Optional[str] = None
-    achievable: Optional[str] = None
-    relevant: Optional[str] = None
-    timeBound: Optional[str] = None
     targetDate: Optional[date] = None
     financialTargetValue: Optional[Decimal] = None
     financialCurrentValue: Optional[Decimal] = None
