@@ -717,21 +717,30 @@ export default function Expenses() {
             }}
           />
 
-          <select
-            className="themed-input rounded px-3 py-2"
-            value={form.categoryId}
-            onChange={(e) => {
-              setAutoCategoryDisabled(true);
-              setForm((prev) => ({ ...prev, categoryId: e.target.value }));
-            }}
-          >
-            <option value="">Selecione a categoria</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col gap-2">
+            <select
+              className="themed-input rounded px-3 py-2"
+              value={form.categoryId}
+              onChange={(e) => {
+                setAutoCategoryDisabled(true);
+                setForm((prev) => ({ ...prev, categoryId: e.target.value }));
+              }}
+            >
+              <option value="">Selecione a categoria</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+
+            <Link
+              to="/finances/expenses/categories"
+              className="text-sm font-medium text-blue-500 hover:text-blue-400 transition"
+            >
+              + adicionar categoria
+            </Link>
+          </div>
 
           <select
             className="themed-input rounded px-3 py-2"

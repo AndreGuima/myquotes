@@ -38,6 +38,7 @@ import Patrimony from "./pages/Patrimony.jsx";
 import BankAccounts from "./pages/BankAccounts.jsx";
 import BankAccountTransfers from "./pages/BankAccountTransfers.jsx";
 import Expenses from "./pages/Expenses.jsx";
+import ExpenseCategories from "./pages/ExpenseCategories.jsx";
 import ExpensesDashboards from "./pages/ExpensesDashboards.jsx";
 import PayCreditCardInvoice from "./pages/PayCreditCardInvoice.jsx";
 import Investments from "./pages/Investments.jsx";
@@ -117,6 +118,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                 element={<PatrimonyDashboards />}
               />
               <Route path="/finances/expenses" element={<Expenses />} />
+              <Route
+                path="/finances/expenses/categories"
+                element={<ExpenseCategories />}
+              />
               <Route
                 path="/finances/entries-vs-expenses"
                 element={<EntriesVsExpenses />}
