@@ -1,6 +1,7 @@
-# MyLife
+# ✨ MyLife — Full-Stack Life Manager App
 
-Aplicação full-stack com frontend em React/Vite e backend em FastAPI.
+> 📝 Aplicação completa para gerenciamento de habitos feita com **FastAPI + React Native + MySQL + Pytest + Docker + Kubernetes**.  
+> Focada em boas práticas e ambiente moderno de desenvolvimento.
 
 ## Estrutura do projeto
 
