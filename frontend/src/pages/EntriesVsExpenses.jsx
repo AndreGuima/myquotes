@@ -38,7 +38,14 @@ export default function EntriesVsExpenses() {
   }
 
   useEffect(() => {
-    loadData();
+    const run = async () => {
+      await loadData();
+    };
+
+    // A carga inicial é intencional e depende do servidor; o efeito só dispara
+    // uma vez para popular a tela sem re-render em cascata.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
