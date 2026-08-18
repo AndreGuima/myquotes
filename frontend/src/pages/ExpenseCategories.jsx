@@ -28,6 +28,7 @@ export default function ExpenseCategories() {
     setName("");
     setEditingId(null);
   }
+  
 
   async function handleSubmit(e) {
     e.preventDefault();
