@@ -1,71 +1,65 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "🚀 Iniciando script de validação..."
+echo "🚀 Iniciando script de validação via Docker..."
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ======================================
-# Ambiente
-# ======================================
+if ! docker compose version >/dev/null 2>&1; then
+  echo "❌ Docker Compose não foi encontrado no PATH."
+  echo "Instale Docker Desktop ou o plugin docker compose e tente novamente."
+  exit 1
+fi
+
 cd "$ROOT"
-source venv/bin/activate
-echo "🐍 Python ativo: $(python --version)"
-python - <<'PY'
-import sys
-if sys.version_info[:2] != (3, 11):
-    print("⚠ CI usa Python 3.11. Ambiente local diferente pode mascarar erros.")
-    print("⚠ O ambiente local está usando Python", sys.version.split()[0])
-PY
+
+echo "📦 Subindo banco necessário para os testes do backend..."
+docker compose up -d db
+
+echo "📦 Construindo imagem do backend..."
+docker compose build backend
 
 # ======================================
-# Backend - isort + black + flake8
+# Backend - validação em container
 # ======================================
-cd backend
+echo "🐍 Rodando isort, Black, flake8 e pytest no container do backend..."
+docker run --rm \
+  -v "$ROOT/backend:/workspace" \
+  -w /workspace \
+  python:3.11-slim bash -lc '
+    set -e
+    python -m pip install --upgrade pip
+    pip install --no-cache-dir -r requirements.txt
+    python -m isort . --profile black
+    python -m black .
+    python -m flake8 .
+    TZ=UTC python -m pytest -v tests
+  '
 
-echo "📦 Rodando isort..."
-isort . --profile black
-
-echo "🎨 Rodando Black..."
-black .
-
-echo "🔍 Rodando flake8..."
-flake8 app
-
-# ======================================
-# Backend - Testes
-# ======================================
-echo "🧪 Rodando testes backend (espelhando CI com TZ=UTC)..."
-TZ=UTC pytest -v tests
-echo "✅ Testes OK"
+echo "✅ Backend OK"
 
 # ======================================
-# Frontend
+# Frontend - validação em container Node
 # ======================================
-cd "$ROOT/frontend"
-
-echo "📦 Instalando dependências frontend..."
-npm install
-
-echo "🎨 Rodando Prettier (auto-fix)..."
-npx prettier --write .
-
-echo "🔍 Verificando Prettier..."
-npx prettier --check .
-
-echo "🔍 Rodando ESLint..."
-npm run lint
-
-echo "🏗️ Rodando build (Vite)..."
-npm run build
+echo "🌐 Rodando Prettier, ESLint e build do frontend em container Node..."
+docker run --rm \
+  -v "$ROOT/frontend:/app" \
+  -w /app \
+  -e CI=1 \
+  node:20 bash -lc '
+    set -e
+    npm install
+    npx prettier --write .
+    npx prettier --check .
+    npm run lint
+    npm run build
+  '
 
 echo "✅ Frontend OK"
 
 # ======================================
 # Git
 # ======================================
-cd "$ROOT"
-
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 git status
 git add .

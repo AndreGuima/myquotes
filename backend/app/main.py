@@ -22,6 +22,7 @@ from routes.notes import router as notes_router
 from routes.preferences import router as preferences_router
 from routes.quotes import router as quotes_router
 from routes.reading_list import router as reading_list_router
+from routes.reports import router as reports_router
 from sqlalchemy.exc import SQLAlchemyError
 from startup import create_default_admin
 
@@ -101,6 +102,7 @@ app.include_router(expense_categories_router)
 app.include_router(expenses_router)
 app.include_router(investments_router)
 app.include_router(investment_incomes_router)
+app.include_router(reports_router)
 app.include_router(notes_router)
 app.include_router(
     habits_router,

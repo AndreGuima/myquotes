@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🔄 Reiniciando MyQuotes (prod-like)..."
+echo "🔄 Reiniciando MyLife (prod-like)..."
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 

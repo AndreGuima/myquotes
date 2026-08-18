@@ -80,7 +80,7 @@ fi
 # =========================================================
 # 🚀 Subir ambiente
 # =========================================================
-echo "🚀 Iniciando MyQuotes (prod-like)..."
+echo "🚀 Iniciando MyLife (prod-like)..."
 docker compose up -d
 
 echo ""
@@ -108,7 +108,7 @@ done
 # =========================================================
 # 🕒 Verificar cron
 # =========================================================
-if docker ps --format '{{.Names}}' | grep -q '^myquotes-cron$'; then
+if docker ps --format '{{.Names}}' | grep -q '^mylife-cron$'; then
   echo "🕒 Cron ativo"
 else
   echo "⚠️ Cron NÃO está rodando"
@@ -116,4 +116,4 @@ else
 fi
 
 echo ""
-echo "🎉 Ambiente MyQuotes (prod-like) pronto!"
+echo "🎉 Ambiente MyLife (prod-like) pronto!"

@@ -1,4 +1,4 @@
-###### backend ##################################
+####### backend ##################################
 
     ### envio de email manual
         ### com o projeto rodando prod-like
@@ -13,17 +13,17 @@
             # Restart com rebuild total
             ./scripts/restart.sh --rebuild
 
-            docker exec -it myquotes-cron cat /var/log/cron.log
-            docker exec myquotes-cron tail -n 20 /var/log/cron.log
-            docker exec myquotes-cron tail -f /var/log/cron.log
+            docker exec -it mylife-cron cat /var/log/cron.log
+            docker exec mylife-cron tail -n 20 /var/log/cron.log
+            docker exec mylife-cron tail -f /var/log/cron.log
 
-            docker exec -it myquotes-backend python -m jobs.send_daily_quote
+            docker exec -it mylife-backend python -m jobs.send_daily_quote
 
     ### entrar dentro do container
-        docker exec -it myquotes-backend bash
+        docker exec -it mylife-backend bash
 
     ### coleta de logs
-        docker logs myquotes-backend --tail 20
+        docker logs mylife-backend --tail 20
 
     ### veja todos os models do backend:
         cat ./backend/app/models/* | xclip -selection clipboard
@@ -32,7 +32,7 @@
         cat ./backend/app/routes/* | xclip -selection clipboard
 
     ### gerar token para o login
-        docker exec -i myquotes-backend python3 << 'EOF'
+        docker exec -i mylife-backend python3 << 'EOF'
         from app.core.security import create_email_verification_token
         print(create_email_verification_token(3))
         EOF
@@ -44,11 +44,11 @@
     ### Ver todos os arquivos do frontend
         ./ver_frontend.sh
 
-    docker logs myquotes-frontend --tail 20
+    docker logs mylife-frontend --tail 20
  
 ####### Database ################################
     ### Entrar dentro do container
-        docker exec -it myquotes-backend bash
+        docker exec -it mylife-backend bash
 
     ### Entrar ja logado no banco
         docker compose exec db mysql -umyquotes_user -pmyquotes_pass myquotes_db
@@ -110,4 +110,3 @@
 
 ### proximos passos
     history e heatmap
-

@@ -1,9 +1,26 @@
-from core.email import send_html_email
+import core.email as email_module
 from core.templates import render_template
 from settings import settings
 
 
 class EmailService:
+    @staticmethod
+    def send_verification_email(email: str, verification_token: str):
+        verification_link = (
+            f"{settings.FRONTEND_URL}/verify-email?token={verification_token}"
+        )
+
+        html = render_template(
+            "emails/verify_email.html",
+            {"verification_link": verification_link},
+        )
+
+        email_module.send_html_email(
+            to=email,
+            subject="✅ Verifique seu e-mail",
+            html=html,
+        )
+
     @staticmethod
     def send_password_reset_email(email: str, reset_token: str):
         reset_link = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
@@ -13,7 +30,7 @@ class EmailService:
             {"reset_link": reset_link},
         )
 
-        send_html_email(
+        email_module.send_html_email(
             to=email,
             subject="🔐 Redefinição de senha",
             html=html,
@@ -39,7 +56,7 @@ class EmailService:
             },
         )
 
-        send_html_email(
+        email_module.send_html_email(
             to=email,
             subject="📜 Daily Digest",
             html=html,

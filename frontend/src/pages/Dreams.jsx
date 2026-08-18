@@ -352,10 +352,10 @@ export default function Dreams() {
   return (
     <div className="dreams-page p-6 max-w-6xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Gerenciamento de Sonhos</h1>
+        <h1 className="text-3xl font-bold">Objetivos Financeiros</h1>
         <p className="themed-muted mt-2">
-          Estruture seus sonhos no modelo SMART, conecte hábitos e acompanhe
-          marcos em timeline.
+          Estruture seus objetivos financeiros no modelo SMART, conecte hábitos
+          e acompanhe marcos em timeline.
         </p>
       </div>
 
@@ -374,7 +374,7 @@ export default function Dreams() {
                 onChange={(e) =>
                   updateDraftState(setDraft, "title", e.target.value)
                 }
-                placeholder="Ex: Correr minha primeira meia maratona"
+                placeholder="Ex: Receber mais dividendos do que meu cartão de crédito"
                 className="w-full border themed-border rounded px-3 py-2"
               />
             </div>
@@ -482,7 +482,15 @@ export default function Dreams() {
             </div>
 
             <div className="border themed-border rounded-lg p-3">
-              <h3 className="font-medium mb-2">Hábitos vinculados</h3>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <h3 className="font-medium">Hábitos vinculados</h3>
+                <Link
+                  to="/habits/new"
+                  className="text-sm font-medium text-blue-500 hover:underline"
+                >
+                  + adicionar hábito
+                </Link>
+              </div>
               {habits.length === 0 ? (
                 <p className="text-sm themed-muted">
                   Cadastre hábitos antes de vincular.

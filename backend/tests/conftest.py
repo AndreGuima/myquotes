@@ -3,7 +3,6 @@ import sys
 import warnings
 from pathlib import Path
 from types import SimpleNamespace
-from uuid import uuid4
 
 from dotenv import load_dotenv
 
@@ -62,28 +61,26 @@ from main import app
 from models.user import User
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 
 # ============================================================================
-# 🧪 Banco de dados SQLite em memória
+# 🧪 Banco de dados SQLite em memória por teste
 # ============================================================================
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def engine():
-    db_path = Path("/tmp") / f"myquotes_test_{uuid4().hex}.sqlite3"
     engine = create_engine(
-        f"sqlite:///{db_path}",
+        "sqlite://",
         connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
-
     Base.metadata.create_all(bind=engine)
     yield engine
     Base.metadata.drop_all(bind=engine)
     engine.dispose()
-    if db_path.exists():
-        db_path.unlink()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def db_sessionmaker(engine):
     return sessionmaker(
         bind=engine,
@@ -93,17 +90,11 @@ def db_sessionmaker(engine):
     )
 
 
-# ============================================================================
-# 🧪 TestClient
-# ============================================================================
-@pytest.fixture(scope="function")
-def client(engine, db_sessionmaker, monkeypatch):
-    # Override engine e SessionLocal
+def _prepare_client_state(
+    engine, db_sessionmaker, monkeypatch, *, role: str, username: str, email: str
+):
     monkeypatch.setattr(app_db, "engine", engine)
     monkeypatch.setattr(app_db, "SessionLocal", db_sessionmaker)
-
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
 
     def override_get_db():
         db = db_sessionmaker()
@@ -114,14 +105,13 @@ def client(engine, db_sessionmaker, monkeypatch):
 
     app.dependency_overrides[get_db] = override_get_db
 
-    # Usuário fake
     test_db = db_sessionmaker()
     fake_user = User(
         id=1,
-        username="testuser",
-        email="test@example.com",
+        username=username,
+        email=email,
         password_hash="hashed",
-        role="user",
+        role=role,
         is_active=True,
         is_verified=True,
     )
@@ -131,12 +121,11 @@ def client(engine, db_sessionmaker, monkeypatch):
 
     from core.dependencies import get_current_user
 
-    # Evita DetachedInstanceError: retorna um objeto simples em vez de ORM detached
     fake_current_user = SimpleNamespace(
         id=1,
-        username="testuser",
-        email="test@example.com",
-        role="user",
+        username=username,
+        email=email,
+        role=role,
         is_active=True,
         is_verified=True,
     )
@@ -146,61 +135,44 @@ def client(engine, db_sessionmaker, monkeypatch):
 
     app.dependency_overrides[get_current_user] = override_current_user
 
-    with TestClient(app) as c:
-        yield c
-    app.dependency_overrides.clear()
+
+# ============================================================================
+# 🧪 TestClient
+# ============================================================================
+@pytest.fixture(scope="function")
+def client(engine, db_sessionmaker, monkeypatch):
+    _prepare_client_state(
+        engine,
+        db_sessionmaker,
+        monkeypatch,
+        role="user",
+        username="testuser",
+        email="test@example.com",
+    )
+
+    try:
+        with TestClient(app) as c:
+            yield c
+    finally:
+        app.dependency_overrides.clear()
 
 
 @pytest.fixture(scope="function")
 def admin_client(engine, db_sessionmaker, monkeypatch):
-    monkeypatch.setattr(app_db, "engine", engine)
-    monkeypatch.setattr(app_db, "SessionLocal", db_sessionmaker)
-
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-
-    def override_get_db():
-        db = db_sessionmaker()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override_get_db
-
-    test_db = db_sessionmaker()
-    fake_admin = User(
-        id=1,
+    _prepare_client_state(
+        engine,
+        db_sessionmaker,
+        monkeypatch,
+        role="admin",
         username="admin",
         email="admin@example.com",
-        password_hash="hashed",
-        role="admin",
-        is_active=True,
-        is_verified=True,
-    )
-    test_db.add(fake_admin)
-    test_db.commit()
-    test_db.close()
-
-    from core.dependencies import get_current_user
-
-    fake_current_user = SimpleNamespace(
-        id=1,
-        username="admin",
-        email="admin@example.com",
-        role="admin",
-        is_active=True,
-        is_verified=True,
     )
 
-    def override_current_user():
-        return fake_current_user
-
-    app.dependency_overrides[get_current_user] = override_current_user
-
-    with TestClient(app) as c:
-        yield c
-    app.dependency_overrides.clear()
+    try:
+        with TestClient(app) as c:
+            yield c
+    finally:
+        app.dependency_overrides.clear()
 
 
 @pytest.fixture

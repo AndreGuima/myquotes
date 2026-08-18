@@ -1,3 +1,4 @@
+import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -6,6 +7,8 @@ from settings import settings
 
 
 def send_html_email(to: str, subject: str, html: str):
+    if os.getenv("TESTING") == "1":
+        return
     missing = [
         name
         for name, value in {

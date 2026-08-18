@@ -6,7 +6,7 @@ from logging.config import dictConfig
 from typing import Literal
 
 # =========================================================
-# Configuração central de logging do MyQuotes
+# Configuração central de logging do MyLife
 # =========================================================
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]

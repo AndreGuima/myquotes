@@ -321,12 +321,20 @@ def update_account(
         if payload.total_value is not None:
             current_total = to_money_decimal(account.total_value)
             next_total = to_money_decimal(payload.total_value)
+            delta = next_total - current_total
+            # Use a positive incoming transaction type when the value increases
+            # so frontend can display 'entradas' (incomings) separately.
+            tx_type = (
+                TransactionType.INVESTMENT_INCOME
+                if delta > 0
+                else TransactionType.MANUAL_ADJUSTMENT
+            )
             apply_account_delta(
                 db,
                 user_id=user.id,
                 account=account,
-                delta=next_total - current_total,
-                transaction_type=TransactionType.MANUAL_ADJUSTMENT,
+                delta=delta,
+                transaction_type=tx_type,
                 description="Ajuste manual de saldo",
             )
         if payload.allow_investment_income is not None:
