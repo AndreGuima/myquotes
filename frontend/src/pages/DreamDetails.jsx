@@ -141,34 +141,6 @@ export default function DreamDetails() {
       </section>
 
       <section className="themed-card themed-border border rounded-xl p-5 mb-5">
-        <h3 className="text-xl font-semibold mb-3">SMART</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-          <div>
-            <strong>S:</strong> {dream.smart?.specific || "Não informado"}
-          </div>
-          <div>
-            <strong>M:</strong> {dream.smart?.measurable || "Não informado"}
-          </div>
-          <div>
-            <strong>A:</strong> {dream.smart?.achievable || "Não informado"}
-          </div>
-          <div>
-            <strong>R:</strong> {dream.smart?.relevant || "Não informado"}
-          </div>
-          <div>
-            <strong>T:</strong> {dream.smart?.timeBound || "Não informado"}
-          </div>
-          <div>
-            <strong>Data alvo:</strong> {toDateLabel(dream.smart?.targetDate)}
-          </div>
-          <div>
-            <strong>Meta financeira:</strong>{" "}
-            {toMoneyLabel(dream.smart?.financialTargetValue)}
-          </div>
-        </div>
-      </section>
-
-      <section className="themed-card themed-border border rounded-xl p-5 mb-5">
         <h3 className="text-xl font-semibold mb-3">Hábitos vinculados</h3>
         {habitNames.length === 0 ? (
           <p className="themed-muted">Nenhum hábito vinculado.</p>

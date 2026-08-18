@@ -18,11 +18,6 @@ class Dream(Base):
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    smart_specific: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    smart_measurable: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    smart_achievable: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    smart_relevant: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    smart_time_bound: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     smart_target_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     smart_financial_target_value: Mapped[Optional[float]] = mapped_column(
         Numeric(14, 2), nullable=True

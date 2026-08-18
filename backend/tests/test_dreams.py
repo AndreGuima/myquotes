@@ -12,11 +12,6 @@ def test_create_list_and_toggle_milestone(client: TestClient):
         "title": "Correr meia maratona",
         "description": "Meta esportiva de 2026",
         "smart": {
-            "specific": "Completar prova oficial de 21km",
-            "measurable": "21km em ate 2h15",
-            "achievable": "Treino progressivo com 4 sessoes semanais",
-            "relevant": "Melhorar saude e energia",
-            "timeBound": "Concluir ate dezembro",
             "targetDate": "2026-12-01",
         },
         "linkedHabitIds": [habit_id],
@@ -36,7 +31,6 @@ def test_create_list_and_toggle_milestone(client: TestClient):
     assert list_res.status_code == 200
     dreams = list_res.json()
     assert len(dreams) == 1
-    assert dreams[0]["smart"]["specific"] == payload["smart"]["specific"]
 
     dream_id = created["id"]
     milestone_id = created["milestones"][0]["id"]
@@ -50,11 +44,6 @@ def test_create_list_and_toggle_milestone(client: TestClient):
             "title": "Correr meia maratona sub 2h",
             "description": "Meta atualizada",
             "smart": {
-                "specific": "Completar 21km em prova oficial",
-                "measurable": "Abaixo de 2h",
-                "achievable": "Treinos consistentes",
-                "relevant": "Saude e disciplina",
-                "timeBound": "Ate novembro",
                 "targetDate": "2026-11-10",
             },
             "linkedHabitIds": [habit_id],
@@ -108,7 +97,6 @@ def test_dream_details_returns_financial_remaining_value(client: TestClient):
         json={
             "title": "Reserva de emergencia",
             "smart": {
-                "specific": "Guardar a reserva",
                 "financialTargetValue": "2000.00",
             },
             "milestones": [

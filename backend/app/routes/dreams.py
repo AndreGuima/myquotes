@@ -45,11 +45,6 @@ def _to_response(db: Session, user_id: int, dream: Dream) -> DreamRead:
         title=dream.title,
         description=dream.description,
         smart=DreamSmartRead(
-            specific=dream.smart_specific,
-            measurable=dream.smart_measurable,
-            achievable=dream.smart_achievable,
-            relevant=dream.smart_relevant,
-            timeBound=dream.smart_time_bound,
             targetDate=dream.smart_target_date,
             financialTargetValue=dream.smart_financial_target_value,
             financialCurrentValue=financial_progress.total_amount,
@@ -97,11 +92,6 @@ def _apply_payload_to_dream(
 
     if is_create or payload.smart is not None:
         smart = payload.smart or DreamSmartPayload()
-        dream.smart_specific = smart.specific
-        dream.smart_measurable = smart.measurable
-        dream.smart_achievable = smart.achievable
-        dream.smart_relevant = smart.relevant
-        dream.smart_time_bound = smart.timeBound
         dream.smart_target_date = smart.targetDate
         dream.smart_financial_target_value = smart.financialTargetValue
 
