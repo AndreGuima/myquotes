@@ -41,7 +41,7 @@ export default function EntriesVsExpenses() {
     const run = async () => {
       await loadData();
     };
-    
+
     void run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
