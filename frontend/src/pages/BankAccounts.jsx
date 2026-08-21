@@ -264,7 +264,7 @@ export default function BankAccounts() {
 
         <form
           onSubmit={handleCreateAccount}
-          className="grid grid-cols-1 md:grid-cols-5 gap-3"
+          className="grid grid-cols-1 md:grid-cols-5 gap-3 items-start"
         >
           <input
             type="text"
@@ -277,9 +277,16 @@ export default function BankAccounts() {
             }
           />
 
-          <div className="flex flex-col gap-1">
+          <div className="relative">
+            <Link
+              to="/dreams"
+              className="absolute -top-6 left-0 text-sm font-medium text-blue-500 hover:underline"
+            >
+              + adicionar objetivo
+            </Link>
+
             <select
-              className="themed-input rounded px-3 py-2"
+              className="themed-input rounded px-3 py-2 w-full"
               value={accountForm.objectiveDreamId}
               onChange={(e) =>
                 setAccountForm((prev) => ({
@@ -295,12 +302,6 @@ export default function BankAccounts() {
                 </option>
               ))}
             </select>
-            <Link
-              to="/dreams"
-              className="text-sm font-medium text-blue-500 hover:underline"
-            >
-              + adicionar objetivo
-            </Link>
           </div>
 
           <input
@@ -317,7 +318,7 @@ export default function BankAccounts() {
             }
           />
 
-          <label className="themed-input rounded px-3 py-2 flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 px-3 py-2 text-sm">
             <input
               type="checkbox"
               checked={Boolean(accountForm.allowInvestmentIncome)}

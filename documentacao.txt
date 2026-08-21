@@ -77,7 +77,7 @@
     
     ### Como aplicar a migration, 
         ### Na pasta backend (com venv ativo):
-        cd ~/repo/myquotes
+        cd ~/repo/mylife
         source venv/bin/activate
         cd ./backend/
         alembic revision -m "remove quote preferences from users"
@@ -95,7 +95,7 @@
     ./prework.sh "Criar proteção contra brute-force (limitar tentativas)." | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
-    /home/andre/repo/myquotes/ver_alteracoes.sh | xclip -selection clipboard
+    /home/andre/repo/mylife/ver_alteracoes.sh | xclip -selection clipboard
 
 ### Rodar Testes ou installar dependencias. Python 3.13
     cd /home/andre/repo/myquotes
