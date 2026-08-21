@@ -9,7 +9,7 @@ fi
 FEATURE=$1
 
 # Entrar no diretório
-echo "~/repo/myquotes/"
+echo "~/repo/mylife/"
 echo
 
 # Texto com o parâmetro

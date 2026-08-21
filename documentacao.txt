@@ -92,7 +92,7 @@
 
 ######## documentacao pessoal de lembretes ######
 ### Antes de comecar a trabalhar
-    ./prework.sh "Criar proteção contra brute-force (limitar tentativas)." | xclip -selection clipboard
+    ./prework.sh "Criar crud de cartao de crédito" | xclip -selection clipboard
 
 ### obter alteracoes e checkpoint
     /home/andre/repo/mylife/ver_alteracoes.sh | xclip -selection clipboard
