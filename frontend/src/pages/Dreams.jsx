@@ -18,6 +18,25 @@ function newDraft() {
   };
 }
 
+function emptyMilestoneInlineDraft() {
+  return {
+    title: "",
+    targetDate: "",
+    financialTargetValue: "",
+  };
+}
+
+function milestoneInlineDraftFromMilestone(milestone) {
+  return {
+    title: milestone.title || "",
+    targetDate: milestone.targetDate || "",
+    financialTargetValue:
+      milestone.financialTargetValue != null
+        ? String(milestone.financialTargetValue)
+        : "",
+  };
+}
+
 function draftFromDream(dream) {
   return {
     title: dream.title || "",
@@ -179,6 +198,36 @@ function addMilestone(
   setTargetValue("");
 }
 
+function updateMilestone(
+  setDraftState,
+  milestoneId,
+  inlineDraft,
+  setInlineDraft,
+  setEditingId,
+) {
+  const cleanTitle = inlineDraft.title.trim();
+  if (!cleanTitle) {
+    notify.error("Informe o nome do marco");
+    return;
+  }
+
+  setDraftState((prev) => ({
+    ...prev,
+    milestones: prev.milestones.map((milestone) =>
+      milestone.id === milestoneId
+        ? {
+            ...milestone,
+            title: cleanTitle,
+            targetDate: inlineDraft.targetDate || "",
+            financialTargetValue: inlineDraft.financialTargetValue || "",
+          }
+        : milestone,
+    ),
+  }));
+  setInlineDraft(emptyMilestoneInlineDraft());
+  setEditingId(null);
+}
+
 function removeMilestone(setDraftState, milestoneId) {
   setDraftState((prev) => ({
     ...prev,
@@ -197,12 +246,20 @@ export default function Dreams() {
   const [milestoneTitle, setMilestoneTitle] = useState("");
   const [milestoneDate, setMilestoneDate] = useState("");
   const [milestoneTargetValue, setMilestoneTargetValue] = useState("");
+  const [editingMilestoneId, setEditingMilestoneId] = useState(null);
+  const [milestoneInlineDraft, setMilestoneInlineDraft] = useState(
+    emptyMilestoneInlineDraft,
+  );
 
   const [editingDreamId, setEditingDreamId] = useState(null);
   const [editDraft, setEditDraft] = useState(newDraft);
   const [editMilestoneTitle, setEditMilestoneTitle] = useState("");
   const [editMilestoneDate, setEditMilestoneDate] = useState("");
   const [editMilestoneTargetValue, setEditMilestoneTargetValue] = useState("");
+  const [editingEditMilestoneId, setEditingEditMilestoneId] = useState(null);
+  const [editMilestoneInlineDraft, setEditMilestoneInlineDraft] = useState(
+    emptyMilestoneInlineDraft,
+  );
 
   useEffect(() => {
     async function loadData() {
@@ -247,6 +304,8 @@ export default function Dreams() {
       setMilestoneTitle("");
       setMilestoneDate("");
       setMilestoneTargetValue("");
+      setEditingMilestoneId(null);
+      setMilestoneInlineDraft(emptyMilestoneInlineDraft());
       notify.success("Sonho criado com sucesso");
     } catch (err) {
       notify.error(getApiErrorMessage(err, "Erro ao criar sonho"));
@@ -261,6 +320,8 @@ export default function Dreams() {
     setEditMilestoneTitle("");
     setEditMilestoneDate("");
     setEditMilestoneTargetValue("");
+    setEditingEditMilestoneId(null);
+    setEditMilestoneInlineDraft(emptyMilestoneInlineDraft());
   }
 
   function cancelEdit() {
@@ -269,6 +330,18 @@ export default function Dreams() {
     setEditMilestoneTitle("");
     setEditMilestoneDate("");
     setEditMilestoneTargetValue("");
+    setEditingEditMilestoneId(null);
+    setEditMilestoneInlineDraft(emptyMilestoneInlineDraft());
+  }
+
+  function startMilestoneEdit(milestone, setInlineDraft, setEditingId) {
+    setInlineDraft(milestoneInlineDraftFromMilestone(milestone));
+    setEditingId(milestone.id);
+  }
+
+  function cancelMilestoneEdit(setInlineDraft, setEditingId) {
+    setInlineDraft(emptyMilestoneInlineDraft());
+    setEditingId(null);
   }
 
   async function saveEdit(dreamId) {
@@ -480,37 +553,140 @@ export default function Dreams() {
 
               {draft.milestones.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  {sortByDate(draft.milestones).map((milestone) => (
-                    <div
-                      key={milestone.id}
-                      className="text-sm border themed-border rounded px-3 py-2 flex justify-between gap-2"
-                    >
-                      <div>
-                        <div className="font-medium">{milestone.title}</div>
-                        <div className="themed-muted">
-                          {toDateLabel(milestone.targetDate)}
-                        </div>
-                        {milestone.financialTargetValue && (
-                          <div className="themed-muted">
-                            Meta: R${" "}
-                            {Number(
-                              milestone.financialTargetValue,
-                            ).toLocaleString("pt-BR", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
+                  {sortByDate(draft.milestones).map((milestone) => {
+                    const isEditingMilestone =
+                      editingMilestoneId === milestone.id;
+
+                    return (
+                      <div
+                        key={milestone.id}
+                        className="text-sm border themed-border rounded px-3 py-2 flex justify-between gap-2"
+                      >
+                        {isEditingMilestone ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+                            <input
+                              value={milestoneInlineDraft.title}
+                              onChange={(e) =>
+                                setMilestoneInlineDraft((prev) => ({
+                                  ...prev,
+                                  title: e.target.value,
+                                }))
+                              }
+                              placeholder="Nome do marco"
+                              className="sm:col-span-2 border themed-border rounded px-3 py-2"
+                            />
+                            <input
+                              type="date"
+                              value={milestoneInlineDraft.targetDate}
+                              onChange={(e) =>
+                                setMilestoneInlineDraft((prev) => ({
+                                  ...prev,
+                                  targetDate: e.target.value,
+                                }))
+                              }
+                              className="border themed-border rounded px-3 py-2"
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={milestoneInlineDraft.financialTargetValue}
+                              onChange={(e) =>
+                                setMilestoneInlineDraft((prev) => ({
+                                  ...prev,
+                                  financialTargetValue: e.target.value,
+                                }))
+                              }
+                              placeholder="Meta R$"
+                              className="border themed-border rounded px-3 py-2"
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="font-medium">
+                              {milestone.title}
+                            </div>
+                            <div className="themed-muted">
+                              {toDateLabel(milestone.targetDate)}
+                            </div>
+                            {milestone.financialTargetValue && (
+                              <div className="themed-muted">
+                                Meta: R${" "}
+                                {Number(
+                                  milestone.financialTargetValue,
+                                ).toLocaleString("pt-BR", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </div>
+                            )}
                           </div>
                         )}
+                        <div className="flex flex-col items-end gap-1">
+                          {isEditingMilestone ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateMilestone(
+                                    setDraft,
+                                    milestone.id,
+                                    milestoneInlineDraft,
+                                    setMilestoneInlineDraft,
+                                    setEditingMilestoneId,
+                                  )
+                                }
+                                className="themed-link hover:underline"
+                              >
+                                salvar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  cancelMilestoneEdit(
+                                    setMilestoneInlineDraft,
+                                    setEditingMilestoneId,
+                                  )
+                                }
+                                className="themed-muted hover:underline"
+                              >
+                                cancelar
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                startMilestoneEdit(
+                                  milestone,
+                                  setMilestoneInlineDraft,
+                                  setEditingMilestoneId,
+                                )
+                              }
+                              className="themed-link hover:underline"
+                            >
+                              alterar
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              removeMilestone(setDraft, milestone.id);
+                              if (editingMilestoneId === milestone.id) {
+                                cancelMilestoneEdit(
+                                  setMilestoneInlineDraft,
+                                  setEditingMilestoneId,
+                                );
+                              }
+                            }}
+                            className="text-red-600 hover:underline"
+                          >
+                            remover
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeMilestone(setDraft, milestone.id)}
-                        className="text-red-600 hover:underline"
-                      >
-                        remover
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -726,44 +902,159 @@ export default function Dreams() {
                           {editDraft.milestones.length > 0 && (
                             <div className="mt-3 space-y-2">
                               {sortByDate(editDraft.milestones).map(
-                                (milestone) => (
-                                  <div
-                                    key={milestone.id}
-                                    className="text-sm border themed-border rounded px-3 py-2 flex justify-between gap-2"
-                                  >
-                                    <div>
-                                      <div className="font-medium">
-                                        {milestone.title}
-                                      </div>
-                                      <div className="themed-muted">
-                                        {toDateLabel(milestone.targetDate)}
-                                      </div>
-                                      {milestone.financialTargetValue && (
-                                        <div className="themed-muted">
-                                          Meta: R${" "}
-                                          {Number(
-                                            milestone.financialTargetValue,
-                                          ).toLocaleString("pt-BR", {
-                                            minimumFractionDigits: 2,
-                                            maximumFractionDigits: 2,
-                                          })}
+                                (milestone) => {
+                                  const isEditingMilestone =
+                                    editingEditMilestoneId === milestone.id;
+
+                                  return (
+                                    <div
+                                      key={milestone.id}
+                                      className="text-sm border themed-border rounded px-3 py-2 flex justify-between gap-2"
+                                    >
+                                      {isEditingMilestone ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+                                          <input
+                                            value={
+                                              editMilestoneInlineDraft.title
+                                            }
+                                            onChange={(e) =>
+                                              setEditMilestoneInlineDraft(
+                                                (prev) => ({
+                                                  ...prev,
+                                                  title: e.target.value,
+                                                }),
+                                              )
+                                            }
+                                            placeholder="Nome do marco"
+                                            className="sm:col-span-2 border themed-border rounded px-3 py-2"
+                                          />
+                                          <input
+                                            type="date"
+                                            value={
+                                              editMilestoneInlineDraft.targetDate
+                                            }
+                                            onChange={(e) =>
+                                              setEditMilestoneInlineDraft(
+                                                (prev) => ({
+                                                  ...prev,
+                                                  targetDate: e.target.value,
+                                                }),
+                                              )
+                                            }
+                                            className="border themed-border rounded px-3 py-2"
+                                          />
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={
+                                              editMilestoneInlineDraft.financialTargetValue
+                                            }
+                                            onChange={(e) =>
+                                              setEditMilestoneInlineDraft(
+                                                (prev) => ({
+                                                  ...prev,
+                                                  financialTargetValue:
+                                                    e.target.value,
+                                                }),
+                                              )
+                                            }
+                                            placeholder="Meta R$"
+                                            className="border themed-border rounded px-3 py-2"
+                                          />
+                                        </div>
+                                      ) : (
+                                        <div>
+                                          <div className="font-medium">
+                                            {milestone.title}
+                                          </div>
+                                          <div className="themed-muted">
+                                            {toDateLabel(milestone.targetDate)}
+                                          </div>
+                                          {milestone.financialTargetValue && (
+                                            <div className="themed-muted">
+                                              Meta: R${" "}
+                                              {Number(
+                                                milestone.financialTargetValue,
+                                              ).toLocaleString("pt-BR", {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                              })}
+                                            </div>
+                                          )}
                                         </div>
                                       )}
+                                      <div className="flex flex-col items-end gap-1">
+                                        {isEditingMilestone ? (
+                                          <>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                updateMilestone(
+                                                  setEditDraft,
+                                                  milestone.id,
+                                                  editMilestoneInlineDraft,
+                                                  setEditMilestoneInlineDraft,
+                                                  setEditingEditMilestoneId,
+                                                )
+                                              }
+                                              className="themed-link hover:underline"
+                                            >
+                                              salvar
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                cancelMilestoneEdit(
+                                                  setEditMilestoneInlineDraft,
+                                                  setEditingEditMilestoneId,
+                                                )
+                                              }
+                                              className="themed-muted hover:underline"
+                                            >
+                                              cancelar
+                                            </button>
+                                          </>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              startMilestoneEdit(
+                                                milestone,
+                                                setEditMilestoneInlineDraft,
+                                                setEditingEditMilestoneId,
+                                              )
+                                            }
+                                            className="themed-link hover:underline"
+                                          >
+                                            alterar
+                                          </button>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            removeMilestone(
+                                              setEditDraft,
+                                              milestone.id,
+                                            );
+                                            if (
+                                              editingEditMilestoneId ===
+                                              milestone.id
+                                            ) {
+                                              cancelMilestoneEdit(
+                                                setEditMilestoneInlineDraft,
+                                                setEditingEditMilestoneId,
+                                              );
+                                            }
+                                          }}
+                                          className="text-red-600 hover:underline"
+                                        >
+                                          remover
+                                        </button>
+                                      </div>
                                     </div>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        removeMilestone(
-                                          setEditDraft,
-                                          milestone.id,
-                                        )
-                                      }
-                                      className="text-red-600 hover:underline"
-                                    >
-                                      remover
-                                    </button>
-                                  </div>
-                                ),
+                                  );
+                                },
                               )}
                             </div>
                           )}
