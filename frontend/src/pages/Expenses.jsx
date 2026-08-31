@@ -767,20 +767,29 @@ export default function Expenses() {
               ))}
             </select>
           ) : (
-            <select
-              className="themed-input rounded px-3 py-2"
-              value={form.cardId}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, cardId: e.target.value }))
-              }
-            >
-              <option value="">Selecione o cartao</option>
-              {cards.map((card) => (
-                <option key={card.id} value={card.id}>
-                  {card.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-2">
+              <select
+                className="themed-input rounded px-3 py-2"
+                value={form.cardId}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, cardId: e.target.value }))
+                }
+              >
+                <option value="">Selecione o cartao</option>
+                {cards.map((card) => (
+                  <option key={card.id} value={card.id}>
+                    {card.name}
+                  </option>
+                ))}
+              </select>
+
+              <Link
+                to="/finances/credit-cards"
+                className="text-sm font-medium text-blue-500 hover:text-blue-400 transition"
+              >
+                + adicionar cartão de crédito
+              </Link>
+            </div>
           )}
 
           <input
