@@ -5,6 +5,29 @@ import { getApiErrorMessage } from "../core/apiError";
 import habitsService from "../services/habitsService";
 import dreamsService from "../services/dreamsService";
 
+function formatCurrencyInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+
+  const numberValue = Number(digits) / 100;
+  return numberValue.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function formatDecimalCurrencyInput(value) {
+  if (value == null || value === "") return "";
+
+  return formatCurrencyInput(Math.round(Number(value) * 100));
+}
+
+function parseCurrencyInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return 0;
+  return Number(digits) / 100;
+}
+
 function newDraft() {
   return {
     title: "",
@@ -32,7 +55,7 @@ function milestoneInlineDraftFromMilestone(milestone) {
     targetDate: milestone.targetDate || "",
     financialTargetValue:
       milestone.financialTargetValue != null
-        ? String(milestone.financialTargetValue)
+        ? formatDecimalCurrencyInput(milestone.financialTargetValue)
         : "",
   };
 }
@@ -44,7 +67,7 @@ function draftFromDream(dream) {
     smart: {
       targetDate: dream.smart?.targetDate || "",
       financialTargetValue: dream.smart?.financialTargetValue
-        ? String(dream.smart.financialTargetValue)
+        ? formatDecimalCurrencyInput(dream.smart.financialTargetValue)
         : "",
     },
     linkedHabitIds: [...(dream.linkedHabitIds || [])],
@@ -55,7 +78,7 @@ function draftFromDream(dream) {
       completedAt: milestone.completedAt || null,
       financialTargetValue:
         milestone.financialTargetValue != null
-          ? String(milestone.financialTargetValue)
+          ? formatDecimalCurrencyInput(milestone.financialTargetValue)
           : "",
       progressPercent: milestone.progressPercent ?? 0,
       position: milestone.position ?? index,
@@ -70,7 +93,7 @@ function dreamPayloadFromDraft(draft) {
     smart: {
       targetDate: draft.smart.targetDate || null,
       financialTargetValue: draft.smart.financialTargetValue
-        ? Number(draft.smart.financialTargetValue)
+        ? parseCurrencyInput(draft.smart.financialTargetValue)
         : null,
     },
     linkedHabitIds: draft.linkedHabitIds,
@@ -80,7 +103,7 @@ function dreamPayloadFromDraft(draft) {
       targetDate: milestone.targetDate || null,
       completedAt: milestone.completedAt || null,
       financialTargetValue: milestone.financialTargetValue
-        ? Number(milestone.financialTargetValue)
+        ? parseCurrencyInput(milestone.financialTargetValue)
         : null,
       progressPercent:
         milestone.progressPercent != null
@@ -457,15 +480,14 @@ export default function Dreams() {
                   />
                 </div>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={draft.smart.financialTargetValue}
                   onChange={(e) =>
                     updateDraftState(
                       setDraft,
                       "smart.financialTargetValue",
-                      e.target.value,
+                      formatCurrencyInput(e.target.value),
                     )
                   }
                   className="w-full border themed-border rounded px-3 py-2"
@@ -523,11 +545,12 @@ export default function Dreams() {
                   className="border themed-border rounded px-3 py-2"
                 />
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={milestoneTargetValue}
-                  onChange={(e) => setMilestoneTargetValue(e.target.value)}
+                  onChange={(e) =>
+                    setMilestoneTargetValue(formatCurrencyInput(e.target.value))
+                  }
                   placeholder="Meta R$"
                   className="border themed-border rounded px-3 py-2"
                 />
@@ -587,14 +610,15 @@ export default function Dreams() {
                               className="border themed-border rounded px-3 py-2"
                             />
                             <input
-                              type="number"
-                              min="0"
-                              step="0.01"
+                              type="text"
+                              inputMode="decimal"
                               value={milestoneInlineDraft.financialTargetValue}
                               onChange={(e) =>
                                 setMilestoneInlineDraft((prev) => ({
                                   ...prev,
-                                  financialTargetValue: e.target.value,
+                                  financialTargetValue: formatCurrencyInput(
+                                    e.target.value,
+                                  ),
                                 }))
                               }
                               placeholder="Meta R$"
@@ -612,7 +636,7 @@ export default function Dreams() {
                             {milestone.financialTargetValue && (
                               <div className="themed-muted">
                                 Meta: R${" "}
-                                {Number(
+                                {parseCurrencyInput(
                                   milestone.financialTargetValue,
                                 ).toLocaleString("pt-BR", {
                                   minimumFractionDigits: 2,
@@ -809,15 +833,14 @@ export default function Dreams() {
                             className="border themed-border rounded px-3 py-2"
                           />
                           <input
-                            type="number"
-                            min="0"
-                            step="0.01"
+                            type="text"
+                            inputMode="decimal"
                             value={editDraft.smart.financialTargetValue}
                             onChange={(e) =>
                               updateDraftState(
                                 setEditDraft,
                                 "smart.financialTargetValue",
-                                e.target.value,
+                                formatCurrencyInput(e.target.value),
                               )
                             }
                             className="border themed-border rounded px-3 py-2"
@@ -870,12 +893,13 @@ export default function Dreams() {
                               className="border themed-border rounded px-3 py-2"
                             />
                             <input
-                              type="number"
-                              min="0"
-                              step="0.01"
+                              type="text"
+                              inputMode="decimal"
                               value={editMilestoneTargetValue}
                               onChange={(e) =>
-                                setEditMilestoneTargetValue(e.target.value)
+                                setEditMilestoneTargetValue(
+                                  formatCurrencyInput(e.target.value),
+                                )
                               }
                               placeholder="Meta R$"
                               className="border themed-border rounded px-3 py-2"
@@ -944,9 +968,8 @@ export default function Dreams() {
                                             className="border themed-border rounded px-3 py-2"
                                           />
                                           <input
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
+                                            type="text"
+                                            inputMode="decimal"
                                             value={
                                               editMilestoneInlineDraft.financialTargetValue
                                             }
@@ -955,7 +978,9 @@ export default function Dreams() {
                                                 (prev) => ({
                                                   ...prev,
                                                   financialTargetValue:
-                                                    e.target.value,
+                                                    formatCurrencyInput(
+                                                      e.target.value,
+                                                    ),
                                                 }),
                                               )
                                             }
@@ -974,7 +999,7 @@ export default function Dreams() {
                                           {milestone.financialTargetValue && (
                                             <div className="themed-muted">
                                               Meta: R${" "}
-                                              {Number(
+                                              {parseCurrencyInput(
                                                 milestone.financialTargetValue,
                                               ).toLocaleString("pt-BR", {
                                                 minimumFractionDigits: 2,
