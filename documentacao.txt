@@ -97,11 +97,19 @@
 ### obter alteracoes e checkpoint
     /home/andre/repo/mylife/ver_alteracoes.sh | xclip -selection clipboard
 
-### Rodar Testes ou installar dependencias. Python 3.13
-    cd /home/andre/repo/myquotes
-    source /home/andre/.local/miniconda3/etc/profile.d/conda.sh
-    conda activate /home/andre/.local/miniconda3/envs/myquotes_py313
-    pytest -v backend/tests/
+### Rodar Testes
+    ./quality-check.sh
+    ### fix isort
+        docker compose run --rm -v "$PWD/backend:/app" -w /app backend python -m isort app/routes/dreams.py --profile black
+    ### fix black
+        ### Verificacao
+            docker compose run --rm -v "$PWD/backend:/app" -w /app backend python -m black migrations/versions/7b4c8d2e1f30_add_current_value_to_dream_milestones.py tests/test_dreams.py --diff
+        ### Aplicação
+            docker compose run --rm -v "$PWD/backend:/app" -w /app backend python -m black migrations/versions/7b4c8d2e1f30_add_current_value_to_dream_milestones.py tests/test_dreams.py
+    ### prettier check
+        docker run --rm -v "$PWD/frontend:/app" -w /app node:20 bash -lc 'npx prettier --check .'
+        ### fix
+            docker run --rm -v "$PWD/frontend:/app" -w /app node:20 bash -lc 'npx prettier src/main.jsx src/pages/BankAccounts.jsx src/pages/CreditCards.jsx src/pages/DreamDetails.jsx src/pages/Dreams.jsx --write'
 
 ### para commitar, no final do dia, testes
     ### Crie testes para essa nova feature que acabamos de realizar:

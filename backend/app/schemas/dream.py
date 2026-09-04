@@ -20,6 +20,9 @@ class DreamMilestonePayload(BaseModel):
     financialTargetValue: Optional[Decimal] = Field(
         default=None, ge=0, decimal_places=2
     )
+    financialCurrentValue: Optional[Decimal] = Field(
+        default=None, ge=0, decimal_places=2
+    )
     progressPercent: Optional[Decimal] = Field(
         default=None, ge=0, le=100, decimal_places=2
     )
@@ -47,6 +50,7 @@ class DreamMilestoneRead(BaseModel):
     targetDate: Optional[date] = None
     completedAt: Optional[datetime] = None
     financialTargetValue: Decimal | None = None
+    financialCurrentValue: Decimal | None = None
     progressPercent: Decimal | None = None
     position: int
 
@@ -75,3 +79,7 @@ class DreamRead(BaseModel):
 class DreamMilestoneToggleRead(BaseModel):
     id: int
     completedAt: Optional[datetime] = None
+
+
+class DreamMilestoneProgressPayload(BaseModel):
+    financialCurrentValue: Decimal = Field(ge=0, decimal_places=2)

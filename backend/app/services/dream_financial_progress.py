@@ -131,7 +131,11 @@ def sync_dream_milestone_financial_progress(
             )
 
         milestone.progress_percent = _compute_progress_percent(
-            total_amount=progress.total_amount,
+            total_amount=(
+                Decimal(milestone.financial_current_value)
+                if milestone.financial_current_value is not None
+                else progress.total_amount
+            ),
             target_amount=milestone_target,
         )
 

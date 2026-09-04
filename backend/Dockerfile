@@ -29,7 +29,7 @@ COPY alembic.ini /app/alembic.ini
 COPY migrations/ /app/migrations/
 COPY app/ /app
 COPY app/templates/ /app/templates/
-
+COPY tests/ /app/tests/
 
 COPY wait-for-db.sh /app/wait-for-db.sh
 RUN chmod +x /app/wait-for-db.sh

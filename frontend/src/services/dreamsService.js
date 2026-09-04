@@ -24,6 +24,10 @@ const dreamsService = {
   toggleMilestone(dreamId, milestoneId) {
     return api.post(`/dreams/${dreamId}/milestones/${milestoneId}/toggle`);
   },
+
+  updateMilestone(dreamId, milestoneId, payload) {
+    return api.patch(`/dreams/${dreamId}/milestones/${milestoneId}`, payload);
+  },
 };
 
 export default dreamsService;

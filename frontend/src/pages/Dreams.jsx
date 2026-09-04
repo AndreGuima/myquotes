@@ -80,6 +80,10 @@ function draftFromDream(dream) {
         milestone.financialTargetValue != null
           ? formatDecimalCurrencyInput(milestone.financialTargetValue)
           : "",
+      financialCurrentValue:
+        milestone.financialCurrentValue != null
+          ? formatDecimalCurrencyInput(milestone.financialCurrentValue)
+          : "",
       progressPercent: milestone.progressPercent ?? 0,
       position: milestone.position ?? index,
     })),
@@ -104,6 +108,9 @@ function dreamPayloadFromDraft(draft) {
       completedAt: milestone.completedAt || null,
       financialTargetValue: milestone.financialTargetValue
         ? parseCurrencyInput(milestone.financialTargetValue)
+        : null,
+      financialCurrentValue: milestone.financialCurrentValue
+        ? parseCurrencyInput(milestone.financialCurrentValue)
         : null,
       progressPercent:
         milestone.progressPercent != null
@@ -627,9 +634,7 @@ export default function Dreams() {
                           </div>
                         ) : (
                           <div>
-                            <div className="font-medium">
-                              {milestone.title}
-                            </div>
+                            <div className="font-medium">{milestone.title}</div>
                             <div className="themed-muted">
                               {toDateLabel(milestone.targetDate)}
                             </div>

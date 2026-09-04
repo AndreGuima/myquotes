@@ -105,12 +105,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               <Route path="/dreams" element={<Dreams />} />
               <Route path="/dreams/:id" element={<DreamDetails />} />
               <Route path="/finances" element={<Finances />} />
-              <Route path="/finances/credit-cards" element={<CreditCards />}/>
+              <Route path="/finances/credit-cards" element={<CreditCards />} />
               <Route path="/finances/patrimony" element={<Patrimony />} />
-              <Route path="/finances/patrimony/accounts"
+              <Route
+                path="/finances/patrimony/accounts"
                 element={<BankAccounts />}
               />
-              <Route path="/finances/transfers"
+              <Route
+                path="/finances/transfers"
                 element={<BankAccountTransfers />}
               />
               <Route

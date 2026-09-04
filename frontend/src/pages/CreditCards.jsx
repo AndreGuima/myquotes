@@ -63,9 +63,7 @@ export default function CreditCards() {
       notify.success("Cartão criado");
       resetForm();
     } catch (err) {
-      notify.error(
-        getApiErrorMessage(err, "Erro ao criar cartão de crédito"),
-      );
+      notify.error(getApiErrorMessage(err, "Erro ao criar cartão de crédito"));
     } finally {
       setSaving(false);
     }
@@ -144,9 +142,7 @@ export default function CreditCards() {
       </div>
 
       <div className="themed-card themed-border border rounded-xl p-5">
-        <h2 className="text-xl font-semibold mb-4">
-          Novo Cartão de Crédito
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">Novo Cartão de Crédito</h2>
 
         <form
           onSubmit={handleCreate}

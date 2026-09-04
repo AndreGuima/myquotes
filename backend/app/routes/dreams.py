@@ -8,6 +8,7 @@ from models.habit import Habit
 from models.user import User
 from schemas.dream import (
     DreamCreate,
+    DreamMilestoneProgressPayload,
     DreamMilestoneRead,
     DreamMilestoneToggleRead,
     DreamRead,
@@ -34,6 +35,7 @@ def _to_response(db: Session, user_id: int, dream: Dream) -> DreamRead:
             targetDate=item.target_date,
             completedAt=item.completed_at,
             financialTargetValue=item.financial_target_value,
+            financialCurrentValue=item.financial_current_value,
             progressPercent=item.progress_percent,
             position=item.position,
         )
@@ -117,6 +119,7 @@ def _apply_payload_to_dream(
                     target_date=item.targetDate,
                     completed_at=item.completedAt,
                     financial_target_value=item.financialTargetValue,
+                    financial_current_value=item.financialCurrentValue,
                     progress_percent=item.progressPercent or 0,
                     position=index,
                 )
@@ -253,3 +256,37 @@ def toggle_milestone(
     db.commit()
     db.refresh(milestone)
     return DreamMilestoneToggleRead(id=milestone.id, completedAt=milestone.completed_at)
+
+
+@router.patch(
+    "/{dream_id}/milestones/{milestone_id}", response_model=DreamMilestoneRead
+)
+def update_milestone_progress(
+    dream_id: int,
+    milestone_id: int,
+    payload: DreamMilestoneProgressPayload,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    dream = _get_user_dream_or_404(db, user.id, dream_id)
+    milestone = next(
+        (item for item in dream.milestones if item.id == milestone_id), None
+    )
+    if not milestone:
+        raise HTTPException(status_code=404, detail="Marco não encontrado")
+
+    milestone.financial_current_value = payload.financialCurrentValue
+    db.flush()
+    sync_dream_milestone_financial_progress(db, user.id, dream.id)
+    db.commit()
+    db.refresh(milestone)
+    return DreamMilestoneRead(
+        id=milestone.id,
+        title=milestone.title,
+        targetDate=milestone.target_date,
+        completedAt=milestone.completed_at,
+        financialTargetValue=milestone.financial_target_value,
+        financialCurrentValue=milestone.financial_current_value,
+        progressPercent=milestone.progress_percent,
+        position=milestone.position,
+    )
