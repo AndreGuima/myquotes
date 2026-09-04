@@ -23,6 +23,20 @@ function toMoneyValue(value) {
   return Number.isFinite(amount) ? amount : 0;
 }
 
+function formatCurrencyInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  return (Number(digits) / 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function parseCurrencyInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits ? Number(digits) / 100 : 0;
+}
+
 function toTimestamp(value) {
   const ts = new Date(value || "").getTime();
   return Number.isFinite(ts) ? ts : 0;
@@ -49,6 +63,9 @@ export default function DreamDetails() {
   const [dream, setDream] = useState(null);
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingMilestoneId, setEditingMilestoneId] = useState(null);
+  const [milestoneValueInput, setMilestoneValueInput] = useState("");
+  const [savingMilestone, setSavingMilestone] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -68,6 +85,42 @@ export default function DreamDetails() {
 
     loadData();
   }, [id]);
+
+  function startMilestoneUpdate(milestone) {
+    setEditingMilestoneId(milestone.id);
+    setMilestoneValueInput(
+      milestone.financialCurrentValue != null
+        ? formatCurrencyInput(
+            Math.round(Number(milestone.financialCurrentValue) * 100),
+          )
+        : "",
+    );
+  }
+
+  async function saveMilestoneUpdate(milestoneId) {
+    setSavingMilestone(true);
+    try {
+      const updatedMilestone = await dreamsService.updateMilestone(
+        id,
+        milestoneId,
+        {
+          financialCurrentValue: parseCurrencyInput(milestoneValueInput),
+        },
+      );
+      setDream((previous) => ({
+        ...previous,
+        milestones: previous.milestones.map((milestone) =>
+          milestone.id === milestoneId ? updatedMilestone : milestone,
+        ),
+      }));
+      setEditingMilestoneId(null);
+      notify.success("Marco atualizado");
+    } catch (err) {
+      notify.error(getApiErrorMessage(err, "Erro ao atualizar marco"));
+    } finally {
+      setSavingMilestone(false);
+    }
+  }
 
   const habitNames = useMemo(() => {
     const byId = new Map(habits.map((habit) => [habit.id, habit.title]));
@@ -187,8 +240,8 @@ export default function DreamDetails() {
                     {toMoneyLabel(milestone.financialTargetValue)}
                   </div>
                   <div className="text-sm themed-muted mt-1">
-                    Realizado:{" "}
-                    {Number(milestone.progressPercent ?? 0).toFixed(2)}%
+                    Realizado: {toMoneyLabel(milestone.financialCurrentValue)} ({" "}
+                    {Number(milestone.progressPercent ?? 0).toFixed(2)}%)
                   </div>
                   <div className="mt-2 h-1.5 bg-[var(--line-color)] rounded-full overflow-hidden">
                     <div
@@ -205,6 +258,46 @@ export default function DreamDetails() {
                     Status:{" "}
                     {isMilestoneCompleted(milestone) ? "Concluído" : "Pendente"}
                   </div>
+                  {editingMilestoneId === milestone.id ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={milestoneValueInput}
+                        onChange={(event) =>
+                          setMilestoneValueInput(
+                            formatCurrencyInput(event.target.value),
+                          )
+                        }
+                        placeholder="0,00"
+                        aria-label={`Valor atingido de ${milestone.title}`}
+                        className="themed-card themed-border border rounded px-3 py-2"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => saveMilestoneUpdate(milestone.id)}
+                        disabled={savingMilestone}
+                        className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        Salvar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingMilestoneId(null)}
+                        className="themed-border border px-3 py-2 rounded"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => startMilestoneUpdate(milestone)}
+                      className="mt-3 text-sm text-blue-400 hover:underline"
+                    >
+                      Atualizar marco
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

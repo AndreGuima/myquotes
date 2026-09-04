@@ -63,6 +63,9 @@ class DreamMilestone(Base):
     financial_target_value: Mapped[Optional[float]] = mapped_column(
         Numeric(14, 2), nullable=True
     )
+    financial_current_value: Mapped[Optional[float]] = mapped_column(
+        Numeric(14, 2), nullable=True
+    )
     progress_percent: Mapped[float] = mapped_column(
         Numeric(5, 2), nullable=False, server_default="0"
     )

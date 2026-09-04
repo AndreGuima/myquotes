@@ -53,7 +53,11 @@ class BankAccountTransaction(Base):
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     transaction_type: Mapped[TransactionType] = mapped_column(
-        SAEnum(TransactionType, name="bank_account_transaction_type"),
+        SAEnum(
+            TransactionType,
+            name="bank_account_transaction_type",
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
+        ),
         nullable=False,
     )
     description: Mapped[str | None] = mapped_column(String(255), nullable=True)

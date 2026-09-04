@@ -44,9 +44,7 @@ export default function BankAccounts() {
   const [dreams, setDreams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingAccount, setSavingAccount] = useState(false);
-  const [updatingValueId, setUpdatingValueId] = useState(null);
-  const [updatingValueInput, setUpdatingValueInput] = useState("");
-  const [savingValueId, setSavingValueId] = useState(null);
+  const [editingAccountId, setEditingAccountId] = useState(null);
   const [accountForm, setAccountForm] = useState(getInitialAccountForm);
   const [filters, setFilters] = useState({
     name: "",
@@ -107,9 +105,20 @@ export default function BankAccounts() {
 
   function resetAccountForm() {
     setAccountForm(getInitialAccountForm());
+    setEditingAccountId(null);
   }
 
-  async function handleCreateAccount(e) {
+  function startEditingAccount(account) {
+    setEditingAccountId(account.id);
+    setAccountForm({
+      name: account.name,
+      objectiveDreamId: String(account.objective_dream_id),
+      totalValue: formatCurrencyInput(String(account.total_value || "")),
+      allowInvestmentIncome: Boolean(account.allow_investment_income),
+    });
+  }
+
+  async function handleSaveAccount(e) {
     e.preventDefault();
 
     const name = String(accountForm.name || "").trim();
@@ -133,17 +142,38 @@ export default function BankAccounts() {
 
     setSavingAccount(true);
     try {
-      const created = await bankAccountsService.create({
+      const payload = {
         name,
         objective_dream_id: objectiveDreamId,
         total_value: totalValue,
         allow_investment_income: Boolean(accountForm.allowInvestmentIncome),
-      });
-      setAccounts((prev) => [created, ...prev]);
-      notify.success("Conta criada");
+      };
+
+      if (editingAccountId === null) {
+        const created = await bankAccountsService.create(payload);
+        setAccounts((prev) => [created, ...prev]);
+        notify.success("Conta criada");
+      } else {
+        const updated = await bankAccountsService.update(
+          editingAccountId,
+          payload,
+        );
+        setAccounts((prev) =>
+          prev.map((item) => (item.id === editingAccountId ? updated : item)),
+        );
+        notify.success("Conta atualizada");
+      }
+
       resetAccountForm();
     } catch (err) {
-      notify.error(getApiErrorMessage(err, "Erro ao criar conta"));
+      notify.error(
+        getApiErrorMessage(
+          err,
+          editingAccountId === null
+            ? "Erro ao criar conta"
+            : "Erro ao atualizar conta",
+        ),
+      );
     } finally {
       setSavingAccount(false);
     }
@@ -165,43 +195,6 @@ export default function BankAccounts() {
         }
       },
     });
-  }
-
-  function startUpdateValue(account) {
-    setUpdatingValueId(account.id);
-    setUpdatingValueInput(
-      formatCurrencyInput(String(account.total_value || "")),
-    );
-  }
-
-  function cancelUpdateValue() {
-    setUpdatingValueId(null);
-    setUpdatingValueInput("");
-  }
-
-  async function handleUpdateValue(accountId) {
-    const totalValue = parseCurrencyInput(updatingValueInput);
-
-    if (!Number.isFinite(totalValue) || totalValue < 0) {
-      notify.error("Informe um valor total válido");
-      return;
-    }
-
-    setSavingValueId(accountId);
-    try {
-      const updated = await bankAccountsService.update(accountId, {
-        total_value: totalValue,
-      });
-      setAccounts((prev) =>
-        prev.map((item) => (item.id === accountId ? updated : item)),
-      );
-      notify.success("Valor atualizado");
-      cancelUpdateValue();
-    } catch (err) {
-      notify.error(getApiErrorMessage(err, "Erro ao atualizar valor"));
-    } finally {
-      setSavingValueId(null);
-    }
   }
 
   async function handleToggleInvestmentIncome(account) {
@@ -260,11 +253,15 @@ export default function BankAccounts() {
       </div>
 
       <div className="themed-card themed-border border rounded-xl p-5">
-        <h2 className="text-xl font-semibold mb-4">Nova Conta Bancária</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          {editingAccountId === null
+            ? "Nova Conta Bancária"
+            : "Alterar Conta Bancária"}
+        </h2>
 
         <form
-          onSubmit={handleCreateAccount}
-          className="grid grid-cols-1 md:grid-cols-5 gap-3"
+          onSubmit={handleSaveAccount}
+          className="grid grid-cols-1 md:grid-cols-5 gap-3 items-start"
         >
           <input
             type="text"
@@ -277,9 +274,16 @@ export default function BankAccounts() {
             }
           />
 
-          <div className="flex flex-col gap-1">
+          <div className="relative">
+            <Link
+              to="/dreams"
+              className="absolute -top-6 left-0 text-sm font-medium text-blue-500 hover:underline"
+            >
+              + adicionar objetivo
+            </Link>
+
             <select
-              className="themed-input rounded px-3 py-2"
+              className="themed-input rounded px-3 py-2 w-full"
               value={accountForm.objectiveDreamId}
               onChange={(e) =>
                 setAccountForm((prev) => ({
@@ -295,12 +299,6 @@ export default function BankAccounts() {
                 </option>
               ))}
             </select>
-            <Link
-              to="/dreams"
-              className="text-sm font-medium text-blue-500 hover:underline"
-            >
-              + adicionar objetivo
-            </Link>
           </div>
 
           <input
@@ -317,7 +315,7 @@ export default function BankAccounts() {
             }
           />
 
-          <label className="themed-input rounded px-3 py-2 flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 px-3 py-2 text-sm">
             <input
               type="checkbox"
               checked={Boolean(accountForm.allowInvestmentIncome)}
@@ -337,7 +335,11 @@ export default function BankAccounts() {
               disabled={savingAccount}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
             >
-              {savingAccount ? "Salvando..." : "Cadastrar"}
+              {savingAccount
+                ? "Salvando..."
+                : editingAccountId === null
+                  ? "Cadastrar"
+                  : "Salvar alterações"}
             </button>
             <button
               type="button"
@@ -431,9 +433,6 @@ export default function BankAccounts() {
             ]}
             data={filteredAccounts}
             renderRow={(account) => {
-              const isUpdatingValue = updatingValueId === account.id;
-              const isSavingValue = savingValueId === account.id;
-
               return (
                 <tr key={account.id} className="border themed-border">
                   <td className="p-2 border themed-border font-medium">
@@ -443,37 +442,7 @@ export default function BankAccounts() {
                     {account.objective_dream_title || "—"}
                   </td>
                   <td className="p-2 border themed-border">
-                    {isUpdatingValue ? (
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          handleUpdateValue(account.id);
-                        }}
-                        className="flex min-w-[260px] items-center gap-2"
-                      >
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          className="themed-input rounded px-3 py-2 w-full"
-                          placeholder="Novo valor"
-                          value={updatingValueInput}
-                          onChange={(e) =>
-                            setUpdatingValueInput(
-                              formatCurrencyInput(e.target.value),
-                            )
-                          }
-                        />
-                        <button
-                          type="submit"
-                          disabled={isSavingValue}
-                          className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-                        >
-                          {isSavingValue ? "Salvando..." : "Salvar"}
-                        </button>
-                      </form>
-                    ) : (
-                      formatCurrency(account.total_value)
-                    )}
+                    {formatCurrency(account.total_value)}
                   </td>
                   <td className="p-2 border themed-border">
                     {account.allow_investment_income
@@ -493,15 +462,10 @@ export default function BankAccounts() {
                       </button>
                       <button
                         type="button"
-                        disabled={isSavingValue}
-                        onClick={() =>
-                          isUpdatingValue
-                            ? cancelUpdateValue()
-                            : startUpdateValue(account)
-                        }
-                        className="px-2 py-1 bg-blue-500 text-white rounded disabled:opacity-50"
+                        onClick={() => startEditingAccount(account)}
+                        className="px-2 py-1 bg-blue-500 text-white rounded"
                       >
-                        {isUpdatingValue ? "Cancelar" : "Atualizar Valor"}
+                        Alterar
                       </button>
                       <button
                         type="button"

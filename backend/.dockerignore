@@ -7,6 +7,5 @@ __pycache__
 *.pyd
 .coverage
 htmlcov
-tests
 README.md
 file::memory

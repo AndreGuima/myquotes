@@ -9,11 +9,11 @@ fi
 FEATURE=$1
 
 # Entrar no diretório
-echo "~/repo/myquotes/"
+echo "~/repo/mylife/"
 echo
 
 # Texto com o parâmetro
-echo "Vamos continuar com a feature de $FEATURE do meu projeto Saas desenvolvido em python e react focado em Docker-first."
+echo "Vamos continuar com a feature de $FEATURE do projeto MyLife desenvolvido em python e react focado em Docker-first rodando dentro de containers."
 echo "Segue a estrutura de pastas e arquivos atual do meu projeto:"
 echo
 

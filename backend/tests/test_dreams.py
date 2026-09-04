@@ -127,3 +127,29 @@ def test_dream_details_returns_financial_remaining_value(client: TestClient):
     assert smart["financialCurrentValue"] == "1500.00"
     assert smart["financialRemainingValue"] == "500.00"
     assert smart["financialProgressPercent"] == "75.00"
+
+
+def test_update_milestone_current_value_updates_progress(client: TestClient):
+    create_res = client.post(
+        "/dreams",
+        json={
+            "title": "Viagem",
+            "milestones": [{"title": "Reserva", "financialTargetValue": "1000.00"}],
+        },
+    )
+    assert create_res.status_code == 201
+    created = create_res.json()
+    dream_id = created["id"]
+    milestone_id = created["milestones"][0]["id"]
+
+    update_res = client.patch(
+        f"/dreams/{dream_id}/milestones/{milestone_id}",
+        json={"financialCurrentValue": "250.00"},
+    )
+
+    assert update_res.status_code == 200
+    assert update_res.json()["financialCurrentValue"] == "250.00"
+    assert update_res.json()["progressPercent"] == "25.00"
+
+    detail_res = client.get(f"/dreams/{dream_id}")
+    assert detail_res.json()["milestones"][0]["financialCurrentValue"] == "250.00"
