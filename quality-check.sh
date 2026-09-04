@@ -187,4 +187,3 @@ fi
 
 echo ""
 echo "🎉 Pipeline concluído com sucesso!"
-```
